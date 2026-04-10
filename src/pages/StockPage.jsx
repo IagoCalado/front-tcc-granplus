@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -9,12 +9,63 @@ import { useAuth } from "../contexts/AuthContext";
 import { createProduct, getStock } from "../services/api";
 import { formatNumber } from "../utils/format";
 
+const formatValidityDate = (value) => {
+  if (!value) return "Sem data";
+
+  const parsed = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return "Sem data";
+
+  return parsed.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
+const formatLotName = (value) => {
+  if (value === null || value === undefined || value === "") return "Sem lote";
+  return `Lote ${value}`;
+};
+
+const getValidityStatus = (value) => {
+  if (!value) {
+    return { label: "Sem data de validade", color: "var(--ink)" };
+  }
+
+  const validade = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(validade.getTime())) {
+    return { label: "Sem data de validade", color: "var(--ink)" };
+  }
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  validade.setHours(0, 0, 0, 0);
+
+  const diferencaMs = validade.getTime() - hoje.getTime();
+  const diasParaVencer = Math.ceil(diferencaMs / (1000 * 60 * 60 * 24));
+
+  if (diasParaVencer < 0) {
+    return { label: "Vencido", color: "#dc2626" };
+  }
+
+  if (diasParaVencer === 0) {
+    return { label: "Vence hoje", color: "#ea580c" };
+  }
+
+  if (diasParaVencer <= 30) {
+    return { label: "Proximo do vencimento", color: "#ca8a04" };
+  }
+
+  return { label: "OK", color: "#16a34a" };
+};
+
 const StockPage = () => {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [stock, setStock] = useState([]);
   const [error, setError] = useState("");
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [selectedProductLots, setSelectedProductLots] = useState(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -45,6 +96,41 @@ const StockPage = () => {
     }
   };
 
+  const stockByProduct = useMemo(() => {
+    const map = new Map();
+
+    (stock || []).forEach((item) => {
+      const productId = item.pdt_id;
+      if (!productId) return;
+
+      if (!map.has(productId)) {
+        map.set(productId, {
+          ...item,
+          lotes: [],
+          lotesKeys: new Set(),
+        });
+      }
+
+      const product = map.get(productId);
+      const loteValue = item.lote ?? item.ent_prod_lote ?? null;
+      const validadeValue = item.pdt_validade ?? null;
+      const lotKey = `${loteValue ?? "sem-lote"}|${validadeValue ?? "sem-validade"}`;
+
+      if (
+        !product.lotesKeys.has(lotKey) &&
+        (loteValue !== null || validadeValue)
+      ) {
+        product.lotesKeys.add(lotKey);
+        product.lotes.push({
+          lote: loteValue,
+          validade: validadeValue,
+        });
+      }
+    });
+
+    return Array.from(map.values()).map(({ lotesKeys, ...product }) => product);
+  }, [stock]);
+
   if (!token) {
     return (
       <EmptyState
@@ -59,9 +145,7 @@ const StockPage = () => {
   }
 
   if (error) {
-    return (
-      <EmptyState title="Nao foi possivel carregar" description={error} />
-    );
+    return <EmptyState title="Nao foi possivel carregar" description={error} />;
   }
 
   const columns = [
@@ -71,7 +155,7 @@ const StockPage = () => {
       label: "Codigo",
       render: (row) => row.pdt_codigo || "-",
     },
-    { 
+    {
       key: "pdt_estoque_minimo",
       label: "Estoque minimo",
       render: (row) => formatNumber(row.pdt_estoque_minimo),
@@ -80,6 +164,23 @@ const StockPage = () => {
       key: "pdt_descricao",
       label: "Descrição",
       render: (row) => row.pdt_descricao || "-",
+    },
+    {
+      key: "lotes",
+      label: "Lotes / Validade",
+      render: (row) => (
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span>{formatNumber(row.lotes?.length || 0)} lotes</span>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => setSelectedProductLots(row)}
+            style={{ padding: "6px 10px", fontSize: "12px" }}
+          >
+            Ver lotes
+          </button>
+        </div>
+      ),
     },
     {
       key: "estoque_atual",
@@ -104,18 +205,114 @@ const StockPage = () => {
         title="Estoque"
         subtitle="Acompanhe niveis atuais e disponibilidade"
         actions={
-          <button className="btn btn-primary" onClick={() => setIsProductModalOpen(true)}>
+          <button
+            className="btn btn-primary"
+            onClick={() => setIsProductModalOpen(true)}
+          >
             Adicionar produto
           </button>
         }
       />
-      <DataTable columns={columns} rows={stock} rowKey="pdt_id" />
+      <DataTable columns={columns} rows={stockByProduct} rowKey="pdt_id" />
 
       <ProductModal
         isOpen={isProductModalOpen}
         onClose={() => setIsProductModalOpen(false)}
         onSave={handleSaveProduct}
       />
+
+      {selectedProductLots && (
+        <div
+          className="modal-overlay"
+          onClick={() => setSelectedProductLots(null)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "var(--overlay-bg)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="modal-content"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              background: "var(--bg-elevated)",
+              padding: "24px",
+              borderRadius: "12px",
+              width: "90%",
+              maxWidth: "560px",
+              color: "var(--ink)",
+              border: "1px solid var(--border)",
+              boxShadow: "var(--shadow-lg)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "16px",
+              }}
+            >
+              <h3 style={{ margin: 0, color: "var(--ink)" }}>
+                Lotes de {selectedProductLots.pdt_nome}
+              </h3>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setSelectedProductLots(null)}
+              >
+                Fechar
+              </button>
+            </div>
+
+            {selectedProductLots.lotes?.length ? (
+              <div
+                className="table-shell"
+                style={{ maxHeight: "320px", overflowY: "auto" }}
+              >
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Lote</th>
+                      <th>Validade</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedProductLots.lotes.map((item, index) => {
+                      const status = getValidityStatus(item.validade);
+
+                      return (
+                        <tr
+                          key={`${item.lote ?? "sem-lote"}-${item.validade ?? "sem-validade"}-${index}`}
+                        >
+                          <td>{formatLotName(item.lote)}</td>
+                          <td>{formatValidityDate(item.validade)}</td>
+                          <td style={{ color: status.color, fontWeight: 600 }}>
+                            {status.label}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <EmptyState
+                title="Sem lotes cadastrados"
+                description="Nao ha lotes com validade para este produto."
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
