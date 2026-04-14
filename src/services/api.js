@@ -30,8 +30,16 @@ const request = async (path, { token, method = "GET", body } = {}) => {
 };
 
 // Autenticação
-export const login = (payload) =>
-  request("/usuarios/login", { method: "POST", body: payload });
+export const login = ({ usuario, password }) =>
+  request("/usuarios/login", {
+    method: "POST",
+    body: {
+      usuario,
+      password,
+      user_nome: usuario,
+      user_senha: password,
+    },
+  });
 
 // Produtos
 export const getProducts = (token) => request("/produtos", { token });
@@ -64,6 +72,7 @@ export const deleteUser = (token, id) =>
 export const updatePassword = (token, id, payload) =>
   request(`/usuarios/${id}/senha`, { token, method: "PUT", body: payload });
 
+// Recuperação de senha
 // Entradas e Saídas
 export const getInputs = (token) => request("/entradas", { token });
 export const createInput = (token, payload) =>

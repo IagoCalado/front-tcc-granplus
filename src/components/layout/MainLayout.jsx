@@ -1,33 +1,30 @@
+import { Outlet } from "react-router-dom";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
-import AuthPanel from "../auth/AuthPanel";
-import { useAuth } from "../../contexts/AuthContext";
+import { useState } from "react";
 
-const MainLayout = ({
-  activePage,
-  setActivePage,
-  sidebarOpen,
-  onToggleSidebar,
-  onCloseSidebar,
-  children,
-}) => {
-  const { token } = useAuth();
+const MainLayout = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleToggleSidebar = () => {
+    setSidebarOpen((open) => !open);
+  };
+
+  const handleCloseSidebar = () => {
+    setSidebarOpen(false);
+  };
 
   return (
     <div className="app-shell">
       {sidebarOpen ? (
-        <div className="sidebar-overlay" onClick={onCloseSidebar} />
+        <div className="sidebar-overlay" onClick={handleCloseSidebar} />
       ) : null}
-      <Sidebar
-        activePage={activePage}
-        setActivePage={setActivePage}
-        isOpen={sidebarOpen}
-        onNavigate={onCloseSidebar}
-      />
+      <Sidebar isOpen={sidebarOpen} onNavigate={handleCloseSidebar} />
       <div className="app-main">
-        <Header onToggleSidebar={onToggleSidebar} />
-        {!token ? <AuthPanel /> : null}
-        <main className="app-content">{children}</main>
+        <Header onToggleSidebar={handleToggleSidebar} />
+        <main className="app-content">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
