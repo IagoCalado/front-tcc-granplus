@@ -26,15 +26,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const login = async ({ user_nome, user_senha, user_email }) => {
+  const login = async ({ usuario, password }) => {
     setStatus("loading");
     setError("");
 
     try {
-      const data = await apiLogin({ user_nome, user_senha });
+      const data = await apiLogin({ usuario, password });
       const nextUser = {
         ...data.usuario,
-        email: user_email || "",
+        email: data.usuario?.email || "",
         isAdmin: data.usuario?.user_nivel_acesso === "admin",
       };
 

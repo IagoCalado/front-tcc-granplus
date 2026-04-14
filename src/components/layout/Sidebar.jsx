@@ -1,15 +1,17 @@
+import { NavLink } from "react-router-dom";
+
 const navItems = [
-  { key: "dashboard", label: "Painel Principal", icon: "PP" },
-  { key: "products", label: "Produtos", icon: "PR" },
-  { key: "stock", label: "Estoque", icon: "ES" },
-  { key: "inputs", label: "Entrada", icon: "EN" },
-  { key: "outputs", label: "Saída", icon: "SA" },
-  { key: "suppliers", label: "Fornecedores", icon: "FN" },
-  { key: "audit", label: "Relatórios", icon: "AU" },
-  { key: "users", label: "Usuário", icon: "US" },
+  { path: "/dashboard", label: "Painel Principal", icon: "PP" },
+  { path: "/produtos", label: "Produtos", icon: "PR" },
+  { path: "/estoque", label: "Estoque", icon: "ES" },
+  { path: "/entradas", label: "Entrada", icon: "EN" },
+  { path: "/saidas", label: "Saida", icon: "SA" },
+  { path: "/fornecedores", label: "Fornecedores", icon: "FN" },
+  { path: "/auditoria", label: "Relatorios", icon: "AU" },
+  { path: "/usuarios", label: "Usuario", icon: "US" },
 ];
 
-const Sidebar = ({ activePage, setActivePage, isOpen, onNavigate }) => {
+const Sidebar = ({ isOpen, onNavigate }) => {
   return (
     <aside className={`sidebar ${isOpen ? "open" : ""}`.trim()}>
       <div className="sidebar-brand">
@@ -22,14 +24,13 @@ const Sidebar = ({ activePage, setActivePage, isOpen, onNavigate }) => {
 
       <nav className="sidebar-nav">
         {navItems.map((item) => (
-          <button
-            type="button"
-            key={item.key}
-            className={`nav-item ${
-              activePage === item.key ? "active" : ""
-            }`.trim()}
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) =>
+              `nav-item ${isActive ? "active" : ""}`.trim()
+            }
             onClick={() => {
-              setActivePage(item.key);
               if (onNavigate) {
                 onNavigate();
               }
@@ -37,7 +38,7 @@ const Sidebar = ({ activePage, setActivePage, isOpen, onNavigate }) => {
           >
             <span className="nav-icon">{item.icon}</span>
             <span>{item.label}</span>
-          </button>
+          </NavLink>
         ))}
       </nav>
 
