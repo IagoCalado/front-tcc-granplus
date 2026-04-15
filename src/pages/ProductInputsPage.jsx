@@ -6,7 +6,12 @@ import EmptyState from "../components/common/EmptyState";
 import InputModal from "../components/common/InputModal";
 import { useAuth } from "../contexts/AuthContext";
 import { formatNumber } from "../utils/format";
-import { getInputs, createInput, deleteInput } from "../services/api";
+import {
+  getInputs,
+  createInput,
+  updateInput,
+  deleteInput,
+} from "../services/api";
 
 const ProductInputsPage = () => {
   const { token } = useAuth(); // Recupera o token do usuário para autorizar a requisição
@@ -98,23 +103,23 @@ const ProductInputsPage = () => {
     {
       key: "ent_data",
       label: "Data",
-      render: (row) =>{
+      render: (row) => {
         const dataCompleta = row.ent_data_compra || row.ent_data;
         if (!dataCompleta) return "-";
         return new Date(dataCompleta).toLocaleDateString("pt-BR");
       },
-    }, 
+    },
     {
       key: "ent_hora",
       label: "Horário",
-      render: (row) =>{
+      render: (row) => {
         const dataCompleta = row.ent_data_compra || row.ent_data;
         if (!dataCompleta) return "-";
-        
+
         // Retorna só a hora e minuto (ex: 14:30)
-        return new Date(dataCompleta).toLocaleTimeString('pt-BR', {
-          hour: '2-digit',
-          minute: '2-digit'
+        return new Date(dataCompleta).toLocaleTimeString("pt-BR", {
+          hour: "2-digit",
+          minute: "2-digit",
         });
       },
     },

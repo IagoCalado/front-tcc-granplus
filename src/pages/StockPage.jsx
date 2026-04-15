@@ -9,11 +9,21 @@ import { useAuth } from "../contexts/AuthContext";
 import { createProduct, getStock } from "../services/api";
 import { formatNumber } from "../utils/format";
 
-const formatValidityDate = (value) => {
-  if (!value) return "Sem data";
+const getValidDate = (value) => {
+  if (!value) return null;
 
-  const parsed = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(parsed.getTime())) return "Sem data";
+  const raw = value instanceof Date ? value.toISOString() : String(value);
+  const normalized = raw.includes("T") ? raw : `${raw}T00:00:00`;
+  const parsed = new Date(normalized);
+
+  if (Number.isNaN(parsed.getTime())) return null;
+  parsed.setHours(0, 0, 0, 0);
+  return parsed;
+};
+
+const formatValidityDate = (value) => {
+  const parsed = getValidDate(value);
+  if (!parsed) return "Sem data";
 
   return parsed.toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -28,12 +38,8 @@ const formatLotName = (value) => {
 };
 
 const getValidityStatus = (value) => {
-  if (!value) {
-    return { label: "Sem data de validade", color: "var(--ink)" };
-  }
-
-  const validade = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(validade.getTime())) {
+  const validade = getValidDate(value);
+  if (!validade) {
     return { label: "Sem data de validade", color: "var(--ink)" };
   }
 
@@ -114,16 +120,21 @@ const StockPage = () => {
       const product = map.get(productId);
       const loteValue = item.lote ?? item.ent_prod_lote ?? null;
       const validadeValue = item.pdt_validade ?? null;
+      const validadeDate = getValidDate(validadeValue);
+      const validadeKey = validadeDate
+        ? validadeDate.toISOString().slice(0, 10)
+        : "sem-validade";
       const lotKey = `${loteValue ?? "sem-lote"}|${validadeValue ?? "sem-validade"}`;
+      const normalizedLotKey = `${loteValue ?? "sem-lote"}|${validadeKey}`;
 
       if (
-        !product.lotesKeys.has(lotKey) &&
+        !product.lotesKeys.has(normalizedLotKey) &&
         (loteValue !== null || validadeValue)
       ) {
-        product.lotesKeys.add(lotKey);
+        product.lotesKeys.add(normalizedLotKey);
         product.lotes.push({
           lote: loteValue,
-          validade: validadeValue,
+          validade: validadeKey === "sem-validade" ? null : validadeKey,
         });
       }
     });
