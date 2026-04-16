@@ -41,6 +41,25 @@ export const login = ({ usuario, password }) =>
     },
   });
 
+// Recuperação de senha
+export const verifyUserForReset = ({ user_nome }) =>
+  request("/usuarios/verificar-usuario", {
+    method: "POST",
+    body: { user_nome },
+  });
+
+export const sendResetPin = ({ user_nome }) =>
+  request("/usuarios/enviar-pin", {
+    method: "POST",
+    body: { user_nome },
+  });
+
+export const resetPasswordWithPin = ({ user_nome, pin, novaSenha }) =>
+  request("/usuarios/redefinir-senha", {
+    method: "POST",
+    body: { user_nome, pin, novaSenha },
+  });
+
 // Produtos
 export const getProducts = (token) => request("/produtos", { token });
 export const createProduct = (token, payload) =>
@@ -71,8 +90,6 @@ export const deleteUser = (token, id) =>
   request(`/usuarios/${id}`, { token, method: "DELETE" });
 export const updatePassword = (token, id, payload) =>
   request(`/usuarios/${id}/senha`, { token, method: "PUT", body: payload });
-
-// Recuperação de senha
 // Entradas e Saídas
 export const getInputs = (token) => request("/entradas", { token });
 export const createInput = (token, payload) =>

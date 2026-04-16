@@ -9,6 +9,7 @@ const Input = ({
   autoComplete,
   icon,
   error,
+  disabled,
 }) => {
   return (
     <div className="auth-field">
@@ -23,6 +24,7 @@ const Input = ({
           onChange={onChange}
           placeholder={placeholder}
           autoComplete={autoComplete}
+          disabled={disabled}
           aria-invalid={error ? "true" : "false"}
         />
       </div>
