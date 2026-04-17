@@ -1,4 +1,4 @@
-const Button = ({ children, loading, ...props }) => {
+const Button = ({ children, loading, loadingLabel = "Entrando...", ...props }) => {
   return (
     <button
       type="button"
@@ -7,7 +7,7 @@ const Button = ({ children, loading, ...props }) => {
       {...props}
     >
       {loading ? <span className="auth-spinner" aria-hidden="true" /> : null}
-      <span>{loading ? "Entrando..." : children}</span>
+      <span>{loading ? loadingLabel : children}</span>
     </button>
   );
 };

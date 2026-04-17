@@ -30,7 +30,39 @@ const DashboardPage = () => {
     const loadData = async () => {
       setLoading(true);
       setError("");
+
       try {
+        // 🌟 Trocamos Promise.all por Promise.allSettled
+        // Assim, se a rota de estoque falhar, as outras continuam funcionando!
+        const [productsRes, stockRes, movedRes, minRes] = await Promise.allSettled([
+          getProducts(token),
+          getStock(token),
+          getMostMovedProducts(token),
+          getMinimumStock(token),
+        ]);
+
+        // Pegamos os valores apenas das requisições que deram certo ("fulfilled")
+        setProducts(productsRes.status === "fulfilled" && productsRes.value ? productsRes.value : []);
+        setStock(stockRes.status === "fulfilled" && stockRes.value ? stockRes.value : []);
+        setMostMoved(movedRes.status === "fulfilled" && movedRes.value ? movedRes.value : []);
+        setMinStock(minRes.status === "fulfilled" && minRes.value ? minRes.value : []);
+
+        if (isAdmin) {
+          try {
+            const usersData = await getUsers(token);
+            setUsers(usersData?.usuarios || []);
+          } catch (e) {
+            setUsers([]); // Se der erro nos usuários, apenas deixa vazio
+          }
+        }
+      } catch (loadError) {
+        // Só vai cair aqui se a sua internet cair ou algo muito grave acontecer
+        setError(loadError.message || "Erro crítico ao carregar painel");
+      } finally {
+        setLoading(false);
+      }
+    };
+      {/*try {
         const [productsData, stockData, movedData, minData] =
           await Promise.all([
             getProducts(token),
@@ -53,7 +85,7 @@ const DashboardPage = () => {
       } finally {
         setLoading(false);
       }
-    };
+    };*/}
 
     loadData();
   }, [token, isAdmin]);
