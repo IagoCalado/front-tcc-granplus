@@ -92,7 +92,32 @@ const SuppliersPage = () => {
   const columns = [
     { key: "fncd_nome", label: "Nome do Fornecedor" },
     { key: "fncd_documento", label: "CPF/CNPJ" },
-    { key: "fncd_endereco", label: "Endereço" },
+    {
+      key: "fncd_logradouro",
+      label: "Nome da Rua",
+      render: (row) => row.fncd_logradouro || "-",
+    },
+    {
+      key: "fncd_endereco_formatado",
+      label: "Endereço",
+      render: (row) => {
+        const endereco = [
+          row.fncd_logradouro,
+          row.fncd_numero,
+          row.fncd_complemento,
+          row.fncd_bairro,
+          row.fncd_cidade,
+          row.fncd_estado,
+          row.fncd_cep,
+        ]
+          .filter(Boolean)
+          .map((item) => String(item).trim())
+          .filter(Boolean)
+          .join(", ");
+
+        return endereco || "-";
+      },
+    },
     { key: "fncd_tel", label: "Telefone" },
     { key: "fncd_email", label: "E-mail" },
     {

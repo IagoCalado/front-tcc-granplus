@@ -2,32 +2,43 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 
 export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     fncd_nome: "",
     fncd_documento: "",
-    fncd_endereco: "",
     fncd_tel: "",
     fncd_email: "",
-  });
+    fncd_cep: "",
+    fncd_logradouro: "",
+    fncd_numero: "",
+    fncd_complemento: "",
+    fncd_bairro: "",
+    fncd_cidade: "",
+    fncd_estado: "",
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState("");
 
   useEffect(() => {
     if (supplier) {
       setFormData({
         fncd_nome: supplier.fncd_nome || "",
         fncd_documento: supplier.fncd_documento || "",
-        fncd_endereco: supplier.fncd_endereco || "",
         fncd_tel: supplier.fncd_tel || "",
         fncd_email: supplier.fncd_email || "",
+        fncd_cep: supplier.fncd_cep || "",
+        fncd_logradouro: supplier.fncd_logradouro || "",
+        fncd_numero: supplier.fncd_numero || "",
+        fncd_complemento: supplier.fncd_complemento || "",
+        fncd_bairro: supplier.fncd_bairro || "",
+        fncd_cidade: supplier.fncd_cidade || "",
+        fncd_estado: supplier.fncd_estado || "",
       });
     } else {
-      setFormData({
-        fncd_nome: "",
-        fncd_documento: "",
-        fncd_endereco: "",
-        fncd_tel: "",
-        fncd_email: "",
-      });
+      setFormData(initialFormData);
     }
+    setCepError("");
   }, [supplier, isOpen]);
 
   if (!isOpen) return null;
@@ -42,7 +53,55 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData, supplier?.fncd_id); // Passa fncd_id se for update
+
+    const payload = {
+      ...formData,
+      fncd_documento: String(formData.fncd_documento || "").replace(/\D/g, ""),
+      fncd_cep: String(formData.fncd_cep || "").replace(/\D/g, ""),
+      fncd_estado: String(formData.fncd_estado || "").trim().toUpperCase(),
+    };
+
+    onSave(payload, supplier?.fncd_id);
+  };
+
+  const handleBuscarCep = async () => {
+    const cep = String(formData.fncd_cep || "").replace(/\D/g, "");
+
+    if (!cep) {
+      setCepError("");
+      return;
+    }
+
+    if (cep.length !== 8) {
+      setCepError("CEP deve conter 8 numeros");
+      return;
+    }
+
+    setCepLoading(true);
+    setCepError("");
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        setCepError("CEP não encontrado");
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        fncd_cep: cep,
+        fncd_logradouro: data.logradouro || prev.fncd_logradouro,
+        fncd_bairro: data.bairro || prev.fncd_bairro,
+        fncd_cidade: data.localidade || prev.fncd_cidade,
+        fncd_estado: data.uf || prev.fncd_estado,
+      }));
+    } catch {
+      setCepError("Erro ao consultar CEP");
+    } finally {
+      setCepLoading(false);
+    }
   };
 
   return (
@@ -71,6 +130,8 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
           borderRadius: "12px",
           width: "90%",
           maxWidth: "500px",
+          maxHeight: "85vh",
+          overflowY: "auto",
           color: "#1f2937",
         }}
       >
@@ -119,6 +180,215 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
                 padding: "10px",
                 borderRadius: "6px",
                 border: "1px solid #ccc",
+              }}
+            />
+          </div>
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "6px",
+                fontSize: "14px",
+                fontWeight: "500",
+              }}
+            >
+              CEP
+            </label>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input
+                type="text"
+                name="fncd_cep"
+                value={formData.fncd_cep}
+                onChange={handleChange}
+                required
+                placeholder="Ex: 01001000"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleBuscarCep}
+                disabled={cepLoading}
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                  background: "#f8fafc",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {cepLoading ? "Buscando..." : "Buscar CEP"}
+              </button>
+            </div>
+            {cepError ? (
+              <small style={{ color: "#dc2626", display: "block", marginTop: "4px" }}>
+                {cepError}
+              </small>
+            ) : null}
+          </div>
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "6px",
+                fontSize: "14px",
+                fontWeight: "500",
+              }}
+            >
+              Nome da Rua
+            </label>
+            <input
+              type="text"
+              name="fncd_logradouro"
+              value={formData.fncd_logradouro}
+              onChange={handleChange}
+              required
+              placeholder="Ex: Rua das Flores"
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: "6px",
+                border: "1px solid #ccc",
+              }}
+            />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "6px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                }}
+              >
+                Numero
+              </label>
+              <input
+                type="text"
+                name="fncd_numero"
+                value={formData.fncd_numero}
+                onChange={handleChange}
+                required
+                placeholder="Ex: 250"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                }}
+              />
+            </div>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "6px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                }}
+              >
+                Complemento
+              </label>
+              <input
+                type="text"
+                name="fncd_complemento"
+                value={formData.fncd_complemento}
+                onChange={handleChange}
+                placeholder="Ex: Sala 4"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                }}
+              />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "6px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                }}
+              >
+                Bairro
+              </label>
+              <input
+                type="text"
+                name="fncd_bairro"
+                value={formData.fncd_bairro}
+                onChange={handleChange}
+                required
+                placeholder="Ex: Centro"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                }}
+              />
+            </div>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "6px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                }}
+              >
+                Cidade
+              </label>
+              <input
+                type="text"
+                name="fncd_cidade"
+                value={formData.fncd_cidade}
+                onChange={handleChange}
+                required
+                placeholder="Ex: Sao Paulo"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                }}
+              />
+            </div>
+          </div>
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "6px",
+                fontSize: "14px",
+                fontWeight: "500",
+              }}
+            >
+              Estado (UF)
+            </label>
+            <input
+              type="text"
+              name="fncd_estado"
+              value={formData.fncd_estado}
+              onChange={handleChange}
+              required
+              maxLength={2}
+              placeholder="Ex: SP"
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: "6px",
+                border: "1px solid #ccc",
+                textTransform: "uppercase",
               }}
             />
           </div>
@@ -191,31 +461,6 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
               value={formData.fncd_email}
               onChange={handleChange}
               placeholder="Ex: contato@fornecedor.com.br"
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-              }}
-            />
-          </div>
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "6px",
-                fontSize: "14px",
-                fontWeight: "500",
-              }}
-            >
-              Endereço
-            </label>
-            <input
-              type="text"
-              name="fncd_endereco"
-              value={formData.fncd_endereco}
-              onChange={handleChange}
-              placeholder="Ex: Rua das Flores, 250"
               style={{
                 width: "100%",
                 padding: "10px",
