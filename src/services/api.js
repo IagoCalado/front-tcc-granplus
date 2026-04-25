@@ -121,3 +121,6 @@ export const getMinimumStock = (token) =>
 
 export const getAuditReports = (token, period) => 
   request(`/relatorios/auditoria?period=${period}`, { token });
+
+export const getAuditReportsByDate = (token, startDate, endDate) => 
+  request(`/relatorios/auditoria?startDate=${startDate}&endDate=${endDate}`, { token });

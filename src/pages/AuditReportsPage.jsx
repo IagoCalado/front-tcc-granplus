@@ -1,19 +1,28 @@
 import { useEffect, useState } from "react";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import { useAuth } from "../contexts/AuthContext";
-import { getAuditReports } from "../services/api";
+
+// Agora importamos certinho as duas funções do seu api.js!
+import { getAuditReports, getAuditReportsByDate } from "../services/api";
 
 const AuditReportsPage = () => {
-  const { token } = useAuth(); // Recuperar o token da aplicação
+  const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [reports, setReports] = useState([]);
   const [error, setError] = useState("");
-  const [filterPeriod, setFilterPeriod] = useState("monthly"); // Estados de seleção (Semanal/Mensal/Anual)
+  const [filterPeriod, setFilterPeriod] = useState("monthly"); 
 
-  // Função para carregar os de relatórios auditoria da API do app por período especificado
+  // Estados para o Modal e Datas do PDF
+  const [isModalAberto, setIsModalAberto] = useState(false);
+  const [dataInicio, setDataInicio] = useState("");
+  const [dataFim, setDataFim] = useState("");
+
+  // Função para carregar a tabela
   const loadData = async () => {
     setLoading(true);
     setError("");
@@ -27,13 +36,62 @@ const AuditReportsPage = () => {
     }
   };
 
-  // Carrega listagem inicial na renderização da view desde que tenha token de autenticação e refaz caso de alteração no filtro de período
   useEffect(() => {
     if (!token) return;
     loadData();
   }, [token, filterPeriod]);
 
-  // View bloqueada para visualização quando faltar a autenticação
+  // A MÁGICA DO PDF
+  const handleGerarPDF = async (e) => {
+    e.preventDefault();
+    
+    try {
+      // Usamos a função nova que criamos no api.js
+      const dadosAuditoria = await getAuditReportsByDate(token, dataInicio, dataFim);
+
+      if (!dadosAuditoria || dadosAuditoria.length === 0) {
+        alert("Nenhum dado encontrado para as datas selecionadas!");
+        return;
+      }
+
+      // Inicializa o PDF
+      const doc = new jsPDF();
+      
+      // Cabeçalho
+      doc.setFontSize(18);
+      doc.text(`Relatorio de Auditoria - GranPlus`, 14, 22);
+      
+      doc.setFontSize(11);
+      doc.text(`Periodo: ${dataInicio.split('-').reverse().join('/')} ate ${dataFim.split('-').reverse().join('/')}`, 14, 30);
+
+      // Desenha a tabela perfeita
+      autoTable(doc, {
+        startY: 35,
+        head: [['ID', 'Usuario', 'Acao', 'Data', 'Hora', 'Tabela']],
+        body: dadosAuditoria.map(item => [
+          item.aud_id,
+          item.user_nome || item.user_id || 'Administrador',
+          item.aud_acao,
+          item.aud_data ? new Date(item.aud_data).toLocaleDateString("pt-BR") : "-",
+          item.aud_time,
+          item.aud_tabela_afetada
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [44, 62, 80] }, 
+      });
+
+      // Salva o arquivo e fecha tudo
+      doc.save(`Auditoria_${dataInicio}_a_${dataFim}.pdf`);
+      setIsModalAberto(false);
+      setDataInicio("");
+      setDataFim("");
+
+    } catch (erro) {
+      console.error("Erro ao gerar PDF:", erro);
+      alert("Erro ao buscar dados para o relatório. Verifique o F12.");
+    }
+  };
+
   if (!token) {
     return (
       <EmptyState
@@ -43,16 +101,13 @@ const AuditReportsPage = () => {
     );
   }
 
-  // Se a requisição de busca estiver pendente exibe componente de Spinner
   if (loading) return <LoadingSpinner />;
   
-  // Tratamental de falha para exibir Erro da requisição ao carregar dados
   if (error) return <EmptyState title="Não foi possível carregar" description={error} />;
 
-  // Colunas de apresentação e mapeamento dos registros de histórico 
   const columns = [
     { key: "aud_id", label: "ID" },
-    { key: "user_id", label: "Usuário", render: (row) => row.user_nome || row.user_id },
+    { key: "user_id", label: "Usuário", render: (row) => row.user_nome || row.user_id || "administrador" },
     { key: "aud_acao", label: "Ação realizada" },
     { key: "aud_data",
       label: "Data",
@@ -68,10 +123,13 @@ const AuditReportsPage = () => {
       <SectionHeader 
         title="Relatórios" 
         subtitle="Acompanhe as movimentações no sistema (semanal, mensal, anual)." 
-        actions={<button className="btn btn-primary" onClick={() => alert('Exportando...')}>Exportar Relatório</button>}
+        actions={
+          <button className="btn btn-primary" onClick={() => setIsModalAberto(true)}>
+            Exportar Relatório
+          </button>
+        }
       />
 
-      {/* Botões de filtro para refazer a listagem e enviar via ?period por Query Params ao Backend  */}
       <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
         <button 
           onClick={() => setFilterPeriod("weekly")}
@@ -94,6 +152,48 @@ const AuditReportsPage = () => {
       </div>
 
       <DataTable columns={columns} rows={reports} rowKey="aud_id" />
+
+      {/* MODAL DE FILTRO DO PDF (Design Dark) */}
+      {isModalAberto && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#1e293b', padding: '30px', borderRadius: '8px', width: '400px', color: 'white', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>
+            <h2 style={{ marginTop: 0, color: 'white' }}>Exportar Relatório</h2>
+            <p style={{ color: '#94a3b8', fontSize: '14px' }}>Selecione o período exato desejado:</p>
+            <hr style={{ borderColor: '#334155', marginBottom: '20px' }} />
+            
+            <form onSubmit={handleGerarPDF} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '5px', color: 'white' }}>
+                Data de Início:
+                <input 
+                  type="date" 
+                  value={dataInicio} 
+                  onChange={(e) => setDataInicio(e.target.value)} 
+                  required 
+                  style={{ padding: '10px', borderRadius: '4px', border: '1px solid #334155', outline: 'none', backgroundColor: '#0f172a', color: 'white', colorScheme: 'dark' }} 
+                />
+              </label>
+
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '5px', color: 'white' }}>
+                Data de Fim:
+                <input 
+                  type="date" 
+                  value={dataFim} 
+                  onChange={(e) => setDataFim(e.target.value)} 
+                  required 
+                  style={{ padding: '10px', borderRadius: '4px', border: '1px solid #334155', outline: 'none', backgroundColor: '#0f172a', color: 'white', colorScheme: 'dark' }} 
+                />
+              </label>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button type="button" onClick={() => setIsModalAberto(false)} style={{ padding: '10px 15px', border: 'none', backgroundColor: '#64748b', color: 'white', borderRadius: '4px', cursor: 'pointer' }}>Cancelar</button>
+                <button type="submit" style={{ padding: '10px 15px', border: 'none', backgroundColor: '#6366f1', color: 'white', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Gerar PDF</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
