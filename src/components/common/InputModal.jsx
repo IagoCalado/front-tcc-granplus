@@ -285,75 +285,93 @@ export default function InputModal({
             </h3>
 
             {formData.produtos.map((prod, index) => (
-              <div
-                key={index}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "2fr 1fr 1fr 1fr",
-                  gap: "10px",
-                  marginBottom: "10px",
-                  alignItems: "center",
-                }}
-              >
-                <select
-                  name="pdt_id"
-                  value={prod.pdt_id}
-                  onChange={(e) => handleProductChange(index, e)}
-                  required
+              <div key={index}>
+                {index === 0 && (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "2fr 1fr 1fr 1fr",
+                      gap: "10px",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    <div />
+                    <div />
+                    <div />
+                    <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                      Validade
+                    </label>
+                  </div>
+                )}
+                <div
                   style={{
-                    width: "100%",
-                    padding: "8px",
-                    borderRadius: "6px",
-                    border: "1px solid #ccc",
+                    display: "grid",
+                    gridTemplateColumns: "2fr 1fr 1fr 1fr",
+                    gap: "10px",
+                    marginBottom: "10px",
+                    alignItems: "center",
                   }}
                 >
-                  <option value="">Produto...</option>
-                  {products.map((p) => (
-                    <option key={p.pdt_id} value={p.pdt_id}>
-                      {p.pdt_nome}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  name="quantidade"
-                  value={prod.quantidade}
-                  onChange={(e) => handleProductChange(index, e)}
-                  required
-                  placeholder="Qtd"
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    borderRadius: "6px",
-                    border: "1px solid #ccc",
-                  }}
-                />
-                <input
-                  type="text"
-                  name="lote"
-                  value={prod.lote}
-                  onChange={(e) => handleProductChange(index, e)}
-                  placeholder="Lote (Opcional)"
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    borderRadius: "6px",
-                    border: "1px solid #ccc",
-                  }}
-                />
-                <input
-                  type="date"
-                  name="pdt_validade"
-                  value={prod.pdt_validade || ""}
-                  onChange={(e) => handleProductChange(index, e)}
-                  placeholder="Validade (Opcional)"
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    borderRadius: "6px",
-                    border: "1px solid #ccc",
-                  }}
-                />
+                  <select
+                    name="pdt_id"
+                    value={prod.pdt_id}
+                    onChange={(e) => handleProductChange(index, e)}
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      border: "1px solid #ccc",
+                    }}
+                  >
+                    <option value="">Produto...</option>
+                    {products.map((p) => (
+                      <option key={p.pdt_id} value={p.pdt_id}>
+                        {p.pdt_nome}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    name="quantidade"
+                    value={prod.quantidade}
+                    onChange={(e) => handleProductChange(index, e)}
+                    required
+                    placeholder="Qtd"
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      border: "1px solid #ccc",
+                    }}
+                  />
+                  <input
+                    type="text"
+                    name="lote"
+                    value={prod.lote}
+                    onChange={(e) => handleProductChange(index, e)}
+                    placeholder="Lote (Opcional)"
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      border: "1px solid #ccc",
+                    }}
+                  />
+                  <input
+                    type="date"
+                    name="pdt_validade"
+                    value={prod.pdt_validade || ""}
+                    onChange={(e) => handleProductChange(index, e)}
+                    placeholder="Validade (Opcional)"
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      border: "1px solid #ccc",
+                    }}
+                  />
+                </div>
               </div>
             ))}
 

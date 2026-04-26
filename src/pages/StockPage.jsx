@@ -4,9 +4,8 @@ import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import StatusPill from "../components/common/StatusPill";
-import ProductModal from "../components/common/ProductModal";
 import { useAuth } from "../contexts/AuthContext";
-import { createProduct, getStock } from "../services/api";
+import { getStock } from "../services/api";
 import { formatNumber } from "../utils/format";
 
 const getValidDate = (value) => {
@@ -34,7 +33,7 @@ const formatValidityDate = (value) => {
 
 const formatLotName = (value) => {
   if (value === null || value === undefined || value === "") return "Sem lote";
-  return `Lote ${value}`;
+  return String(value);
 };
 
 const getValidityStatus = (value) => {
@@ -70,7 +69,6 @@ const StockPage = () => {
   const [loading, setLoading] = useState(false);
   const [stock, setStock] = useState([]);
   const [error, setError] = useState("");
-  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [selectedProductLots, setSelectedProductLots] = useState(null);
 
   const loadData = async () => {
@@ -92,16 +90,6 @@ const StockPage = () => {
     loadData();
   }, [token]);
 
-  const handleSaveProduct = async (payload) => {
-    try {
-      await createProduct(token, payload);
-      setIsProductModalOpen(false);
-      await loadData();
-    } catch (err) {
-      alert("Erro ao cadastrar produto: " + err.message);
-    }
-  };
-
   const stockByProduct = useMemo(() => {
     const map = new Map();
 
@@ -119,24 +107,49 @@ const StockPage = () => {
 
       const product = map.get(productId);
       const loteValue = item.lote ?? item.ent_prod_lote ?? null;
+      const quantidadeValue =
+        Number(item.quantidade_lote ?? item.ent_prod_qtde ?? 0) || 0;
       const validadeValue = item.pdt_validade ?? null;
       const validadeDate = getValidDate(validadeValue);
       const validadeKey = validadeDate
         ? validadeDate.toISOString().slice(0, 10)
         : "sem-validade";
-      const lotKey = `${loteValue ?? "sem-lote"}|${validadeValue ?? "sem-validade"}`;
       const normalizedLotKey = `${loteValue ?? "sem-lote"}|${validadeKey}`;
 
-      if (
-        !product.lotesKeys.has(normalizedLotKey) &&
-        (loteValue !== null || validadeValue)
-      ) {
-        product.lotesKeys.add(normalizedLotKey);
-        product.lotes.push({
-          lote: loteValue,
-          validade: validadeKey === "sem-validade" ? null : validadeKey,
-        });
+      if (loteValue !== null || validadeValue) {
+        if (!product.lotesKeys.has(normalizedLotKey)) {
+          product.lotesKeys.add(normalizedLotKey);
+          product.lotes.push({
+            lote: loteValue,
+            quantidade: quantidadeValue,
+            validade: validadeKey === "sem-validade" ? null : validadeKey,
+          });
+        } else {
+          const existingLot = product.lotes.find(
+            (lot) =>
+              `${lot.lote ?? "sem-lote"}|${lot.validade ?? "sem-validade"}` ===
+              normalizedLotKey,
+          );
+
+          if (existingLot) {
+            existingLot.quantidade =
+              (Number(existingLot.quantidade) || 0) + quantidadeValue;
+          }
+        }
       }
+    });
+
+    map.forEach((product) => {
+      product.lotes.sort((first, second) => {
+        const firstDate = getValidDate(first.validade);
+        const secondDate = getValidDate(second.validade);
+
+        if (!firstDate && !secondDate) return 0;
+        if (!firstDate) return 1;
+        if (!secondDate) return -1;
+
+        return firstDate.getTime() - secondDate.getTime();
+      });
     });
 
     return Array.from(map.values()).map(({ lotesKeys, ...product }) => product);
@@ -215,22 +228,8 @@ const StockPage = () => {
       <SectionHeader
         title="Estoque"
         subtitle="Acompanhe niveis atuais e disponibilidade"
-        actions={
-          <button
-            className="btn btn-primary"
-            onClick={() => setIsProductModalOpen(true)}
-          >
-            Adicionar produto
-          </button>
-        }
       />
       <DataTable columns={columns} rows={stockByProduct} rowKey="pdt_id" />
-
-      <ProductModal
-        isOpen={isProductModalOpen}
-        onClose={() => setIsProductModalOpen(false)}
-        onSave={handleSaveProduct}
-      />
 
       {selectedProductLots && (
         <div
@@ -291,6 +290,7 @@ const StockPage = () => {
                 <table className="table">
                   <thead>
                     <tr>
+                      <th style={{ textAlign: "center" }}>Quantidade</th>
                       <th>Lote</th>
                       <th>Validade</th>
                       <th>Status</th>
@@ -304,6 +304,9 @@ const StockPage = () => {
                         <tr
                           key={`${item.lote ?? "sem-lote"}-${item.validade ?? "sem-validade"}-${index}`}
                         >
+                          <td style={{ textAlign: "center" }}>
+                            {formatNumber(item.quantidade)}
+                          </td>
                           <td>{formatLotName(item.lote)}</td>
                           <td>{formatValidityDate(item.validade)}</td>
                           <td style={{ color: status.color, fontWeight: 600 }}>
