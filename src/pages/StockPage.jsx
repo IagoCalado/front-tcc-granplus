@@ -5,8 +5,12 @@ import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import StatusPill from "../components/common/StatusPill";
 import { useAuth } from "../contexts/AuthContext";
-import { getStock } from "../services/api";
+import { getOutputAvailableLots, getStock } from "../services/api";
 import { formatNumber } from "../utils/format";
+import {
+  STOCK_MOVEMENT_EVENT,
+  STOCK_MOVEMENT_STORAGE_KEY,
+} from "../utils/stockEvents";
 
 const getValidDate = (value) => {
   if (!value) return null;
@@ -69,10 +73,17 @@ const StockPage = () => {
   const [loading, setLoading] = useState(false);
   const [stock, setStock] = useState([]);
   const [error, setError] = useState("");
-  const [selectedProductLots, setSelectedProductLots] = useState(null);
+  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [selectedProductName, setSelectedProductName] = useState("");
+  const [modalLots, setModalLots] = useState([]);
+  const [loadingModalLots, setLoadingModalLots] = useState(false);
+  const [availableLotsCountByProduct, setAvailableLotsCountByProduct] =
+    useState({});
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (options = {}) => {
+    const { silent = false } = options;
+
+    if (!silent) setLoading(true);
     setError("");
     try {
       const data = await getStock(token);
@@ -80,8 +91,69 @@ const StockPage = () => {
     } catch (loadError) {
       setError(loadError.message || "Erro ao carregar estoque");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
+  };
+
+  const loadSelectedProductLots = async (productId) => {
+    if (!token || !productId) return;
+
+    setLoadingModalLots(true);
+    try {
+      const data = await getOutputAvailableLots(token, productId);
+      const lotes = Array.isArray(data?.lotes) ? data.lotes : [];
+
+      const normalizedLots = lotes
+        .map((lote) => ({
+          lote: lote?.lote ?? null,
+          validade: lote?.validade ?? null,
+          quantidade:
+            Number(lote?.quantidade_disponivel ?? lote?.quantidade ?? 0) || 0,
+        }))
+        .filter((lote) => lote.quantidade > 0);
+
+      setModalLots(normalizedLots);
+      setAvailableLotsCountByProduct((prev) => ({
+        ...prev,
+        [productId]: normalizedLots.length,
+      }));
+    } catch {
+      setModalLots([]);
+      setAvailableLotsCountByProduct((prev) => ({
+        ...prev,
+        [productId]: 0,
+      }));
+    } finally {
+      setLoadingModalLots(false);
+    }
+  };
+
+  const loadAvailableLotsCount = async (products) => {
+    if (!token) return;
+
+    if (!Array.isArray(products) || products.length === 0) {
+      setAvailableLotsCountByProduct({});
+      return;
+    }
+
+    const entries = await Promise.all(
+      products.map(async (product) => {
+        try {
+          const data = await getOutputAvailableLots(token, product.pdt_id);
+          const lotes = Array.isArray(data?.lotes) ? data.lotes : [];
+          const total = lotes.filter(
+            (lote) =>
+              Number(lote?.quantidade_disponivel ?? lote?.quantidade ?? 0) > 0,
+          ).length;
+
+          return [product.pdt_id, total];
+        } catch {
+          return [product.pdt_id, 0];
+        }
+      }),
+    );
+
+    setAvailableLotsCountByProduct(Object.fromEntries(entries));
   };
 
   useEffect(() => {
@@ -89,6 +161,42 @@ const StockPage = () => {
 
     loadData();
   }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const handleStockMovement = () => {
+      loadData({ silent: true });
+      if (selectedProductId) {
+        loadSelectedProductLots(selectedProductId);
+      }
+    };
+
+    const handleStorage = (event) => {
+      if (event.key !== STOCK_MOVEMENT_STORAGE_KEY) return;
+      loadData({ silent: true });
+      if (selectedProductId) {
+        loadSelectedProductLots(selectedProductId);
+      }
+    };
+
+    window.addEventListener(STOCK_MOVEMENT_EVENT, handleStockMovement);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener(STOCK_MOVEMENT_EVENT, handleStockMovement);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [token, selectedProductId]);
+
+  useEffect(() => {
+    if (!selectedProductId) {
+      setModalLots([]);
+      return;
+    }
+
+    loadSelectedProductLots(selectedProductId);
+  }, [selectedProductId, token]);
 
   const stockByProduct = useMemo(() => {
     const map = new Map();
@@ -155,6 +263,18 @@ const StockPage = () => {
     return Array.from(map.values()).map(({ lotesKeys, ...product }) => product);
   }, [stock]);
 
+  const selectedProductLots = useMemo(() => {
+    if (!selectedProductId) return null;
+    return (
+      stockByProduct.find((item) => item.pdt_id === selectedProductId) || null
+    );
+  }, [selectedProductId, stockByProduct]);
+
+  useEffect(() => {
+    if (!token) return;
+    loadAvailableLotsCount(stockByProduct);
+  }, [token, stockByProduct]);
+
   if (!token) {
     return (
       <EmptyState
@@ -192,19 +312,28 @@ const StockPage = () => {
     {
       key: "lotes",
       label: "Lotes / Validade",
-      render: (row) => (
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span>{formatNumber(row.lotes?.length || 0)} lotes</span>
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={() => setSelectedProductLots(row)}
-            style={{ padding: "6px 10px", fontSize: "12px" }}
-          >
-            Ver lotes
-          </button>
-        </div>
-      ),
+      render: (row) => {
+        const lotsCount =
+          availableLotsCountByProduct[row.pdt_id] ?? row.lotes?.length ?? 0;
+
+        return (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span>{formatNumber(lotsCount)} lotes</span>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => {
+                setSelectedProductId(row.pdt_id);
+                setSelectedProductName(row.pdt_nome || "");
+                loadData({ silent: true });
+              }}
+              style={{ padding: "6px 10px", fontSize: "12px" }}
+            >
+              Ver lotes
+            </button>
+          </div>
+        );
+      },
     },
     {
       key: "estoque_atual",
@@ -231,10 +360,13 @@ const StockPage = () => {
       />
       <DataTable columns={columns} rows={stockByProduct} rowKey="pdt_id" />
 
-      {selectedProductLots && (
+      {selectedProductId && (
         <div
           className="modal-overlay"
-          onClick={() => setSelectedProductLots(null)}
+          onClick={() => {
+            setSelectedProductId(null);
+            setSelectedProductName("");
+          }}
           style={{
             position: "fixed",
             top: 0,
@@ -271,18 +403,23 @@ const StockPage = () => {
               }}
             >
               <h3 style={{ margin: 0, color: "var(--ink)" }}>
-                Lotes de {selectedProductLots.pdt_nome}
+                Lotes de {selectedProductLots?.pdt_nome || selectedProductName}
               </h3>
               <button
                 type="button"
                 className="btn btn-ghost"
-                onClick={() => setSelectedProductLots(null)}
+                onClick={() => {
+                  setSelectedProductId(null);
+                  setSelectedProductName("");
+                }}
               >
                 Fechar
               </button>
             </div>
 
-            {selectedProductLots.lotes?.length ? (
+            {loadingModalLots ? (
+              <LoadingSpinner />
+            ) : modalLots.length ? (
               <div
                 className="table-shell"
                 style={{ maxHeight: "320px", overflowY: "auto" }}
@@ -297,7 +434,7 @@ const StockPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedProductLots.lotes.map((item, index) => {
+                    {modalLots.map((item, index) => {
                       const status = getValidityStatus(item.validade);
 
                       return (
@@ -320,8 +457,8 @@ const StockPage = () => {
               </div>
             ) : (
               <EmptyState
-                title="Sem lotes cadastrados"
-                description="Nao ha lotes com validade para este produto."
+                title="Sem lotes disponiveis"
+                description="Nao ha saldo para os lotes deste produto."
               />
             )}
           </div>

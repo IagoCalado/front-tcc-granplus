@@ -22,7 +22,8 @@ const request = async (path, { token, method = "GET", body } = {}) => {
   const data = isJson ? await response.json() : null;
 
   if (!response.ok) {
-    const message = data?.detalhe || data?.erro || data?.message || "Erro ao buscar dados";
+    const message =
+      data?.detalhe || data?.erro || data?.message || "Erro ao buscar dados";
     throw new Error(message);
   }
 
@@ -64,7 +65,7 @@ export const resetPasswordWithPin = ({ user_nome, pin, novaSenha }) =>
 export const getProducts = (token) => request("/produtos", { token });
 export const createProduct = (token, payload) =>
   request("/produtos", { token, method: "POST", body: payload });
-export const updateProduct = (token, id, payload) => 
+export const updateProduct = (token, id, payload) =>
   request(`/produtos/${id}`, { token, method: "PUT", body: payload });
 export const deleteProduct = (token, id) =>
   request(`/produtos/${id}`, { token, method: "DELETE" });
@@ -100,8 +101,10 @@ export const deleteInput = (token, id) =>
   request(`/entradas/${id}`, { token, method: "DELETE" });
 
 export const getOutputs = (token) => request("/saidas", { token });
-export const createOutput = (token, payload) => 
+export const createOutput = (token, payload) =>
   request("/saidas", { token, method: "POST", body: payload });
+export const getOutputAvailableLots = (token, pdtId) =>
+  request(`/saidas/lotes-disponiveis?pdt_id=${pdtId}`, { token });
 
 // Fornecedores
 export const getSuppliers = (token) => request("/fornecedores", { token });
@@ -119,8 +122,10 @@ export const getMostMovedProducts = (token) =>
 export const getMinimumStock = (token) =>
   request("/relatorios/estoque-minimo", { token });
 
-export const getAuditReports = (token, period) => 
+export const getAuditReports = (token, period) =>
   request(`/relatorios/auditoria?period=${period}`, { token });
 
-export const getAuditReportsByDate = (token, startDate, endDate) => 
-  request(`/relatorios/auditoria?startDate=${startDate}&endDate=${endDate}`, { token });
+export const getAuditReportsByDate = (token, startDate, endDate) =>
+  request(`/relatorios/auditoria?startDate=${startDate}&endDate=${endDate}`, {
+    token,
+  });

@@ -6,6 +6,7 @@ import EmptyState from "../components/common/EmptyState";
 import InputModal from "../components/common/InputModal";
 import { useAuth } from "../contexts/AuthContext";
 import { formatNumber } from "../utils/format";
+import { notifyStockMovement } from "../utils/stockEvents";
 import {
   getInputs,
   createInput,
@@ -54,6 +55,7 @@ const ProductInputsPage = () => {
       } else {
         await createInput(token, payload);
       }
+      notifyStockMovement();
       setIsModalOpen(false);
       loadData(); // Recarrega os dados da tabela
     } catch (err) {

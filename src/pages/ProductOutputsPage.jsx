@@ -7,6 +7,7 @@ import OutputModal from "../components/common/OutputModal";
 import { useAuth } from "../contexts/AuthContext";
 import { formatNumber } from "../utils/format";
 import { getOutputs, createOutput } from "../services/api";
+import { notifyStockMovement } from "../utils/stockEvents";
 
 const ProductOutputsPage = () => {
   const { token } = useAuth();
@@ -35,6 +36,7 @@ const ProductOutputsPage = () => {
 
   const handleSaveOutput = async (payload) => {
     await createOutput(token, payload);
+    notifyStockMovement();
     setIsModalOpen(false);
     loadData();
   };
