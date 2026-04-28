@@ -17,6 +17,8 @@ import {
   sendResetPin,
   verifyUserForReset,
 } from "../services/api";
+import BorderBeam from "../components/common/BorderBeam";
+import Meteors from "../components/common/Meteors";
 
 const ForgotPasswordPage = () => {
   const [step, setStep] = useState("request");
@@ -69,12 +71,12 @@ const ForgotPasswordPage = () => {
       setMaskedEmail(verification?.emailMascarado || "seu e-mail cadastrado");
       setStep("confirm");
       setMessage(
-        `Codigo enviado com sucesso para ${verification?.emailMascarado || "seu e-mail cadastrado"}.`
+        `Codigo enviado com sucesso para ${verification?.emailMascarado || "seu e-mail cadastrado"}.`,
       );
     } catch (requestError) {
       setError(
         requestError.message ||
-          "Nao foi possivel enviar o codigo. Verifique o usuario e tente novamente."
+          "Nao foi possivel enviar o codigo. Verifique o usuario e tente novamente.",
       );
     } finally {
       setLoading(false);
@@ -119,11 +121,13 @@ const ForgotPasswordPage = () => {
       });
 
       setStep("done");
-      setMessage("Senha redefinida com sucesso. Voce ja pode entrar no sistema.");
+      setMessage(
+        "Senha redefinida com sucesso. Voce ja pode entrar no sistema.",
+      );
     } catch (resetError) {
       setError(
         resetError.message ||
-          "Nao foi possivel redefinir a senha. Verifique o PIN e tente novamente."
+          "Nao foi possivel redefinir a senha. Verifique o PIN e tente novamente.",
       );
     } finally {
       setLoading(false);
@@ -132,187 +136,227 @@ const ForgotPasswordPage = () => {
 
   return (
     <main className="login-page">
+      {/* 1. O fundo de Aurora */}
       <div className="login-aurora" aria-hidden="true" />
 
-      <section className="auth-card forgot-password-card">
-        <div className="auth-card-header">
-          <h1>Recuperacao de senha</h1>
-          <p>
-            Solicite um PIN por e-mail, confirme o codigo e defina uma nova senha.
-          </p>
-        </div>
+      {/* 2. AQUI ENTRAM OS METEOROS! Ficam no fundo, atrás do card */}
+      <Meteors number={100} />
 
-        {message ? (
-          <p className="auth-success-box" role="status">
-            {message}
-          </p>
-        ) : null}
+      {/* 3. O Container do Card (Fica por cima de tudo) */}
 
-        {error ? (
-          <p className="auth-error-box" role="alert">
-            {error}
-          </p>
-        ) : null}
-
-        <form
-          className="login-form forgot-password-form"
-          onSubmit={
-            step === "request"
-              ? handleSendPin
-              : step === "confirm"
-                ? handleResetPassword
-                : (event) => event.preventDefault()
-          }
-          noValidate
+      <div className="login-card-container">
+        <BorderBeam
+          title="Recuperação de senha"
+          subtitle="Solicite um PIN por e-mail, confirme o codigo e defina uma nova
+                senha."
         >
-          <Input
-            id="usuario"
-            name="usuario"
-            label="Usuario"
-            value={form.usuario}
-            onChange={handleChange}
-            placeholder="Seu usuario"
-            autoComplete="username"
-            icon={<UserRound size={18} />}
-            disabled={step !== "request"}
-          />
-
-          {step !== "request" ? (
-            <div className="forgot-step-summary">
-              <div className="forgot-step-summary-icon">
-                <Mail size={18} />
-              </div>
-              <div>
-                <strong>PIN enviado</strong>
-                <p>{maskedEmail || "Seu e-mail cadastrado recebeu o codigo."}</p>
-              </div>
+          <section className="auth-card forgot-password-card">
+            <div className="auth-card-header">
+              <h1>Recuperação de senha</h1>
+              <p>
+                Solicite um PIN por e-mail, confirme o codigo e defina uma nova
+                senha.
+              </p>
             </div>
-          ) : null}
 
-          {step === "confirm" ? (
-            <>
-              <Input
-                id="pin"
-                name="pin"
-                label="PIN de 6 digitos"
-                value={form.pin}
-                onChange={handleChange}
-                placeholder="000000"
-                autoComplete="one-time-code"
-                icon={<Hash size={18} />}
-              />
+            {message ? (
+              <p className="auth-success-box" role="status">
+                {message}
+              </p>
+            ) : null}
 
-              <Input
-                id="novaSenha"
-                name="novaSenha"
-                type="password"
-                label="Nova senha"
-                value={form.novaSenha}
-                onChange={handleChange}
-                placeholder="Digite a nova senha"
-                autoComplete="new-password"
-                icon={<KeyRound size={18} />}
-              />
+            {error ? (
+              <p className="auth-error-box" role="alert">
+                {error}
+              </p>
+            ) : null}
 
-              <Input
-                id="confirmarSenha"
-                name="confirmarSenha"
-                type="password"
-                label="Confirmar nova senha"
-                value={form.confirmarSenha}
-                onChange={handleChange}
-                placeholder="Repita a nova senha"
-                autoComplete="new-password"
-                icon={<ShieldCheck size={18} />}
-              />
-            </>
-          ) : null}
-
-          {step === "request" ? (
-            <Button
-              type="submit"
-              loading={loading}
-              loadingLabel="Enviando codigo..."
-              disabled={form.usuario.trim().length < 3}
+            <form
+              className="login-form forgot-password-form"
+              onSubmit={
+                step === "request"
+                  ? handleSendPin
+                  : step === "confirm"
+                    ? handleResetPassword
+                    : (event) => event.preventDefault()
+              }
+              noValidate
             >
-              Enviar codigo
-            </Button>
-          ) : step === "confirm" ? (
-            <Button type="submit" loading={loading} loadingLabel="Redefinindo senha...">
-              Redefinir senha
-            </Button>
-          ) : (
-            <div className="forgot-password-actions forgot-password-actions-final">
-              <button type="button" className="forgot-link-button" onClick={resetFlow}>
-                <ArrowLeft size={16} />
-                Fazer nova tentativa
-              </button>
+              <Input
+                id="usuario"
+                name="usuario"
+                label="Usuario"
+                value={form.usuario}
+                onChange={handleChange}
+                placeholder="Seu usuario"
+                autoComplete="username"
+                icon={<UserRound size={18} />}
+                disabled={step !== "request"}
+              />
 
-              <Link to="/login" className="forgot-link">
-                Ir para login
-              </Link>
+              {step !== "request" ? (
+                <div className="forgot-step-summary">
+                  <div className="forgot-step-summary-icon">
+                    <Mail size={18} />
+                  </div>
+
+                  <div>
+                    <strong>PIN enviado</strong>
+
+                    <p>
+                      {maskedEmail || "Seu e-mail cadastrado recebeu o codigo."}
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+
+              {step === "confirm" ? (
+                <>
+                  <Input
+                    id="pin"
+                    name="pin"
+                    label="PIN de 6 digitos"
+                    value={form.pin}
+                    onChange={handleChange}
+                    placeholder="000000"
+                    autoComplete="one-time-code"
+                    icon={<Hash size={18} />}
+                  />
+
+                  <Input
+                    id="novaSenha"
+                    name="novaSenha"
+                    type="password"
+                    label="Nova senha"
+                    value={form.novaSenha}
+                    onChange={handleChange}
+                    placeholder="Digite a nova senha"
+                    autoComplete="new-password"
+                    icon={<KeyRound size={18} />}
+                  />
+
+                  <Input
+                    id="confirmarSenha"
+                    name="confirmarSenha"
+                    type="password"
+                    label="Confirmar nova senha"
+                    value={form.confirmarSenha}
+                    onChange={handleChange}
+                    placeholder="Repita a nova senha"
+                    autoComplete="new-password"
+                    icon={<ShieldCheck size={18} />}
+                  />
+                </>
+              ) : null}
+
+              {step === "request" ? (
+                <Button
+                  type="submit"
+                  loading={loading}
+                  loadingLabel="Enviando codigo..."
+                  disabled={form.usuario.trim().length < 3}
+                >
+                  Enviar codigo
+                </Button>
+              ) : step === "confirm" ? (
+                <Button
+                  type="submit"
+                  loading={loading}
+                  loadingLabel="Redefinindo senha..."
+                >
+                  Redefinir senha
+                </Button>
+              ) : (
+                <div className="forgot-password-actions forgot-password-actions-final">
+                  <button
+                    type="button"
+                    className="forgot-link-button"
+                    onClick={resetFlow}
+                  >
+                    <ArrowLeft size={16} />
+                    Fazer nova tentativa
+                  </button>
+
+                  <Link to="/login" className="forgot-link">
+                    Ir para login
+                  </Link>
+                </div>
+              )}
+            </form>
+
+            <div className="forgot-password-actions">
+              {step === "confirm" ? (
+                <button
+                  type="button"
+                  className="forgot-link-button"
+                  onClick={resetFlow}
+                >
+                  <ArrowLeft size={16} />
+                  Alterar usuario
+                </button>
+              ) : null}
+
+              {step !== "done" ? (
+                <button
+                  type="button"
+                  className="forgot-link-button"
+                  onClick={async () => {
+                    if (!form.usuario.trim()) {
+                      setError("Informe o usuario antes de reenviar o codigo.");
+
+                      return;
+                    }
+
+                    try {
+                      setLoading(true);
+
+                      await sendResetPin({ user_nome: form.usuario.trim() });
+
+                      setStep("confirm");
+
+                      setMessage(
+                        `Novo codigo reenviado para ${maskedEmail || "seu e-mail cadastrado"}.`,
+                      );
+
+                      setError("");
+                    } catch (resendError) {
+                      setError(
+                        resendError.message ||
+                          "Nao foi possivel reenviar o codigo no momento.",
+                      );
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  <Send size={16} />
+                  Reenviar codigo
+                </button>
+              ) : null}
             </div>
-          )}
-        </form>
 
-        <div className="forgot-password-actions">
-          {step === "confirm" ? (
-            <button type="button" className="forgot-link-button" onClick={resetFlow}>
-              <ArrowLeft size={16} />
-              Alterar usuario
-            </button>
-          ) : null}
+            {step === "done" ? (
+              <div className="forgot-complete-box">
+                <CheckCircle2 size={18} />
 
-          {step !== "done" ? (
-            <button
-              type="button"
-              className="forgot-link-button"
-              onClick={async () => {
-                if (!form.usuario.trim()) {
-                  setError("Informe o usuario antes de reenviar o codigo.");
-                  return;
-                }
+                <span>
+                  Sua senha foi atualizada. Voce pode entrar novamente.
+                </span>
+              </div>
+            ) : null}
 
-                try {
-                  setLoading(true);
-                  await sendResetPin({ user_nome: form.usuario.trim() });
-                  setStep("confirm");
-                  setMessage(
-                    `Novo codigo reenviado para ${maskedEmail || "seu e-mail cadastrado"}.`
-                  );
-                  setError("");
-                } catch (resendError) {
-                  setError(
-                    resendError.message ||
-                      "Nao foi possivel reenviar o codigo no momento."
-                  );
-                } finally {
-                  setLoading(false);
-                }
-              }}
-            >
-              <Send size={16} />
-              Reenviar codigo
-            </button>
-          ) : null}
-        </div>
+            <div className="auth-footer-tip">
+              <ShieldCheck size={16} />
 
-        {step === "done" ? (
-          <div className="forgot-complete-box">
-            <CheckCircle2 size={18} />
-            <span>Sua senha foi atualizada. Voce pode entrar novamente.</span>
-          </div>
-        ) : null}
+              <span>O PIN expira em 15 minutos por seguranca.</span>
+            </div>
 
-        <div className="auth-footer-tip">
-          <ShieldCheck size={16} />
-          <span>O PIN expira em 15 minutos por seguranca.</span>
-        </div>
-
-        <Link to="/login" className="forgot-link forgot-link-back">
-          Voltar para login
-        </Link>
-      </section>
+            <Link to="/login" className="forgot-link forgot-link-back">
+              Voltar para login
+            </Link>
+          </section>
+        </BorderBeam>
+      </div>
     </main>
   );
 };
