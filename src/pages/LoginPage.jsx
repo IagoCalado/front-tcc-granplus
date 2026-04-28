@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { KeyRound, ShieldCheck, UserRound } from "lucide-react";
-import Card from "../components/auth/Card";
 import Input from "../components/auth/Input";
 import Button from "../components/auth/Button";
 import { useAuth } from "../contexts/AuthContext";
 import useLoginForm from "../hooks/useLoginForm";
+import BorderBeam from "../components/common/BorderBeam";
+import Meteors from "../components/common/Meteors";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -52,58 +53,70 @@ const LoginPage = () => {
     <main className="login-page">
       <div className="login-aurora" aria-hidden="true" />
 
-      <Card
-        title="Acesso ao GranPlus"
-        subtitle="Entre com suas credenciais para acessar o painel de estoque"
-      >
-        <form className="login-form" onSubmit={handleSubmit} noValidate>
-          <Input
-            id="usuario"
-            name="usuario"
-            label="Usuario"
-            value={form.usuario}
-            onChange={handleChange}
-            placeholder="Seu usuario"
-            autoComplete="username"
-            icon={<UserRound size={18} />}
-            error={fieldErrors.usuario}
-          />
+      <Meteors number={100} />
 
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            label="Senha"
-            value={form.password}
-            onChange={handleChange}
-            placeholder="Sua senha"
-            autoComplete="current-password"
-            icon={<KeyRound size={18} />}
-            error={fieldErrors.password}
-          />
+      <div className="login-card-container">
+        <BorderBeam>
+          <section className="auth-card login-card">
+            <div className="auth-card-header">
+              <h1>Acesso ao GranPlus</h1>
+              <p>Entre com suas credenciais para acessar o painel de estoque</p>
+            </div>
 
-          {friendlyError || error ? (
-            <p className="auth-error-box" role="alert">
-              {friendlyError || error || "Credenciais invalidas."}
-            </p>
-          ) : null}
+            <form className="login-form" onSubmit={handleSubmit} noValidate>
+              <Input
+                id="usuario"
+                name="usuario"
+                label="Usuario"
+                value={form.usuario}
+                onChange={handleChange}
+                placeholder="Seu usuario"
+                autoComplete="username"
+                icon={<UserRound size={18} />}
+                error={fieldErrors.usuario}
+              />
 
-          <Button type="submit" loading={status === "loading"} disabled={!isValid}>
-            Entrar
-          </Button>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                label="Senha"
+                value={form.password}
+                onChange={handleChange}
+                placeholder="Sua senha"
+                autoComplete="current-password"
+                icon={<KeyRound size={18} />}
+                error={fieldErrors.password}
+              />
 
-          <div className="auth-actions-row">
-            <Link to="/recuperar-senha" className="forgot-link">
-              Esqueci minha senha
-            </Link>
-          </div>
-        </form>
+              {friendlyError || error ? (
+                <p className="auth-error-box" role="alert">
+                  {friendlyError || error || "Credenciais invalidas."}
+                </p>
+              ) : null}
 
-        <div className="auth-footer-tip">
-          <ShieldCheck size={16} />
-          <span>Seu acesso protegido com a melhor tecnologia.</span>
-        </div>
-      </Card>
+              <Button
+                type="submit"
+                loading={status === "loading"}
+                disabled={!isValid}
+              >
+                Entrar
+              </Button>
+
+              <div className="auth-actions-row">
+                <Link to="/recuperar-senha" className="forgot-link">
+                  Esqueci minha senha
+                </Link>
+              </div>
+            </form>
+
+            <div className="auth-footer-tip">
+              <ShieldCheck size={16} />
+              <span>Seu acesso protegido com a melhor tecnologia.</span>
+            </div>
+          </section>
+        </BorderBeam>
+      </div>
     </main>
   );
 };
