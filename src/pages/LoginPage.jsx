@@ -53,7 +53,7 @@ const LoginPage = () => {
     <main className="login-page">
       <div className="login-aurora" aria-hidden="true" />
 
-      <Meteors number={100} />
+      <Meteors number={30} />
 
       <div className="login-card-container">
         <BorderBeam>
