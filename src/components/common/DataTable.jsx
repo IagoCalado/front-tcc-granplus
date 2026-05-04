@@ -12,15 +12,23 @@ const DataTable = ({ columns, rows, rowKey = "id" }) => {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, index) => (
-            <tr key={row[rowKey] || index}>
+          {rows.map((row, index) => {
+            const keyValue = row?.[rowKey];
+            const rowUniqueKey =
+              keyValue !== undefined && keyValue !== null && keyValue !== ""
+                ? `${keyValue}-${index}`
+                : `row-${index}`;
+
+            return (
+            <tr key={rowUniqueKey}>
               {columns.map((column) => (
                 <td key={column.key || column.label}>
                   {column.render ? column.render(row) : row[column.key]}
                 </td>
               ))}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
