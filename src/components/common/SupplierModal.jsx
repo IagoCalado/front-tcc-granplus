@@ -57,9 +57,7 @@ const formatPhone = (value) => {
 };
 
 export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
-  const [cepLoading, setCepLoading] = useState(false);
-
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     fncd_nome: "",
     fncd_documento: "",
     fncd_cep: "",
@@ -71,13 +69,6 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
     fncd_estado: "",
     fncd_tel: "",
     fncd_email: "",
-    fncd_cep: "",
-    fncd_logradouro: "",
-    fncd_numero: "",
-    fncd_complemento: "",
-    fncd_bairro: "",
-    fncd_cidade: "",
-    fncd_estado: "",
   };
 
   const [formData, setFormData] = useState(initialFormData);
@@ -299,7 +290,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
               />
               <button
                 type="button"
-                onClick={handleBuscarCep}
+                onClick={handleConsultarCep}
                 disabled={cepLoading}
                 style={{
                   padding: "10px 12px",
@@ -668,4 +659,6 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
       </div>
     </div>
   );
+
 }
+
