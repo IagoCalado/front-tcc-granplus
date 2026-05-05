@@ -10,6 +10,31 @@ import { useAuth } from "../contexts/AuthContext";
 // Agora importamos certinho as duas funções do seu api.js!
 import { getAuditReports, getAuditReportsByDate } from "../services/api";
 
+const TableNameLabels = {
+  saida_produtos: "Saidas de Produtos",
+  entrada: "Entradas",
+  entrada_produtos: "Itens de Entrada",
+  fornecedor: "Fornecedores",
+  produto: "Produtos",
+  localizacao: "Localizações",
+  localizacao_produtos: "Estoque por Localização",
+  usuarios: "Usuários",
+  auditoria: "Auditoria",
+};
+
+const formatTableName = (tableName) => {
+  if (!tableName) return "-";
+
+  if (TableNameLabels[tableName]) {
+    return TableNameLabels[tableName];
+  }
+
+  return String(tableName)
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+};
+
 const AuditReportsPage = () => {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -114,7 +139,11 @@ const AuditReportsPage = () => {
       render: (row) => (row.aud_data ? new Date(row.aud_data).toLocaleDateString("pt-BR") : "-"),
     },
     { key: "aud_time", label: "Hora" },
-    { key: "aud_tabela_afetada", label: "Tabela Afetada" },
+    {
+      key: "aud_tabela_afetada",
+      label: "Tabela Afetada",
+      render: (row) => formatTableName(row.aud_tabela_afetada),
+    },
     { key: "aud_id_evento", label: "ID do Evento" },
   ];
 

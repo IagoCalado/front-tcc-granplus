@@ -87,7 +87,11 @@ const StockPage = () => {
     setError("");
     try {
       const data = await getStock(token);
-      setStock(data || []);
+      const rows = Array.isArray(data) ? data : [];
+      const uniqueRows = Array.from(
+        new Map(rows.map((item) => [item.pdt_id, item])).values(),
+      );
+      setStock(uniqueRows);
     } catch (loadError) {
       setError(loadError.message || "Erro ao carregar estoque");
     } finally {

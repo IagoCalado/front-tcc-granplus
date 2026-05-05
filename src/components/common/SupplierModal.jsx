@@ -71,7 +71,18 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
     fncd_estado: "",
     fncd_tel: "",
     fncd_email: "",
-  });
+    fncd_cep: "",
+    fncd_logradouro: "",
+    fncd_numero: "",
+    fncd_complemento: "",
+    fncd_bairro: "",
+    fncd_cidade: "",
+    fncd_estado: "",
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState("");
 
   useEffect(() => {
     if (supplier) {
@@ -87,6 +98,13 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
         fncd_estado: supplier.fncd_estado || "",
         fncd_tel: formatPhone(supplier.fncd_tel || ""),
         fncd_email: supplier.fncd_email || "",
+        fncd_cep: supplier.fncd_cep || "",
+        fncd_logradouro: supplier.fncd_logradouro || "",
+        fncd_numero: supplier.fncd_numero || "",
+        fncd_complemento: supplier.fncd_complemento || "",
+        fncd_bairro: supplier.fncd_bairro || "",
+        fncd_cidade: supplier.fncd_cidade || "",
+        fncd_estado: supplier.fncd_estado || "",
       });
     } else {
       setFormData({
@@ -103,6 +121,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
         fncd_email: "",
       });
     }
+    setCepError("");
   }, [supplier, isOpen]);
 
   if (!isOpen) return null;
@@ -199,6 +218,8 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
           borderRadius: "12px",
           width: "90%",
           maxWidth: "500px",
+          maxHeight: "85vh",
+          overflowY: "auto",
           color: "#1f2937",
         }}
       >
@@ -259,12 +280,60 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
                 fontWeight: "500",
               }}
             >
-              CPF/CNPJ
+              CEP
+            </label>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <input
+                type="text"
+                name="fncd_cep"
+                value={formData.fncd_cep}
+                onChange={handleChange}
+                required
+                placeholder="Ex: 01001000"
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleBuscarCep}
+                disabled={cepLoading}
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                  background: "#f8fafc",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {cepLoading ? "Buscando..." : "Buscar CEP"}
+              </button>
+            </div>
+            {cepError ? (
+              <small style={{ color: "#dc2626", display: "block", marginTop: "4px" }}>
+                {cepError}
+              </small>
+            ) : null}
+          </div>
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "6px",
+                fontSize: "14px",
+                fontWeight: "500",
+              }}
+            >
+              Nome da Rua
             </label>
             <input
               type="text"
-              name="fncd_documento"
-              value={formData.fncd_documento}
+              name="fncd_logradouro"
+              value={formData.fncd_logradouro}
               onChange={handleChange}
               required
               placeholder="Ex: 12.345.678/0001-90"
@@ -387,6 +456,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
                 padding: "10px",
                 borderRadius: "6px",
                 border: "1px solid #ccc",
+                textTransform: "uppercase",
               }}
             />
           </div>
