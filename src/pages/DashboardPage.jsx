@@ -501,8 +501,8 @@ const DashboardPage = () => {
               </div>
             </div>
           ) : mostMovedChartData.length ? (
-            <div style={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <div style={{ height: 300, minWidth: 0, minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={mostMovedChartData} margin={{ left: 10, right: 10 }}>
                   <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                   <XAxis
@@ -576,8 +576,8 @@ const DashboardPage = () => {
               </div>
             </div>
           ) : topStockChartData.length ? (
-            <div style={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <div style={{ height: 300, minWidth: 0, minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={topStockChartData} layout="vertical" margin={{ left: 30, right: 10 }}>
                   <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                   <XAxis
@@ -644,8 +644,8 @@ const DashboardPage = () => {
               </div>
             </div>
           ) : minStockChartData.length ? (
-            <div style={{ height: 320 }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <div style={{ height: 320, minWidth: 0, minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={minStockChartData} margin={{ left: 10, right: 10 }}>
                   <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                   <XAxis
@@ -715,8 +715,8 @@ const DashboardPage = () => {
               </div>
             </div>
           ) : productStatusChartData.length ? (
-            <div style={{ height: 320, display: "grid", placeItems: "center" }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <div style={{ height: 320, display: "grid", placeItems: "center", minWidth: 0, minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
                   <Tooltip content={<DashboardTooltip />} />
                   <Legend
