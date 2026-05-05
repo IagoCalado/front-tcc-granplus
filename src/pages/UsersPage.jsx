@@ -152,10 +152,9 @@ const UsersPage = () => {
             </button>
             {row.user_id !== user.user_id && (
               <button
-                className="btn btn-ghost"
+                className="btn btn-ghost btn-danger"
                 type="button"
                 onClick={() => handleDeleteUser(row)}
-                style={{ color: "#ef4444", borderColor: "#fee2e2" }}
               >
                 Excluir
               </button>

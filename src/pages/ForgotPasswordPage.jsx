@@ -292,7 +292,7 @@ const ForgotPasswordPage = () => {
                   onClick={resetFlow}
                 >
                   <ArrowLeft size={16} />
-                  Alterar usuario
+                  Alterar usuário
                 </button>
               ) : null}
 
@@ -302,7 +302,7 @@ const ForgotPasswordPage = () => {
                   className="forgot-link-button"
                   onClick={async () => {
                     if (!form.usuario.trim()) {
-                      setError("Informe o usuario antes de reenviar o codigo.");
+                      setError("Informe o usuário antes de reenviar o codigo.");
 
                       return;
                     }
@@ -340,7 +340,7 @@ const ForgotPasswordPage = () => {
                 <CheckCircle2 size={18} />
 
                 <span>
-                  Sua senha foi atualizada. Voce pode entrar novamente.
+                  Sua senha foi atualizada. Você pode entrar novamente.
                 </span>
               </div>
             ) : null}
@@ -348,7 +348,7 @@ const ForgotPasswordPage = () => {
             <div className="auth-footer-tip">
               <ShieldCheck size={16} />
 
-              <span>O PIN expira em 15 minutos por seguranca.</span>
+              <span>O PIN expira em 15 minutos por segurança.</span>
             </div>
 
             <Link to="/login" className="forgot-link forgot-link-back">

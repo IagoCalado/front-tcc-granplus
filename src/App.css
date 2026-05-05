@@ -259,6 +259,27 @@
   color: var(--muted);
 }
 
+.btn-danger {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  filter: none;
+}
+
+[data-theme="light"] .btn-danger {
+  color: #b91c1c;
+  border-color: rgba(185, 28, 28, 0.35);
+  background: rgba(185, 28, 28, 0.06);
+}
+
+[data-theme="light"] .btn-danger:hover {
+  background: rgba(185, 28, 28, 0.1);
+}
+
 .user-chip {
   display: flex;
   align-items: center;
@@ -342,6 +363,59 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--neutral-rgb), 0.08) 0%,
+    rgba(var(--neutral-rgb), 0.16) 40%,
+    rgba(var(--neutral-rgb), 0.08) 80%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.2s ease-in-out infinite;
+  border-radius: 999px;
+}
+
+.dashboard-callout {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--warning-rgb), 0.16),
+    rgba(var(--accent-rgb), 0.08)
+  );
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-callout strong {
+  color: var(--ink);
+}
+
+.dashboard-callout p {
+  color: var(--ink-soft);
+}
+
+.dashboard-error {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--ink);
 }
 
 .stat-card {

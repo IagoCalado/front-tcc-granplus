@@ -129,10 +129,9 @@ const ProductsPage = () => {
             Editar
           </button>
           <button
-            className="btn btn-ghost"
+            className="btn btn-ghost btn-danger"
             type="button"
             onClick={() => handleDeleteProduct(row)}
-            style={{ color: "#ef4444", borderColor: "#fee2e2" }}
           >
             Excluir
           </button>
