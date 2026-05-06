@@ -5,6 +5,7 @@ import { useState } from "react";
 
 const MainLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleToggleSidebar = () => {
     setSidebarOpen((open) => !open);
@@ -22,7 +23,7 @@ const MainLayout = () => {
       <Sidebar isOpen={sidebarOpen} onNavigate={handleCloseSidebar} />
       <div className="app-main">
         <main className="app-content">
-          <Outlet />
+          <Outlet context={{ searchTerm, setSearchTerm }} />
         </main>
       </div>
     </div>

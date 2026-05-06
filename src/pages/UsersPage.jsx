@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -15,9 +16,11 @@ import {
   updatePassword,
 } from "../services/api";
 import { formatRole } from "../utils/format";
+import { matchesSearch } from "../utils/search";
 
 const UsersPage = () => {
   const { token, isAdmin, user } = useAuth();
+  const { searchTerm = "" } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -104,6 +107,15 @@ const UsersPage = () => {
     }
   };
 
+  const filteredUsers = useMemo(() => {
+    return users.filter((row) =>
+      matchesSearch(
+        [row?.user_nome, row?.user_nivel_acesso, row?.user_ativo],
+        searchTerm,
+      ),
+    );
+  }, [users, searchTerm]);
+
   if (!token) {
     return (
       <EmptyState
@@ -120,6 +132,8 @@ const UsersPage = () => {
   if (error && !users.length && !profile) {
     return <EmptyState title="Nao foi possivel carregar" description={error} />;
   }
+
+  const hasSearchTerm = Boolean(String(searchTerm || "").trim());
 
   if (isAdmin) {
     const columns = [

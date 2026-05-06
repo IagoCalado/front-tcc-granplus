@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -7,6 +8,7 @@ import StatusPill from "../components/common/StatusPill";
 import { useAuth } from "../contexts/AuthContext";
 import { getOutputAvailableLots, getStock } from "../services/api";
 import { formatNumber } from "../utils/format";
+import { matchesSearch } from "../utils/search";
 import {
   STOCK_MOVEMENT_EVENT,
   STOCK_MOVEMENT_STORAGE_KEY,
@@ -70,6 +72,7 @@ const getValidityStatus = (value) => {
 
 const StockPage = () => {
   const { token } = useAuth();
+  const { searchTerm = "" } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [stock, setStock] = useState([]);
   const [error, setError] = useState("");
@@ -305,6 +308,8 @@ const StockPage = () => {
   if (error) {
     return <EmptyState title="Nao foi possivel carregar" description={error} />;
   }
+
+  const hasSearchTerm = Boolean(String(searchTerm || "").trim());
 
   const columns = [
     { key: "pdt_nome", label: "Produto" },

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -7,6 +8,7 @@ import InputModal from "../components/common/InputModal";
 import { useAuth } from "../contexts/AuthContext";
 import { formatNumber } from "../utils/format";
 import { notifyStockMovement } from "../utils/stockEvents";
+import { matchesSearch } from "../utils/search";
 import {
   getInputs,
   createInput,
@@ -16,6 +18,7 @@ import {
 
 const ProductInputsPage = () => {
   const { token } = useAuth(); // Recupera o token do usuário para autorizar a requisição
+  const { searchTerm = "" } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [inputs, setInputs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -86,6 +89,24 @@ const ProductInputsPage = () => {
     }
   };
 
+  const filteredInputs = useMemo(() => {
+    return inputs.filter((row) =>
+      matchesSearch(
+        [
+          row?.ent_id,
+          row?.ent_data,
+          row?.ent_data_compra,
+          row?.pdt_nome,
+          row?.forn_nome,
+          row?.ent_quantidade,
+          row?.ep_quantidade,
+          row?.ent_valor_compra,
+        ],
+        searchTerm,
+      ),
+    );
+  }, [inputs, searchTerm]);
+
   // View exibida se usuário não estiver no escopo seguro da aplicação com JWT válido
   if (!token) {
     return (
@@ -99,6 +120,8 @@ const ProductInputsPage = () => {
   if (loading) return <LoadingSpinner />;
   if (error)
     return <EmptyState title="Não foi possível carregar" description={error} />;
+
+  const hasSearchTerm = Boolean(String(searchTerm || "").trim());
 
   // Colunas contendo o map das chaves do endpoint de Entradas com renderizadores personalizados para valores/moedas/data
   const columns = [

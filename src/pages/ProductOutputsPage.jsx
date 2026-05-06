@@ -1,4 +1,5 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -8,9 +9,11 @@ import { useAuth } from "../contexts/AuthContext";
 import { formatNumber } from "../utils/format";
 import { getOutputs, createOutput } from "../services/api";
 import { notifyStockMovement } from "../utils/stockEvents";
+import { matchesSearch } from "../utils/search";
 
 const ProductOutputsPage = () => {
   const { token } = useAuth();
+  const { searchTerm = "" } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [outputs, setOutputs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,6 +45,22 @@ const ProductOutputsPage = () => {
     loadData();
   };
 
+  const filteredOutputs = useMemo(() => {
+    return outputs.filter((row) =>
+      matchesSearch(
+        [
+          row?.sai_id,
+          row?.sai_data,
+          row?.pdt_nome,
+          row?.sai_quantidade,
+          row?.sai_motivo,
+          row?.sai_destino,
+        ],
+        searchTerm,
+      ),
+    );
+  }, [outputs, searchTerm]);
+
   if (!token) {
     return (
       <EmptyState
@@ -56,6 +75,8 @@ const ProductOutputsPage = () => {
   if (error && outputs.length === 0) {
     return <EmptyState title="Não foi possível carregar" description={error} />;
   }
+
+  const hasSearchTerm = Boolean(String(searchTerm || "").trim());
 
   const columns = [
     { key: "sai_id", label: "ID" },

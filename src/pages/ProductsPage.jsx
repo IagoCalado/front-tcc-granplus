@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -16,12 +17,20 @@ import { formatNumber } from "../utils/format";
 
 const ProductsPage = () => {
   const { token } = useAuth();
+  const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
+
+  const normalizeText = (value) =>
+    String(value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
 
   const loadData = async () => {
     setLoading(true);
@@ -75,6 +84,30 @@ const ProductsPage = () => {
     }
   };
 
+  const filteredProducts = useMemo(() => {
+    const normalizedSearch = normalizeText(searchTerm);
+
+    if (!normalizedSearch) {
+      return products;
+    }
+
+    return products.filter((product) => {
+      const searchableFields = [
+        product?.pdt_nome,
+        product?.pdt_codigo,
+        product?.cat_id,
+        product?.unid_med_id,
+        product?.pdt_estoque_atual,
+        product?.pdt_estoque_minimo,
+        product?.pdt_ativo ? "ativo" : "inativo",
+      ];
+
+      return searchableFields.some((field) =>
+        normalizeText(field).includes(normalizedSearch),
+      );
+    });
+  }, [products, searchTerm]);
+
   if (!token) {
     return (
       <EmptyState
@@ -91,6 +124,8 @@ const ProductsPage = () => {
   if (error) {
     return <EmptyState title="Nao foi possivel carregar" description={error} />;
   }
+
+  const hasSearchTerm = Boolean(String(searchTerm || "").trim());
 
   const columns = [
     { key: "pdt_nome", label: "Produto" },
@@ -154,7 +189,13 @@ const ProductsPage = () => {
         onSearch={setSearchTerm}
         searchPlaceholder="Buscar por produto/código..."
         actions={
-          <button className="btn btn-primary" onClick={() => handleOpenModal()}>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              if (setSearchTerm) setSearchTerm("");
+              handleOpenModal();
+            }}
+          >
             Novo produto
           </button>
         }
