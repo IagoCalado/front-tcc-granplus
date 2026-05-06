@@ -1,7 +1,7 @@
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 
-const Header = ({ onToggleSidebar }) => {
+const Header = ({ onToggleSidebar, searchTerm, onSearchTermChange }) => {
   const { user, logout, token, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const initials = user?.user_nome
@@ -16,13 +16,6 @@ const Header = ({ onToggleSidebar }) => {
   return (
     <header className="header">
       <div className="header-left">
-        <button
-          className="btn btn-outline"
-          onClick={onToggleSidebar}
-          type="button"
-        >
-          Menu
-        </button>
         <div className="header-title">
           <h1>Dashboard de Estoque</h1>
           <span>Visao central de operacoes e alertas</span>
@@ -31,7 +24,11 @@ const Header = ({ onToggleSidebar }) => {
       <div className="header-actions">
         <label className="search-field">
           <span>Busca</span>
-          <input placeholder="Produto, usuário ou local" />
+          <input
+            value={searchTerm}
+            onChange={(event) => onSearchTermChange(event.target.value)}
+            placeholder="Produto, usuário ou local"
+          />
         </label>
         
         <button 

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import SectionHeader from "../components/common/SectionHeader";
@@ -6,6 +7,7 @@ import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import { useAuth } from "../contexts/AuthContext";
+import { matchesSearch } from "../utils/search";
 
 // Agora importamos certinho as duas funções do seu api.js!
 import { getAuditReports, getAuditReportsByDate } from "../services/api";
@@ -37,6 +39,7 @@ const formatTableName = (tableName) => {
 
 const AuditReportsPage = () => {
   const { token } = useAuth();
+  const { searchTerm = "" } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [reports, setReports] = useState([]);
   const [error, setError] = useState("");
@@ -117,6 +120,24 @@ const AuditReportsPage = () => {
     }
   };
 
+  const filteredReports = useMemo(() => {
+    return reports.filter((row) =>
+      matchesSearch(
+        [
+          row?.aud_id,
+          row?.user_nome,
+          row?.user_id,
+          row?.aud_acao,
+          row?.aud_data,
+          row?.aud_time,
+          row?.aud_tabela_afetada,
+          row?.aud_id_evento,
+        ],
+        searchTerm,
+      ),
+    );
+  }, [reports, searchTerm]);
+
   if (!token) {
     return (
       <EmptyState
@@ -129,6 +150,8 @@ const AuditReportsPage = () => {
   if (loading) return <LoadingSpinner />;
   
   if (error) return <EmptyState title="Não foi possível carregar" description={error} />;
+
+  const hasSearchTerm = Boolean(String(searchTerm || "").trim());
 
   const columns = [
     { key: "aud_id", label: "ID" },
@@ -151,7 +174,11 @@ const AuditReportsPage = () => {
     <div>
       <SectionHeader 
         title="Relatórios" 
-        subtitle="Acompanhe as movimentações no sistema (semanal, mensal, anual)." 
+        subtitle={
+          hasSearchTerm
+            ? `${filteredReports.length} resultado(s) para "${searchTerm}"`
+            : "Acompanhe as movimentações no sistema (semanal, mensal, anual)."
+        } 
         actions={
           <button className="btn btn-primary" onClick={() => setIsModalAberto(true)}>
             Exportar Relatório
@@ -180,7 +207,18 @@ const AuditReportsPage = () => {
         </button>
       </div>
 
-      <DataTable columns={columns} rows={reports} rowKey="aud_id" />
+      {filteredReports.length ? (
+        <DataTable columns={columns} rows={filteredReports} rowKey="aud_id" />
+      ) : (
+        <EmptyState
+          title={hasSearchTerm ? "Nenhum relatório encontrado" : "Nenhum relatório disponível"}
+          description={
+            hasSearchTerm
+              ? "Tente um termo diferente para localizar o relatório desejado."
+              : "Os relatórios aparecerão assim que houver movimentações registradas."
+          }
+        />
+      )}
 
       {/* MODAL DE FILTRO DO PDF (Design Dark) */}
       {isModalAberto && (

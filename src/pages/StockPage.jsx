@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -7,6 +8,7 @@ import StatusPill from "../components/common/StatusPill";
 import { useAuth } from "../contexts/AuthContext";
 import { getOutputAvailableLots, getStock } from "../services/api";
 import { formatNumber } from "../utils/format";
+import { matchesSearch } from "../utils/search";
 import {
   STOCK_MOVEMENT_EVENT,
   STOCK_MOVEMENT_STORAGE_KEY,
@@ -70,6 +72,7 @@ const getValidityStatus = (value) => {
 
 const StockPage = () => {
   const { token } = useAuth();
+  const { searchTerm = "" } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [stock, setStock] = useState([]);
   const [error, setError] = useState("");
@@ -274,6 +277,23 @@ const StockPage = () => {
     );
   }, [selectedProductId, stockByProduct]);
 
+  const filteredStockByProduct = useMemo(() => {
+    return stockByProduct.filter((row) =>
+      matchesSearch(
+        [
+          row?.pdt_nome,
+          row?.pdt_codigo,
+          row?.pdt_descricao,
+          row?.pdt_estoque_minimo,
+          row?.estoque_atual,
+          row?.lotes?.map((lote) => lote?.lote).join(" "),
+          row?.lotes?.map((lote) => lote?.validade).join(" "),
+        ],
+        searchTerm,
+      ),
+    );
+  }, [stockByProduct, searchTerm]);
+
   useEffect(() => {
     if (!token) return;
     loadAvailableLotsCount(stockByProduct);
@@ -295,6 +315,8 @@ const StockPage = () => {
   if (error) {
     return <EmptyState title="Nao foi possivel carregar" description={error} />;
   }
+
+  const hasSearchTerm = Boolean(String(searchTerm || "").trim());
 
   const columns = [
     { key: "pdt_nome", label: "Produto" },
@@ -360,9 +382,28 @@ const StockPage = () => {
     <div className="app-content">
       <SectionHeader
         title="Estoque"
-        subtitle="Acompanhe niveis atuais e disponibilidade"
+        subtitle={
+          hasSearchTerm
+            ? `${filteredStockByProduct.length} resultado(s) para "${searchTerm}"`
+            : "Acompanhe niveis atuais e disponibilidade"
+        }
       />
-      <DataTable columns={columns} rows={stockByProduct} rowKey="pdt_id" />
+      {filteredStockByProduct.length ? (
+        <DataTable
+          columns={columns}
+          rows={filteredStockByProduct}
+          rowKey="pdt_id"
+        />
+      ) : (
+        <EmptyState
+          title={hasSearchTerm ? "Nenhum item encontrado" : "Nenhum item em estoque"}
+          description={
+            hasSearchTerm
+              ? "Tente outro termo para localizar o produto no estoque."
+              : "Não há itens cadastrados para exibir agora."
+          }
+        />
+      )}
 
       {selectedProductId && (
         <div

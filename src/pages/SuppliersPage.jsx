@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -11,9 +12,11 @@ import {
   updateSupplier,
   deleteSupplier,
 } from "../services/api";
+import { matchesSearch } from "../utils/search";
 
 const SuppliersPage = () => {
   const { token } = useAuth(); // Recuperar o token da sessão do usuário
+  const { searchTerm = "" } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
   const [error, setError] = useState("");
@@ -183,6 +186,25 @@ const SuppliersPage = () => {
     }
   };
 
+  const filteredSuppliers = useMemo(() => {
+    return suppliers.filter((row) =>
+      matchesSearch(
+        [
+          row?.fncd_nome,
+          row?.fncd_documento,
+          row?.fncd_email,
+          row?.fncd_tel,
+          row?.fncd_endereco,
+          row?.fncd_logradouro,
+          row?.fncd_cep,
+          row?.fncd_cidade,
+          row?.fncd_estado,
+        ],
+        searchTerm,
+      ),
+    );
+  }, [suppliers, searchTerm]);
+
   // Se não existir token, exige o login antes de mostrar os dados da tabela
   if (!token) {
     return (
@@ -199,6 +221,8 @@ const SuppliersPage = () => {
   // Se a requisição apresentar falha, reflete na interface via EmptyState com a descrição do Erro
   if (error)
     return <EmptyState title="Não foi possível carregar" description={error} />;
+
+  const hasSearchTerm = Boolean(String(searchTerm || "").trim());
 
   // Colunas contendo as chaves para match correspondente de chaves vindas da API de fornecedores
   const columns = [
@@ -286,14 +310,29 @@ const SuppliersPage = () => {
     <div className="app-content">
       <SectionHeader
         title="Fornecedores"
-        subtitle="Gerencie os fornecedores de produtos e serviços."
+        subtitle={
+          hasSearchTerm
+            ? `${filteredSuppliers.length} resultado(s) para "${searchTerm}"`
+            : "Gerencie os fornecedores de produtos e serviços."
+        }
         actions={
           <button className="btn btn-primary" onClick={() => handleOpenModal()}>
             Novo Fornecedor
           </button>
         }
       />
-      <DataTable columns={columns} rows={suppliers} rowKey="fncd_id" />
+      {filteredSuppliers.length ? (
+        <DataTable columns={columns} rows={filteredSuppliers} rowKey="fncd_id" />
+      ) : (
+        <EmptyState
+          title={hasSearchTerm ? "Nenhum fornecedor encontrado" : "Nenhum fornecedor cadastrado"}
+          description={
+            hasSearchTerm
+              ? "Tente um termo diferente para localizar o fornecedor desejado."
+              : "Cadastre o primeiro fornecedor para começar a gerenciar a base."
+          }
+        />
+      )}
 
       <SupplierModal
         isOpen={isModalOpen}
