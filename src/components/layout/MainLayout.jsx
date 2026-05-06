@@ -21,7 +21,6 @@ const MainLayout = () => {
       ) : null}
       <Sidebar isOpen={sidebarOpen} onNavigate={handleCloseSidebar} />
       <div className="app-main">
-        <Header onToggleSidebar={handleToggleSidebar} />
         <main className="app-content">
           <Outlet />
         </main>

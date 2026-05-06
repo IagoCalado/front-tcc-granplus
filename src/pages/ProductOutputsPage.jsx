@@ -13,6 +13,7 @@ const ProductOutputsPage = () => {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [outputs, setOutputs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -80,11 +81,19 @@ const ProductOutputsPage = () => {
     { key: "sai_destino", label: "Destino" },
   ];
 
+  const filteredOutputs = outputs.filter((item) =>
+    (item.pdt_nome || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.sai_destino || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.sai_motivo || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="app-content">
       <SectionHeader
         title="Saída de Produtos"
         subtitle="Controle a saída de produtos (venda, descarte, etc)."
+        onSearch={setSearchTerm}
+        searchPlaceholder="Buscar produto, motivo ou destino..."
         actions={
           <button
             className="btn btn-primary"
@@ -94,7 +103,7 @@ const ProductOutputsPage = () => {
           </button>
         }
       />
-      <DataTable columns={columns} rows={outputs} rowKey="sai_id" />
+      <DataTable columns={columns} rows={filteredOutputs} rowKey="sai_id" />
 
       <OutputModal
         isOpen={isModalOpen}

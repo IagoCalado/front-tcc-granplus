@@ -77,6 +77,7 @@ const StockPage = () => {
   const [selectedProductName, setSelectedProductName] = useState("");
   const [modalLots, setModalLots] = useState([]);
   const [loadingModalLots, setLoadingModalLots] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [availableLotsCountByProduct, setAvailableLotsCountByProduct] =
     useState({});
 
@@ -274,6 +275,15 @@ const StockPage = () => {
     );
   }, [selectedProductId, stockByProduct]);
 
+  const filteredStock = useMemo(() => {
+    if (!searchTerm.trim()) return stockByProduct;
+    const lowerSearch = searchTerm.toLowerCase();
+    return stockByProduct.filter((item) => 
+      (item.nome || "").toLowerCase().includes(lowerSearch) ||
+      (item.pdt_codigo || "").toLowerCase().includes(lowerSearch)
+    );
+  }, [stockByProduct, searchTerm]);
+
   useEffect(() => {
     if (!token) return;
     loadAvailableLotsCount(stockByProduct);
@@ -361,8 +371,10 @@ const StockPage = () => {
       <SectionHeader
         title="Estoque"
         subtitle="Acompanhe niveis atuais e disponibilidade"
+        onSearch={setSearchTerm}
+        searchPlaceholder="Buscar estoque..."
       />
-      <DataTable columns={columns} rows={stockByProduct} rowKey="pdt_id" />
+      <DataTable columns={columns} rows={filteredStock} rowKey="pdt_id" />
 
       {selectedProductId && (
         <div

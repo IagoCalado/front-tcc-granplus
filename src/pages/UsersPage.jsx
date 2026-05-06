@@ -20,6 +20,7 @@ const UsersPage = () => {
   const { token, isAdmin, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState("");
 
@@ -164,11 +165,18 @@ const UsersPage = () => {
       },
     ];
 
+    const filteredUsers = users.filter((item) =>
+      (item.user_nome || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.user_email || "").toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
       <div className="app-content">
         <SectionHeader
           title="Usuários"
           subtitle="Administração de acessos e permissões"
+          onSearch={setSearchTerm}
+          searchPlaceholder="Buscar por nome ou email..."
           actions={
             <button
               className="btn btn-primary"
@@ -181,7 +189,7 @@ const UsersPage = () => {
             </button>
           }
         />
-        <DataTable columns={columns} rows={users} rowKey="user_id" />
+        <DataTable columns={columns} rows={filteredUsers} rowKey="user_id" />
 
         <UserModal
           isOpen={isModalOpen}

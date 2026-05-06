@@ -1,42 +1,98 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
+import {
+  FaChartLine,
+  FaBox,
+  FaWarehouse,
+  FaCartArrowDown,
+  FaShoppingCart,
+  FaUsers,
+  FaClipboardList,
+  FaSignOutAlt,
+  FaMoon,
+  FaSun,
+  FaUserCircle
+} from "react-icons/fa";
+import "./Sidebar.css";
 
+/**
+ * Array com os items da navegação do sidebar
+ * Cada item contém: path, label, ícone (componente react-icon), e adminOnly (opcional)
+ */
 const navItems = [
-  { path: "/dashboard", label: "Painel Principal", icon: "PP" },
-  { path: "/produtos", label: "Produtos", icon: "PR" },
-  { path: "/estoque", label: "Estoque", icon: "ES" },
-  { path: "/entradas", label: "Entrada", icon: "EN" },
-  { path: "/saidas", label: "Saida", icon: "SA" },
-  { path: "/fornecedores", label: "Fornecedores", icon: "FN" },
-  { path: "/auditoria", label: "Relatorios", icon: "AU", adminOnly: true },
-  { path: "/usuarios", label: "Usuario", icon: "US" },
+  {
+    path: "/dashboard",
+    label: "Painel",
+    Icon: FaChartLine,
+  },
+  {
+    path: "/produtos",
+    label: "Produtos",
+    Icon: FaBox,
+  },
+  {
+    path: "/estoque",
+    label: "Estoque",
+    Icon: FaWarehouse,
+  },
+  {
+    path: "/entradas",
+    label: "Entradas",
+    Icon: FaCartArrowDown,
+  },
+  {
+    path: "/saidas",
+    label: "Saídas",
+    Icon: FaShoppingCart,
+  },
+  {
+    path: "/fornecedores",
+    label: "Fornecedores",
+    Icon: FaClipboardList,
+  },
+  {
+    path: "/auditoria",
+    label: "Relatórios",
+    Icon: FaClipboardList,
+    adminOnly: true,
+  },
+  {
+    path: "/usuarios",
+    label: "Usuários",
+    Icon: FaUsers,
+    adminOnly: true,
+  },
 ];
 
+/**
+ * Componente Sidebar - Rail Sidebar minimalista e expansível
+ * Estado Inicial: Estreita (70px) com apenas ícones
+ * Ao passar hover: Expande para 240px e mostra os textos
+ *
+ * @param {Object} props
+ * @param {boolean} props.isOpen - (Legado) Controla se o sidebar está aberto
+ * @param {Function} props.onNavigate - Callback executado ao clicar em um item
+ */
 const Sidebar = ({ isOpen, onNavigate }) => {
-  const { isAdmin } = useAuth();
+  const { user, logout, token, isAdmin } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
+  // Filtra os items baseado em permissões de admin
   const visibleItems = navItems.filter((item) => {
     if (item.adminOnly) return Boolean(isAdmin);
     return true;
   });
 
   return (
-    <aside className={`sidebar ${isOpen ? "open" : ""}`.trim()}>
-      <div className="sidebar-brand">
-        <div className="sidebar-logo">GP</div>
-        <div className="sidebar-title">
-          <strong>GranPlus</strong>
-          <span>Gestao de Estoque</span>
-        </div>
-      </div>
-
+    <aside className="sidebar">
       <nav className="sidebar-nav">
         {visibleItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `nav-item ${isActive ? "active" : ""}`.trim()
+              `sidebar-item ${isActive ? "active" : ""}`.trim()
             }
             onClick={() => {
               if (onNavigate) {
@@ -44,15 +100,37 @@ const Sidebar = ({ isOpen, onNavigate }) => {
               }
             }}
           >
-            <span className="nav-icon">{item.icon}</span>
-            <span>{item.label}</span>
+            <span className="sidebar-icon">
+              <item.Icon />
+            </span>
+            <span className="sidebar-label">{item.label}</span>
           </NavLink>
         ))}
       </nav>
 
       <div className="sidebar-footer">
-        <h4>Operacao segura</h4>
-        <p>Monitoramento em tempo real com auditoria integrada.</p>
+        <div className="sidebar-item" onClick={toggleTheme} title="Mudar Tema">
+          <span className="sidebar-icon" style={{ backgroundColor: 'var(--bg-soft)', color: 'var(--ink)' }}>
+            {theme === "dark" ? <FaSun /> : <FaMoon />}
+          </span>
+          <span className="sidebar-label">Tema {theme === "dark" ? "Claro" : "Escuro"}</span>
+        </div>
+        
+        <div className="sidebar-item" title="Perfil">
+          <span className="sidebar-icon" style={{ backgroundColor: 'var(--bg-soft)', color: 'var(--ink)' }}>
+            <FaUserCircle />
+          </span>
+          <span className="sidebar-label">{user?.user_nome || "Visitante"}</span>
+        </div>
+
+        {token && (
+          <div className="sidebar-item" onClick={logout} title="Sair do sistema" style={{ marginTop: '4px' }}>
+            <span className="sidebar-icon" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+              <FaSignOutAlt />
+            </span>
+            <span className="sidebar-label">Sair</span>
+          </div>
+        )}
       </div>
     </aside>
   );
