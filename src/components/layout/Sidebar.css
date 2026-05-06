@@ -1,0 +1,255 @@
+/**
+ * ============================================================================
+ * SIDEBAR CSS - RAIL SIDEBAR MINIMALISTA EXPANSÍVEL
+ * ============================================================================
+ * Estilo: Minimalista moderno com animações suaves
+ * Responsividade: Recolhido em mobile, expandido em desktop
+ * Tema: CSS Variables para cores e espaçamentos
+ */
+
+/* ============================================================================
+   CORES E TOKENS (usando CSS Variables para tema)
+   ============================================================================ */
+:root {
+  --transition-smooth: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================================
+   CONTAINER PRINCIPAL DO SIDEBAR
+   ============================================================================ */
+.sidebar {
+  /* Posicionamento no layout App Shell */
+  position: sticky;
+  top: 24px;
+  height: calc(100vh - 48px);
+  width: 80px; /* Largura inicial */
+  flex-shrink: 0;
+  
+  /* Remove a barra de fundo e bordas do container principal */
+  background-color: transparent;
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
+  
+  /* Layout flexível para contenção do nav */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  
+  /* Permite que itens vazem para fora da borda (overflow visible!) */
+  overflow: visible;
+  z-index: 1000;
+}
+
+/**
+ * Sidebar sempre mantém 70px de largura
+ * Apenas os items fazem hover individual
+ */
+
+/* ============================================================================
+   NAV CONTAINER E FOOTER
+   ============================================================================ */
+.sidebar-nav {
+  /* Layout flexível vertical para os items */
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* Espaçamento entre items */
+  
+  /* Dimensões */
+  width: 100%;
+  padding: 0 16px; /* Padding interno para centralizar items */
+  margin-bottom: 24px;
+  
+  /* Overflow VISIBLE para o hover pular para fora */
+  overflow: visible;
+  flex: 1; /* Preenche o espaço disponível */
+}
+
+.sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0 16px;
+  margin-top: auto;
+  overflow: visible;
+}
+
+/* ============================================================================
+   ITEM DE NAVEGAÇÃO (NavLink)
+   ============================================================================ */
+.sidebar-item {
+  /* Link estilo reset */
+  text-decoration: none;
+  color: inherit;
+  
+  /* Posição relativa para ancorar o label absoluto */
+  position: relative;
+  
+  /* Dimensões do quadrado do ícone */
+  width: 48px;
+  height: 48px;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Estilo visual base (pode ser fundo branco ou transparente) */
+  background-color: transparent;
+  border-radius: 12px;
+  
+  /* Cursor */
+  cursor: pointer;
+  user-select: none;
+  
+  transition: all var(--transition-smooth);
+}
+
+/**
+ * Hover do item
+ */
+.sidebar-item:hover {
+  z-index: 1001; /* Fica acima dos outros */
+}
+
+/* ============================================================================
+   ÍCONE DO ITEM
+   ============================================================================ */
+.sidebar-icon {
+  width: 100%;
+  height: 100%;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Estilo do ícone pedido */
+  background-color: var(--accent); /* Fundo com a cor do sistema */
+  color: #ffffff; /* Ícone branco */
+  border-radius: 12px;
+  font-size: 20px;
+  
+  /* Sombra para destacar */
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-smooth);
+}
+
+/**
+ * Reduz a opacidade dos não ativos, a menos que em hover
+ */
+.sidebar-item:not(.active) .sidebar-icon {
+  opacity: 0.85;
+}
+
+.sidebar-item:hover:not(.active) .sidebar-icon {
+  opacity: 1;
+  transform: scale(1.05); /* Pequeno pulo ao hover */
+}
+
+/**
+ * ESTADO ATIVO
+ * Fundo branco, ícone com a cor do sistema e leve borda/sombra para não sumir no fundo
+ */
+.sidebar-item.active .sidebar-icon {
+  background-color: #ffffff;
+  color: var(--accent);
+  box-shadow: 0 0 0 1px var(--border), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  opacity: 1;
+}
+
+/* ============================================================================
+   LABEL DO ITEM (Texto / "Tooltip")
+   ============================================================================ */
+.sidebar-label {
+  /* Flutuante à direita do ícone */
+  position: absolute;
+  left: 64px; /* 48px do botão + 16px de espaçamento */
+  
+  /* Estilo de "balão" super elegante usando cores globais do site */
+  background-color: var(--bg-elevated);
+  color: var(--ink);
+  padding: 8px 16px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  
+  white-space: nowrap;
+  font-weight: 500;
+  font-size: 14px;
+  
+  /* Animação */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-10px);
+  transition: all var(--transition-smooth);
+  
+  /* Desabilitar clique no tooltip */
+  pointer-events: none;
+}
+
+/**
+ * AO PASSAR HOVER NO ITEM
+ * O tooltip aparece suavemente
+ */
+.sidebar-item:hover .sidebar-label {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+/* ============================================================================
+   SCROLLBAR CUSTOMIZADA (Chrome/Edge)
+   ============================================================================ */
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 3px;
+  transition: background-color var(--transition-smooth);
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted);
+}
+
+/* ============================================================================
+   RESPONSIVIDADE - MOBILE
+   ============================================================================ */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 60px; /* Mais estreito em mobile */
+  }
+}
+
+/* ============================================================================
+   ACESSIBILIDADE - FOCUS STATES
+   ============================================================================ */
+.sidebar-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-color: var(--accent);
+}
+
+/* ============================================================================
+   PREFERE REDUÇÃO DE MOVIMENTO
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
+  
+  .sidebar-item {
+    transition: none;
+  }
+  
+  .sidebar-label {
+    transition: none;
+  }
+}

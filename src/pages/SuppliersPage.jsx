@@ -16,6 +16,7 @@ const SuppliersPage = () => {
   const { token } = useAuth(); // Recuperar o token da sessão do usuário
   const [loading, setLoading] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState("");
   const [selectedAddressSupplier, setSelectedAddressSupplier] = useState(null);
 
@@ -282,18 +283,25 @@ const SuppliersPage = () => {
     },
   ];
 
+  const filteredSuppliers = suppliers.filter((item) =>
+    (item.fncd_nome || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.fncd_documento || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="app-content">
       <SectionHeader
         title="Fornecedores"
         subtitle="Gerencie os fornecedores de produtos e serviços."
+        onSearch={setSearchTerm}
+        searchPlaceholder="Buscar por nome ou documento..."
         actions={
           <button className="btn btn-primary" onClick={() => handleOpenModal()}>
             Novo Fornecedor
           </button>
         }
       />
-      <DataTable columns={columns} rows={suppliers} rowKey="fncd_id" />
+      <DataTable columns={columns} rows={filteredSuppliers} rowKey="fncd_id" />
 
       <SupplierModal
         isOpen={isModalOpen}

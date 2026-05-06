@@ -18,6 +18,7 @@ const ProductInputsPage = () => {
   const { token } = useAuth(); // Recupera o token do usuário para autorizar a requisição
   const [loading, setLoading] = useState(false);
   const [inputs, setInputs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Adicionado para suportar modo de edição (mesmo que o backend ainda precise ser implementado para edição/deleção de entradas)
@@ -165,18 +166,25 @@ const ProductInputsPage = () => {
     },
   ];
 
+  const filteredInputs = inputs.filter((item) =>
+    (item.pdt_nome || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.forn_nome || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div>
       <SectionHeader
         title="Entrada de Produtos"
         subtitle="Controle as entradas de estoque (compras/recebimentos)."
+        onSearch={setSearchTerm}
+        searchPlaceholder="Buscar por produto/fornecedor..."
         actions={
           <button className="btn btn-primary" onClick={() => handleOpenModal()}>
             Nova Entrada
           </button>
         }
       />
-      <DataTable columns={columns} rows={inputs} />
+      <DataTable columns={columns} rows={filteredInputs} />
 
       <InputModal
         isOpen={isModalOpen}

@@ -18,6 +18,7 @@ const ProductsPage = () => {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
@@ -140,18 +141,25 @@ const ProductsPage = () => {
     },
   ];
 
+  const filteredProducts = products.filter((product) =>
+    (product.pdt_nome || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.pdt_codigo || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="app-content">
       <SectionHeader
         title="Produtos"
         subtitle="Controle total do catalogo ativo"
+        onSearch={setSearchTerm}
+        searchPlaceholder="Buscar por produto/código..."
         actions={
           <button className="btn btn-primary" onClick={() => handleOpenModal()}>
             Novo produto
           </button>
         }
       />
-      <DataTable columns={columns} rows={products} rowKey="pdt_id" />
+      <DataTable columns={columns} rows={filteredProducts} rowKey="pdt_id" />
 
       <ProductModal
         isOpen={isModalOpen}

@@ -38,8 +38,7 @@ const formatTableName = (tableName) => {
 const AuditReportsPage = () => {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [reports, setReports] = useState([]);
-  const [error, setError] = useState("");
+  const [reports, setReports] = useState([]);  const [searchTerm, setSearchTerm] = useState("");  const [error, setError] = useState("");
   const [filterPeriod, setFilterPeriod] = useState("monthly"); 
 
   // Estados para o Modal e Datas do PDF
@@ -147,11 +146,18 @@ const AuditReportsPage = () => {
     { key: "aud_id_evento", label: "ID do Evento" },
   ];
 
+  const filteredReports = reports.filter((item) =>
+    (formatTableName(item.aud_tabela) || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.user_nome || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div>
       <SectionHeader 
         title="Relatórios" 
         subtitle="Acompanhe as movimentações no sistema (semanal, mensal, anual)." 
+        onSearch={setSearchTerm}
+        searchPlaceholder="Buscar tabela ou usuário..."
         actions={
           <button className="btn btn-primary" onClick={() => setIsModalAberto(true)}>
             Exportar Relatório
@@ -180,7 +186,7 @@ const AuditReportsPage = () => {
         </button>
       </div>
 
-      <DataTable columns={columns} rows={reports} rowKey="aud_id" />
+      <DataTable columns={columns} rows={filteredReports} rowKey="aud_id" />
 
       {/* MODAL DE FILTRO DO PDF (Design Dark) */}
       {isModalAberto && (
