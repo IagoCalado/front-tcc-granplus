@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -276,11 +276,9 @@ const StockPage = () => {
   }, [selectedProductId, stockByProduct]);
 
   const filteredStock = useMemo(() => {
-    if (!searchTerm.trim()) return stockByProduct;
-    const lowerSearch = searchTerm.toLowerCase();
-    return stockByProduct.filter((item) => 
-      (item.nome || "").toLowerCase().includes(lowerSearch) ||
-      (item.pdt_codigo || "").toLowerCase().includes(lowerSearch)
+    if (!searchTerm) return stockByProduct;
+    return stockByProduct.filter((item) =>
+      (item.pdt_nome || "").toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [stockByProduct, searchTerm]);
 
@@ -296,14 +294,6 @@ const StockPage = () => {
         description="As informacoes de estoque exigem autenticacao."
       />
     );
-  }
-
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
-  if (error) {
-    return <EmptyState title="Nao foi possivel carregar" description={error} />;
   }
 
   const columns = [
@@ -367,14 +357,31 @@ const StockPage = () => {
   ];
 
   return (
-    <div className="app-content">
-      <SectionHeader
-        title="Estoque"
-        subtitle="Acompanhe niveis atuais e disponibilidade"
-        onSearch={setSearchTerm}
-        searchPlaceholder="Buscar estoque..."
-      />
-      <DataTable columns={columns} rows={filteredStock} rowKey="pdt_id" />
+    <div className="container mx-auto p-4">
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          // background: "var(--bg)",
+          paddingTop: "4px",
+          paddingBottom: "8px",
+        }}
+      >
+        <SectionHeader
+          title="Estoque"
+          subtitle="Visualize o estoque atual dos produtos."
+          onSearch={setSearchTerm}
+        />
+      </div>
+
+      {loading ? (
+        <LoadingSpinner />
+      ) : error ? (
+        <EmptyState title="Não foi possivel carregar" description={error} />
+      ) : (
+        <DataTable columns={columns} rows={filteredStock} rowKey="pdt_id" />
+      )}
 
       {selectedProductId && (
         <div
@@ -436,10 +443,7 @@ const StockPage = () => {
             {loadingModalLots ? (
               <LoadingSpinner />
             ) : modalLots.length ? (
-              <div
-                className="table-shell"
-                style={{ maxHeight: "320px", overflowY: "auto" }}
-              >
+              <div className="table-shell" style={{ maxHeight: "320px", overflowY: "auto" }}>
                 <table className="table">
                   <thead>
                     <tr>
@@ -474,7 +478,7 @@ const StockPage = () => {
             ) : (
               <EmptyState
                 title="Sem lotes disponiveis"
-                description="Nao ha saldo para os lotes deste produto."
+                description="Não ha saldo para os lotes deste produto."
               />
             )}
           </div>

@@ -172,18 +172,29 @@ const ProductInputsPage = () => {
   );
 
   return (
-    <div>
-      <SectionHeader
-        title="Entrada de Produtos"
-        subtitle="Controle as entradas de estoque (compras/recebimentos)."
-        onSearch={setSearchTerm}
-        searchPlaceholder="Buscar por produto/fornecedor..."
-        actions={
-          <button className="btn btn-primary" onClick={() => handleOpenModal()}>
-            Nova Entrada
-          </button>
-        }
-      />
+    <div className="app-content">
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          // background: "var(--bg)",
+          paddingTop: "4px",
+          paddingBottom: "8px",
+        }}
+      >
+        <SectionHeader
+          title="Entrada de Produtos"
+          subtitle="Controle as entradas de estoque (compras/recebimentos)."
+          onSearch={setSearchTerm}
+          searchPlaceholder="Buscar por produto/fornecedor..."
+          actions={
+            <button className="btn btn-primary" onClick={() => handleOpenModal()}>
+              Nova Entrada
+            </button>
+          }
+        />
+      </div>
       <DataTable columns={columns} rows={filteredInputs} />
 
       <InputModal

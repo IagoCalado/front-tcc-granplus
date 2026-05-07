@@ -178,7 +178,7 @@
 .app-content {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 10px;
 }
 
 .page-header {
@@ -308,7 +308,8 @@
 .table-shell {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow: auto;
+  max-height: min(75vh, 640px); /* AQUI */
 }
 
 .table {
@@ -328,6 +329,9 @@
   background: var(--bg-soft);
   font-weight: 600;
   color: var(--ink-soft);
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .table tbody tr {
@@ -484,6 +488,20 @@
   animation: slideUpFade 0.6s ease forwards;
 }
 
+.meteor::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background: conic-gradient(
+    transparent 72%,
+    var(--border-beam-color-1), 
+    var(--border-beam-color-2), 
+    var(--border-beam-color-3),
+    transparent
+  );
+  animation: spin-border-beam 2.8s linear infinite;
+  filter: blur(10px) saturate(1.9) brightness(1.35);
+}
 .spinner {
   width: 32px;
   height: 32px;
@@ -955,6 +973,42 @@
   animation: beam-sweep 2.2s linear infinite;
   filter: blur(4px) saturate(1.8);
 }
+
+/* =====================
+   Modal (adicionado para UserProfileModal)
+   ===================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(2,6,23,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  width: min(520px, 96%);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 12px 40px rgba(2,6,23,0.45);
+  position: relative;
+  margin: 0;
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+}
+
+.modal-header { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+.profile-avatar { width: 56px; height: 56px; border-radius: 12px; display: grid; place-items: center; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; font-weight: 700; font-size: 18px; }
+.modal-close { position: absolute; right: 10px; top: 8px; border: none; background: transparent; font-size: 22px; color: var(--muted); cursor: pointer; }
+.modal-body { display: grid; gap: 12px; }
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+.input-field label { font-size: 13px; color: var(--muted); margin-bottom: 6px; display: block; }
+.input-field input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-soft); color: var(--ink); }
+
 
 /* O conteúdo não tem mais fundo preto nem padding. 
    Ele deixa todo o trabalho visual para a classe .auth-card */

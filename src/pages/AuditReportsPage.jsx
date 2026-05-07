@@ -152,18 +152,29 @@ const AuditReportsPage = () => {
   );
 
   return (
-    <div>
-      <SectionHeader 
-        title="Relatórios" 
-        subtitle="Acompanhe as movimentações no sistema (semanal, mensal, anual)." 
-        onSearch={setSearchTerm}
-        searchPlaceholder="Buscar tabela ou usuário..."
-        actions={
-          <button className="btn btn-primary" onClick={() => setIsModalAberto(true)}>
-            Exportar Relatório
-          </button>
-        }
-      />
+    <div className="app-content">
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          // background: "var(--bg)",
+          paddingTop: "4px",
+          paddingBottom: "8px",
+        }}
+      >
+        <SectionHeader 
+          title="Relatórios" 
+          subtitle="Acompanhe as movimentações no sistema (semanal, mensal, anual)." 
+          onSearch={setSearchTerm}
+          searchPlaceholder="Buscar tabela ou usuário..."
+          actions={
+            <button className="btn btn-primary" onClick={() => setIsModalAberto(true)}>
+              Exportar Relatório
+            </button>
+          }
+        />
+      </div>
 
       <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
         <button 

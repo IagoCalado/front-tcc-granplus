@@ -1,5 +1,7 @@
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useState } from "react";
+import UserProfileModal from "../common/UserProfileModal";
 
 const Header = ({ onToggleSidebar }) => {
   const { user, logout, token, isAdmin } = useAuth();
@@ -12,6 +14,8 @@ const Header = ({ onToggleSidebar }) => {
         .slice(0, 2)
         .toUpperCase()
     : "GP";
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (
     <header className="header">
@@ -43,7 +47,7 @@ const Header = ({ onToggleSidebar }) => {
           {theme === "dark" ? "☀️" : "🌙"}
         </button>
 
-        <div className="user-chip">
+        <div className="user-chip" onClick={() => setIsProfileOpen(true)} style={{ cursor: 'pointer' }}>
           <div className="user-avatar">{initials}</div>
           <div>
             <strong>{user?.user_nome || "Visitante"}</strong>
@@ -53,10 +57,16 @@ const Header = ({ onToggleSidebar }) => {
           </div>
         </div>
         {token ? (
-          <button className="btn btn-ghost" onClick={logout}>
-            Sair
-          </button>
+          <>
+            <button className="btn btn-outline" onClick={() => setIsProfileOpen(true)}>
+              Meu perfil
+            </button>
+            <button className="btn btn-ghost" onClick={logout}>
+              Sair
+            </button>
+          </>
         ) : null}
+        <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
       </div>
     </header>
   );

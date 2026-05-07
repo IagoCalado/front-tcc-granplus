@@ -148,17 +148,28 @@ const ProductsPage = () => {
 
   return (
     <div className="app-content">
-      <SectionHeader
-        title="Produtos"
-        subtitle="Controle total do catalogo ativo"
-        onSearch={setSearchTerm}
-        searchPlaceholder="Buscar por produto/código..."
-        actions={
-          <button className="btn btn-primary" onClick={() => handleOpenModal()}>
-            Novo produto
-          </button>
-        }
-      />
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          // background: "var(--bg)",
+          paddingTop: "4px",
+          paddingBottom: "8px",
+        }}
+      >
+        <SectionHeader
+          title="Produtos"
+          subtitle="Controle total do catalogo ativo"
+          onSearch={setSearchTerm}
+          searchPlaceholder="Buscar por produto/código..."
+          actions={
+            <button className="btn btn-primary" onClick={() => handleOpenModal()}>
+              Novo produto
+            </button>
+          }
+        />
+      </div>
       <DataTable columns={columns} rows={filteredProducts} rowKey="pdt_id" />
 
       <ProductModal

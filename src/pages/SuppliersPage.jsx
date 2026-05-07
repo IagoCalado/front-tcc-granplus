@@ -290,17 +290,28 @@ const SuppliersPage = () => {
 
   return (
     <div className="app-content">
-      <SectionHeader
-        title="Fornecedores"
-        subtitle="Gerencie os fornecedores de produtos e serviços."
-        onSearch={setSearchTerm}
-        searchPlaceholder="Buscar por nome ou documento..."
-        actions={
-          <button className="btn btn-primary" onClick={() => handleOpenModal()}>
-            Novo Fornecedor
-          </button>
-        }
-      />
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          // background: "var(--bg)",
+          paddingTop: "4px",
+          paddingBottom: "8px",
+        }}
+      >
+        <SectionHeader
+          title="Fornecedores"
+          subtitle="Gerencie os fornecedores de produtos e serviços."
+          onSearch={setSearchTerm}
+          searchPlaceholder="Buscar por nome ou documento..."
+          actions={
+            <button className="btn btn-primary" onClick={() => handleOpenModal()}>
+              Novo Fornecedor
+            </button>
+          }
+        />
+      </div>
       <DataTable columns={columns} rows={filteredSuppliers} rowKey="fncd_id" />
 
       <SupplierModal

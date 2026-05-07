@@ -172,23 +172,34 @@ const UsersPage = () => {
 
     return (
       <div className="app-content">
-        <SectionHeader
-          title="Usuários"
-          subtitle="Administração de acessos e permissões"
-          onSearch={setSearchTerm}
-          searchPlaceholder="Buscar por nome ou email..."
-          actions={
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                setSelectedUser(null);
-                setIsModalOpen(true);
-              }}
-            >
-              Criar usuário
-            </button>
-          }
-        />
+        <div
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 30,
+            // background: "var(--bg)",
+            paddingTop: "4px",
+            paddingBottom: "8px",
+          }}
+        >
+          <SectionHeader
+            title="Usuários"
+            subtitle="Administração de acessos e permissões"
+            onSearch={setSearchTerm}
+            searchPlaceholder="Buscar por nome ou email..."
+            actions={
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setSelectedUser(null);
+                  setIsModalOpen(true);
+                }}
+              >
+                Criar usuário
+              </button>
+            }
+          />
+        </div>
         <DataTable columns={columns} rows={filteredUsers} rowKey="user_id" />
 
         <UserModal
@@ -212,10 +223,21 @@ const UsersPage = () => {
 
   return (
     <div className="app-content">
-      <SectionHeader
-        title="Meu perfil"
-        subtitle="Gerencie suas informacoes pessoais"
-      />
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          background: "var(--bg)",
+          paddingTop: "4px",
+          paddingBottom: "8px",
+        }}
+      >
+        <SectionHeader
+          title="Meu perfil"
+          subtitle="Gerencie suas informacoes pessoais"
+        />
+      </div>
       <div className="stats-grid">
         <div className="card">
           <h3>Informacoes</h3>

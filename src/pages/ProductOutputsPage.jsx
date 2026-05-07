@@ -89,20 +89,31 @@ const ProductOutputsPage = () => {
 
   return (
     <div className="app-content">
-      <SectionHeader
-        title="Saída de Produtos"
-        subtitle="Controle a saída de produtos (venda, descarte, etc)."
-        onSearch={setSearchTerm}
-        searchPlaceholder="Buscar produto, motivo ou destino..."
-        actions={
-          <button
-            className="btn btn-primary"
-            onClick={() => setIsModalOpen(true)}
-          >
-            Nova Saída
-          </button>
-        }
-      />
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          // background: "var(--bg)",
+          paddingTop: "4px",
+          paddingBottom: "8px",
+        }}
+      >
+        <SectionHeader
+          title="Saída de Produtos"
+          subtitle="Controle a saída de produtos (venda, descarte, etc)."
+          onSearch={setSearchTerm}
+          searchPlaceholder="Buscar produto, motivo ou destino..."
+          actions={
+            <button
+              className="btn btn-primary"
+              onClick={() => setIsModalOpen(true)}
+            >
+              Nova Saída
+            </button>
+          }
+        />
+      </div>
       <DataTable columns={columns} rows={filteredOutputs} rowKey="sai_id" />
 
       <OutputModal
