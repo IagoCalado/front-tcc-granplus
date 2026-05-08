@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -20,7 +19,6 @@ import { matchesSearch } from "../utils/search";
 
 const UsersPage = () => {
   const { token, isAdmin, user } = useAuth();
-  const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");

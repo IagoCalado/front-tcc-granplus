@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -17,7 +16,6 @@ import { formatNumber } from "../utils/format";
 
 const ProductsPage = () => {
   const { token } = useAuth();
-  const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");

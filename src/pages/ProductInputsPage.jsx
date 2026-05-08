@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -17,7 +16,6 @@ import {
 } from "../services/api";
 
 const ProductInputsPage = () => {
-  const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const { token } = useAuth(); // Recupera o token do usuário para autorizar a requisição
   const [loading, setLoading] = useState(false);
   const [inputs, setInputs] = useState([]);
