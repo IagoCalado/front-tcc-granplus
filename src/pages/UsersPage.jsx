@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -15,9 +16,11 @@ import {
   updatePassword,
 } from "../services/api";
 import { formatRole } from "../utils/format";
+import { matchesSearch } from "../utils/search";
 
 const UsersPage = () => {
   const { token, isAdmin, user } = useAuth();
+  const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,7 +33,7 @@ const UsersPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -46,12 +49,12 @@ const UsersPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAdmin, token, user]);
 
   useEffect(() => {
     if (!token) return;
     loadData();
-  }, [token, isAdmin, user]);
+  }, [loadData, token]);
 
   const handleChangePassword = async () => {
     try {
@@ -104,6 +107,15 @@ const UsersPage = () => {
     }
   };
 
+  const filteredUsers = useMemo(() => {
+    return users.filter((row) =>
+      matchesSearch(
+        [row?.user_nome, row?.user_nivel_acesso, row?.user_ativo],
+        searchTerm,
+      ),
+    );
+  }, [users, searchTerm]);
+
   if (!token) {
     return (
       <EmptyState
@@ -120,6 +132,8 @@ const UsersPage = () => {
   if (error && !users.length && !profile) {
     return <EmptyState title="Nao foi possivel carregar" description={error} />;
   }
+
+  
 
   if (isAdmin) {
     const columns = [
@@ -165,30 +179,36 @@ const UsersPage = () => {
       },
     ];
 
-    const filteredUsers = users.filter((item) =>
-      (item.user_nome || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.user_email || "").toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     return (
       <div className="app-content">
-        <SectionHeader
-          title="Usuários"
-          subtitle="Administração de acessos e permissões"
-          onSearch={setSearchTerm}
-          searchPlaceholder="Buscar por nome ou email..."
-          actions={
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                setSelectedUser(null);
-                setIsModalOpen(true);
-              }}
-            >
-              Criar usuário
-            </button>
-          }
-        />
+        <div
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 30,
+            // background: "var(--bg)",
+            paddingTop: "4px",
+            paddingBottom: "8px",
+          }}
+        >
+          <SectionHeader
+            title="Usuários"
+            subtitle="Administração de acessos e permissões"
+            onSearch={setSearchTerm}
+            searchPlaceholder="Buscar por nome ou email..."
+            actions={
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setSelectedUser(null);
+                  setIsModalOpen(true);
+                }}
+              >
+                Criar usuário
+              </button>
+            }
+          />
+        </div>
         <DataTable columns={columns} rows={filteredUsers} rowKey="user_id" />
 
         <UserModal
@@ -212,10 +232,21 @@ const UsersPage = () => {
 
   return (
     <div className="app-content">
-      <SectionHeader
-        title="Meu perfil"
-        subtitle="Gerencie suas informacoes pessoais"
-      />
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          background: "var(--bg)",
+          paddingTop: "4px",
+          paddingBottom: "8px",
+        }}
+      >
+        <SectionHeader
+          title="Meu perfil"
+          subtitle="Gerencie suas informacoes pessoais"
+        />
+      </div>
       <div className="stats-grid">
         <div className="card">
           <h3>Informacoes</h3>

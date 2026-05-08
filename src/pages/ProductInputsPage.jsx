@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -7,6 +8,7 @@ import InputModal from "../components/common/InputModal";
 import { useAuth } from "../contexts/AuthContext";
 import { formatNumber } from "../utils/format";
 import { notifyStockMovement } from "../utils/stockEvents";
+import { matchesSearch } from "../utils/search";
 import {
   getInputs,
   createInput,
@@ -15,6 +17,7 @@ import {
 } from "../services/api";
 
 const ProductInputsPage = () => {
+  const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const { token } = useAuth(); // Recupera o token do usuário para autorizar a requisição
   const [loading, setLoading] = useState(false);
   const [inputs, setInputs] = useState([]);
@@ -25,7 +28,7 @@ const ProductInputsPage = () => {
   const [currentInput, setCurrentInput] = useState(null);
 
   // Função para buscar as entradas de produtos já cadastradas com seus detalhes em junção à tabela de fornecedores
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -36,13 +39,13 @@ const ProductInputsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   // Previne carregamento caso não haja token ainda, efetuando o get inicial se tiver token
   useEffect(() => {
     if (!token) return;
     loadData();
-  }, [token]);
+  }, [loadData, token]);
 
   const handleOpenModal = (input = null) => {
     setCurrentInput(input);
@@ -86,6 +89,24 @@ const ProductInputsPage = () => {
     }
   };
 
+  const filteredInputs = useMemo(() => {
+    return inputs.filter((row) =>
+      matchesSearch(
+        [
+          row?.ent_id,
+          row?.ent_data,
+          row?.ent_data_compra,
+          row?.pdt_nome,
+          row?.forn_nome,
+          row?.ent_quantidade,
+          row?.ep_quantidade,
+          row?.ent_valor_compra,
+        ],
+        searchTerm,
+      ),
+    );
+  }, [inputs, searchTerm]);
+
   // View exibida se usuário não estiver no escopo seguro da aplicação com JWT válido
   if (!token) {
     return (
@@ -99,6 +120,8 @@ const ProductInputsPage = () => {
   if (loading) return <LoadingSpinner />;
   if (error)
     return <EmptyState title="Não foi possível carregar" description={error} />;
+
+  
 
   // Colunas contendo o map das chaves do endpoint de Entradas com renderizadores personalizados para valores/moedas/data
   const columns = [
@@ -165,25 +188,30 @@ const ProductInputsPage = () => {
       ),
     },
   ];
-
-  const filteredInputs = inputs.filter((item) =>
-    (item.pdt_nome || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (item.forn_nome || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
-    <div>
-      <SectionHeader
-        title="Entrada de Produtos"
-        subtitle="Controle as entradas de estoque (compras/recebimentos)."
-        onSearch={setSearchTerm}
-        searchPlaceholder="Buscar por produto/fornecedor..."
-        actions={
-          <button className="btn btn-primary" onClick={() => handleOpenModal()}>
-            Nova Entrada
-          </button>
-        }
-      />
+    <div className="app-content">
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          // background: "var(--bg)",
+          paddingTop: "4px",
+          paddingBottom: "8px",
+        }}
+      >
+        <SectionHeader
+          title="Entrada de Produtos"
+          subtitle="Controle as entradas de estoque (compras/recebimentos)."
+          onSearch={setSearchTerm}
+          searchPlaceholder="Buscar por produto/fornecedor..."
+          actions={
+            <button className="btn btn-primary" onClick={() => handleOpenModal()}>
+              Nova Entrada
+            </button>
+          }
+        />
+      </div>
       <DataTable columns={columns} rows={filteredInputs} />
 
       <InputModal

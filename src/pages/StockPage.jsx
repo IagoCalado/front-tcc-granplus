@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -70,6 +71,7 @@ const getValidityStatus = (value) => {
 
 const StockPage = () => {
   const { token } = useAuth();
+  const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [stock, setStock] = useState([]);
   const [error, setError] = useState("");
@@ -81,7 +83,7 @@ const StockPage = () => {
   const [availableLotsCountByProduct, setAvailableLotsCountByProduct] =
     useState({});
 
-  const loadData = async (options = {}) => {
+  const loadData = useCallback(async (options = {}) => {
     const { silent = false } = options;
 
     if (!silent) setLoading(true);
@@ -98,9 +100,9 @@ const StockPage = () => {
     } finally {
       if (!silent) setLoading(false);
     }
-  };
+  }, [token]);
 
-  const loadSelectedProductLots = async (productId) => {
+  const loadSelectedProductLots = useCallback(async (productId) => {
     if (!token || !productId) return;
 
     setLoadingModalLots(true);
@@ -131,9 +133,9 @@ const StockPage = () => {
     } finally {
       setLoadingModalLots(false);
     }
-  };
+  }, [token]);
 
-  const loadAvailableLotsCount = async (products) => {
+  const loadAvailableLotsCount = useCallback(async (products) => {
     if (!token) return;
 
     if (!Array.isArray(products) || products.length === 0) {
@@ -159,13 +161,13 @@ const StockPage = () => {
     );
 
     setAvailableLotsCountByProduct(Object.fromEntries(entries));
-  };
+  }, [token]);
 
   useEffect(() => {
     if (!token) return;
 
     loadData();
-  }, [token]);
+  }, [loadData, token]);
 
   useEffect(() => {
     if (!token) return;
@@ -192,7 +194,7 @@ const StockPage = () => {
       window.removeEventListener(STOCK_MOVEMENT_EVENT, handleStockMovement);
       window.removeEventListener("storage", handleStorage);
     };
-  }, [token, selectedProductId]);
+  }, [loadData, loadSelectedProductLots, selectedProductId, token]);
 
   useEffect(() => {
     if (!selectedProductId) {
@@ -201,7 +203,7 @@ const StockPage = () => {
     }
 
     loadSelectedProductLots(selectedProductId);
-  }, [selectedProductId, token]);
+  }, [loadSelectedProductLots, selectedProductId]);
 
   const stockByProduct = useMemo(() => {
     const map = new Map();
@@ -265,7 +267,11 @@ const StockPage = () => {
       });
     });
 
-    return Array.from(map.values()).map(({ lotesKeys, ...product }) => product);
+    return Array.from(map.values()).map((product) => {
+      const nextProduct = { ...product };
+      delete nextProduct.lotesKeys;
+      return nextProduct;
+    });
   }, [stock]);
 
   const selectedProductLots = useMemo(() => {
@@ -276,18 +282,16 @@ const StockPage = () => {
   }, [selectedProductId, stockByProduct]);
 
   const filteredStock = useMemo(() => {
-    if (!searchTerm.trim()) return stockByProduct;
-    const lowerSearch = searchTerm.toLowerCase();
-    return stockByProduct.filter((item) => 
-      (item.nome || "").toLowerCase().includes(lowerSearch) ||
-      (item.pdt_codigo || "").toLowerCase().includes(lowerSearch)
+    if (!searchTerm) return stockByProduct;
+    return stockByProduct.filter((item) =>
+      (item.pdt_nome || "").toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [stockByProduct, searchTerm]);
 
   useEffect(() => {
     if (!token) return;
     loadAvailableLotsCount(stockByProduct);
-  }, [token, stockByProduct]);
+  }, [loadAvailableLotsCount, stockByProduct, token]);
 
   if (!token) {
     return (
@@ -297,15 +301,6 @@ const StockPage = () => {
       />
     );
   }
-
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
-  if (error) {
-    return <EmptyState title="Nao foi possivel carregar" description={error} />;
-  }
-
   const columns = [
     { key: "pdt_nome", label: "Produto" },
     {
@@ -367,14 +362,31 @@ const StockPage = () => {
   ];
 
   return (
-    <div className="app-content">
-      <SectionHeader
-        title="Estoque"
-        subtitle="Acompanhe niveis atuais e disponibilidade"
-        onSearch={setSearchTerm}
-        searchPlaceholder="Buscar estoque..."
-      />
-      <DataTable columns={columns} rows={filteredStock} rowKey="pdt_id" />
+    <div className="container mx-auto p-4">
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          // background: "var(--bg)",
+          paddingTop: "4px",
+          paddingBottom: "8px",
+        }}
+      >
+        <SectionHeader
+          title="Estoque"
+          subtitle="Visualize o estoque atual dos produtos."
+          onSearch={setSearchTerm}
+        />
+      </div>
+
+      {loading ? (
+        <LoadingSpinner />
+      ) : error ? (
+        <EmptyState title="Não foi possivel carregar" description={error} />
+      ) : (
+        <DataTable columns={columns} rows={filteredStock} rowKey="pdt_id" />
+      )}
 
       {selectedProductId && (
         <div
@@ -436,10 +448,7 @@ const StockPage = () => {
             {loadingModalLots ? (
               <LoadingSpinner />
             ) : modalLots.length ? (
-              <div
-                className="table-shell"
-                style={{ maxHeight: "320px", overflowY: "auto" }}
-              >
+              <div className="table-shell" style={{ maxHeight: "320px", overflowY: "auto" }}>
                 <table className="table">
                   <thead>
                     <tr>
@@ -474,7 +483,7 @@ const StockPage = () => {
             ) : (
               <EmptyState
                 title="Sem lotes disponiveis"
-                description="Nao ha saldo para os lotes deste produto."
+                description="Não ha saldo para os lotes deste produto."
               />
             )}
           </div>

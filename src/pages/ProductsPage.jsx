@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -16,6 +17,7 @@ import { formatNumber } from "../utils/format";
 
 const ProductsPage = () => {
   const { token } = useAuth();
+  const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,7 +25,14 @@ const ProductsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
 
-  const loadData = async () => {
+  const normalizeText = (value) =>
+    String(value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -34,12 +43,12 @@ const ProductsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     if (!token) return;
     loadData();
-  }, [token]);
+  }, [loadData, token]);
 
   const handleOpenModal = (product = null) => {
     setCurrentProduct(product);
@@ -75,6 +84,30 @@ const ProductsPage = () => {
     }
   };
 
+  const filteredProducts = useMemo(() => {
+    const normalizedSearch = normalizeText(searchTerm);
+
+    if (!normalizedSearch) {
+      return products;
+    }
+
+    return products.filter((product) => {
+      const searchableFields = [
+        product?.pdt_nome,
+        product?.pdt_codigo,
+        product?.cat_id,
+        product?.unid_med_id,
+        product?.pdt_estoque_atual,
+        product?.pdt_estoque_minimo,
+        product?.pdt_ativo ? "ativo" : "inativo",
+      ];
+
+      return searchableFields.some((field) =>
+        normalizeText(field).includes(normalizedSearch),
+      );
+    });
+  }, [products, searchTerm]);
+
   if (!token) {
     return (
       <EmptyState
@@ -91,6 +124,8 @@ const ProductsPage = () => {
   if (error) {
     return <EmptyState title="Nao foi possivel carregar" description={error} />;
   }
+
+  
 
   const columns = [
     { key: "pdt_nome", label: "Produto" },
@@ -139,26 +174,32 @@ const ProductsPage = () => {
         </div>
       ),
     },
-  ];
-
-  const filteredProducts = products.filter((product) =>
-    (product.pdt_nome || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (product.pdt_codigo || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ]; 
 
   return (
     <div className="app-content">
-      <SectionHeader
-        title="Produtos"
-        subtitle="Controle total do catalogo ativo"
-        onSearch={setSearchTerm}
-        searchPlaceholder="Buscar por produto/código..."
-        actions={
-          <button className="btn btn-primary" onClick={() => handleOpenModal()}>
-            Novo produto
-          </button>
-        }
-      />
+      <div
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          // background: "var(--bg)",
+          paddingTop: "4px",
+          paddingBottom: "8px",
+        }}
+      >
+        <SectionHeader
+          title="Produtos"
+          subtitle="Controle total do catalogo ativo"
+          onSearch={setSearchTerm}
+          searchPlaceholder="Buscar por produto/código..."
+          actions={
+            <button className="btn btn-primary" onClick={() => handleOpenModal()}>
+              Novo produto
+            </button>
+          }
+        />
+      </div>
       <DataTable columns={columns} rows={filteredProducts} rowKey="pdt_id" />
 
       <ProductModal

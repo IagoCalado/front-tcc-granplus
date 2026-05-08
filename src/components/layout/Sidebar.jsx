@@ -14,6 +14,8 @@ import {
   FaSun,
   FaUserCircle
 } from "react-icons/fa";
+import { useState } from "react";
+import UserProfileModal from "../common/UserProfileModal";
 import "./Sidebar.css";
 
 /**
@@ -74,9 +76,10 @@ const navItems = [
  * @param {boolean} props.isOpen - (Legado) Controla se o sidebar está aberto
  * @param {Function} props.onNavigate - Callback executado ao clicar em um item
  */
-const Sidebar = ({ isOpen, onNavigate }) => {
+const Sidebar = ({ onNavigate }) => {
   const { user, logout, token, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Filtra os items baseado em permissões de admin
   const visibleItems = navItems.filter((item) => {
@@ -116,7 +119,7 @@ const Sidebar = ({ isOpen, onNavigate }) => {
           <span className="sidebar-label">Tema {theme === "dark" ? "Claro" : "Escuro"}</span>
         </div>
         
-        <div className="sidebar-item" title="Perfil">
+        <div className="sidebar-item" title="Perfil" onClick={() => setIsProfileOpen(true)} style={{ cursor: 'pointer' }}>
           <span className="sidebar-icon" style={{ backgroundColor: 'var(--bg-soft)', color: 'var(--ink)' }}>
             <FaUserCircle />
           </span>
@@ -132,6 +135,7 @@ const Sidebar = ({ isOpen, onNavigate }) => {
           </div>
         )}
       </div>
+      <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
     </aside>
   );
 };

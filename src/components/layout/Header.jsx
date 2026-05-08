@@ -1,7 +1,9 @@
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useState } from "react";
+import UserProfileModal from "../common/UserProfileModal";
 
-const Header = ({ onToggleSidebar }) => {
+const Header = ({ searchTerm, onSearchTermChange }) => {
   const { user, logout, token, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const initials = user?.user_nome
@@ -13,16 +15,11 @@ const Header = ({ onToggleSidebar }) => {
         .toUpperCase()
     : "GP";
 
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
   return (
     <header className="header">
       <div className="header-left">
-        <button
-          className="btn btn-outline"
-          onClick={onToggleSidebar}
-          type="button"
-        >
-          Menu
-        </button>
         <div className="header-title">
           <h1>Dashboard de Estoque</h1>
           <span>Visao central de operacoes e alertas</span>
@@ -31,7 +28,11 @@ const Header = ({ onToggleSidebar }) => {
       <div className="header-actions">
         <label className="search-field">
           <span>Busca</span>
-          <input placeholder="Produto, usuário ou local" />
+          <input
+            value={searchTerm}
+            onChange={(event) => onSearchTermChange(event.target.value)}
+            placeholder="Produto, usuário ou local"
+          />
         </label>
         
         <button 
@@ -43,7 +44,7 @@ const Header = ({ onToggleSidebar }) => {
           {theme === "dark" ? "☀️" : "🌙"}
         </button>
 
-        <div className="user-chip">
+        <div className="user-chip" onClick={() => setIsProfileOpen(true)} style={{ cursor: 'pointer' }}>
           <div className="user-avatar">{initials}</div>
           <div>
             <strong>{user?.user_nome || "Visitante"}</strong>
@@ -53,10 +54,16 @@ const Header = ({ onToggleSidebar }) => {
           </div>
         </div>
         {token ? (
-          <button className="btn btn-ghost" onClick={logout}>
-            Sair
-          </button>
+          <>
+            <button className="btn btn-outline" onClick={() => setIsProfileOpen(true)}>
+              Meu perfil
+            </button>
+            <button className="btn btn-ghost" onClick={logout}>
+              Sair
+            </button>
+          </>
         ) : null}
+        <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
       </div>
     </header>
   );
