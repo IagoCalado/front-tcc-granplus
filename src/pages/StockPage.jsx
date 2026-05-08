@@ -295,7 +295,6 @@ const StockPage = () => {
       />
     );
   }
-
   const columns = [
     { key: "pdt_nome", label: "Produto" },
     {
