@@ -1,30 +1,25 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 import { login as apiLogin } from "../services/api";
 
 const AuthContext = createContext(null);
+
+/* eslint-disable react-refresh/only-export-components */
 
 const getStoredAuth = () => {
   try {
     const raw = localStorage.getItem("tcc_auth");
     return raw ? JSON.parse(raw) : null;
-  } catch (error) {
+  } catch {
     return null;
   }
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState("");
+  const storedAuth = getStoredAuth();
+  const [user, setUser] = useState(storedAuth?.user || null);
+  const [token, setToken] = useState(storedAuth?.token || "");
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    const stored = getStoredAuth();
-    if (stored?.token) {
-      setToken(stored.token);
-      setUser(stored.user || null);
-    }
-  }, []);
 
   const login = async ({ usuario, password }) => {
     setStatus("loading");

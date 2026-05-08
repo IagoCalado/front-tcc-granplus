@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import SectionHeader from "../components/common/SectionHeader";
@@ -6,6 +7,7 @@ import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import { useAuth } from "../contexts/AuthContext";
+import { matchesSearch } from "../utils/search";
 
 // Agora importamos certinho as duas funções do seu api.js!
 import { getAuditReports, getAuditReportsByDate } from "../services/api";
@@ -37,8 +39,10 @@ const formatTableName = (tableName) => {
 
 const AuditReportsPage = () => {
   const { token } = useAuth();
+  const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
-  const [reports, setReports] = useState([]);  const [searchTerm, setSearchTerm] = useState("");  const [error, setError] = useState("");
+  const [reports, setReports] = useState([]);
+  const [error, setError] = useState("");
   const [filterPeriod, setFilterPeriod] = useState("monthly"); 
 
   // Estados para o Modal e Datas do PDF
@@ -47,7 +51,7 @@ const AuditReportsPage = () => {
   const [dataFim, setDataFim] = useState("");
 
   // Função para carregar a tabela
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -58,12 +62,12 @@ const AuditReportsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterPeriod, token]);
 
   useEffect(() => {
     if (!token) return;
     loadData();
-  }, [token, filterPeriod]);
+  }, [loadData, token]);
 
   // A MÁGICA DO PDF
   const handleGerarPDF = async (e) => {
@@ -116,6 +120,24 @@ const AuditReportsPage = () => {
     }
   };
 
+  const filteredReports = useMemo(() => {
+    return reports.filter((row) =>
+      matchesSearch(
+        [
+          row?.aud_id,
+          row?.user_nome,
+          row?.user_id,
+          row?.aud_acao,
+          row?.aud_data,
+          row?.aud_time,
+          row?.aud_tabela_afetada,
+          row?.aud_id_evento,
+        ],
+        searchTerm,
+      ),
+    );
+  }, [reports, searchTerm]);
+
   if (!token) {
     return (
       <EmptyState
@@ -128,6 +150,8 @@ const AuditReportsPage = () => {
   if (loading) return <LoadingSpinner />;
   
   if (error) return <EmptyState title="Não foi possível carregar" description={error} />;
+
+  
 
   const columns = [
     { key: "aud_id", label: "ID" },
@@ -146,10 +170,7 @@ const AuditReportsPage = () => {
     { key: "aud_id_evento", label: "ID do Evento" },
   ];
 
-  const filteredReports = reports.filter((item) =>
-    (formatTableName(item.aud_tabela) || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (item.user_nome || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  
 
   return (
     <div className="app-content">

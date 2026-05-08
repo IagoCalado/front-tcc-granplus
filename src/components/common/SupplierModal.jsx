@@ -3,6 +3,20 @@ import { X } from "lucide-react";
 
 const normalizeDigits = (value) => String(value || "").replace(/\D/g, "");
 
+const initialFormData = {
+  fncd_nome: "",
+  fncd_documento: "",
+  fncd_cep: "",
+  fncd_logradouro: "",
+  fncd_numero: "",
+  fncd_complemento: "",
+  fncd_bairro: "",
+  fncd_cidade: "",
+  fncd_estado: "",
+  fncd_tel: "",
+  fncd_email: "",
+};
+
 const normalizeCep = (value) => String(value || "").replace(/\D/g, "");
 
 const formatCep = (value) => {
@@ -57,20 +71,6 @@ const formatPhone = (value) => {
 };
 
 export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
-  const initialFormData = {
-    fncd_nome: "",
-    fncd_documento: "",
-    fncd_cep: "",
-    fncd_logradouro: "",
-    fncd_numero: "",
-    fncd_complemento: "",
-    fncd_bairro: "",
-    fncd_cidade: "",
-    fncd_estado: "",
-    fncd_tel: "",
-    fncd_email: "",
-  };
-
   const [formData, setFormData] = useState(initialFormData);
   const [cepLoading, setCepLoading] = useState(false);
   const [cepError, setCepError] = useState("");
@@ -78,6 +78,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
   useEffect(() => {
     if (supplier) {
       setFormData({
+        ...initialFormData,
         fncd_nome: supplier.fncd_nome || "",
         fncd_documento: formatCpfCnpj(supplier.fncd_documento || ""),
         fncd_cep: formatCep(supplier.fncd_cep || ""),
@@ -89,13 +90,6 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
         fncd_estado: supplier.fncd_estado || "",
         fncd_tel: formatPhone(supplier.fncd_tel || ""),
         fncd_email: supplier.fncd_email || "",
-        fncd_cep: supplier.fncd_cep || "",
-        fncd_logradouro: supplier.fncd_logradouro || "",
-        fncd_numero: supplier.fncd_numero || "",
-        fncd_complemento: supplier.fncd_complemento || "",
-        fncd_bairro: supplier.fncd_bairro || "",
-        fncd_cidade: supplier.fncd_cidade || "",
-        fncd_estado: supplier.fncd_estado || "",
       });
     } else {
       setFormData({
