@@ -23,6 +23,7 @@ const UsersPage = () => {
   const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState("");
 
@@ -177,8 +178,6 @@ const UsersPage = () => {
         ),
       },
     ];
-
-    
 
     return (
       <div className="app-content">

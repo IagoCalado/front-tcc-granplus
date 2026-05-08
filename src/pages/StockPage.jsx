@@ -79,6 +79,7 @@ const StockPage = () => {
   const [selectedProductName, setSelectedProductName] = useState("");
   const [modalLots, setModalLots] = useState([]);
   const [loadingModalLots, setLoadingModalLots] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [availableLotsCountByProduct, setAvailableLotsCountByProduct] =
     useState({});
 

@@ -21,6 +21,7 @@ const ProductInputsPage = () => {
   const { token } = useAuth(); // Recupera o token do usuário para autorizar a requisição
   const [loading, setLoading] = useState(false);
   const [inputs, setInputs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Adicionado para suportar modo de edição (mesmo que o backend ainda precise ser implementado para edição/deleção de entradas)
@@ -187,9 +188,6 @@ const ProductInputsPage = () => {
       ),
     },
   ];
-
-  
-
   return (
     <div className="app-content">
       <div

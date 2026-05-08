@@ -16,6 +16,7 @@ const ProductOutputsPage = () => {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [outputs, setOutputs] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -100,8 +101,6 @@ const ProductOutputsPage = () => {
     { key: "sai_motivo", label: "Motivo" },
     { key: "sai_destino", label: "Destino" },
   ];
-
-  
 
   return (
     <div className="app-content">

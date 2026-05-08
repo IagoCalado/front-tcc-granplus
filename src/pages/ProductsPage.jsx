@@ -20,6 +20,7 @@ const ProductsPage = () => {
   const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
@@ -173,9 +174,7 @@ const ProductsPage = () => {
         </div>
       ),
     },
-  ];
-
-  
+  ]; 
 
   return (
     <div className="app-content">

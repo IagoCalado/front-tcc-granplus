@@ -41,8 +41,7 @@ const AuditReportsPage = () => {
   const { token } = useAuth();
   const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
-  const [reports, setReports] = useState([]);
-  const [error, setError] = useState("");
+  const [reports, setReports] = useState([]);  const [searchTerm, setSearchTerm] = useState("");  const [error, setError] = useState("");
   const [filterPeriod, setFilterPeriod] = useState("monthly"); 
 
   // Estados para o Modal e Datas do PDF
@@ -169,8 +168,6 @@ const AuditReportsPage = () => {
     },
     { key: "aud_id_evento", label: "ID do Evento" },
   ];
-
-  
 
   return (
     <div className="app-content">

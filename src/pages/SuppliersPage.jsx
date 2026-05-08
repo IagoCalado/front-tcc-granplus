@@ -19,6 +19,7 @@ const SuppliersPage = () => {
   const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState("");
   const [selectedAddressSupplier, setSelectedAddressSupplier] = useState(null);
 
@@ -305,8 +306,6 @@ const SuppliersPage = () => {
       ),
     },
   ];
-
-  
 
   return (
     <div className="app-content">
