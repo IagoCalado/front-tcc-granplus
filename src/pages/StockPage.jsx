@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -71,7 +70,6 @@ const getValidityStatus = (value) => {
 
 const StockPage = () => {
   const { token } = useAuth();
-  const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
   const [stock, setStock] = useState([]);
   const [error, setError] = useState("");

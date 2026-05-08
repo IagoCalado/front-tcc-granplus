@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import SectionHeader from "../components/common/SectionHeader";
@@ -39,9 +38,10 @@ const formatTableName = (tableName) => {
 
 const AuditReportsPage = () => {
   const { token } = useAuth();
-  const { searchTerm = "", setSearchTerm } = useOutletContext() || {};
   const [loading, setLoading] = useState(false);
-  const [reports, setReports] = useState([]);  const [searchTerm, setSearchTerm] = useState("");  const [error, setError] = useState("");
+  const [reports, setReports] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [error, setError] = useState("");
   const [filterPeriod, setFilterPeriod] = useState("monthly"); 
 
   // Estados para o Modal e Datas do PDF
