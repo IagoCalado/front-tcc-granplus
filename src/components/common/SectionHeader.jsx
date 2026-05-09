@@ -9,11 +9,12 @@ const SectionHeader = ({ title, subtitle, actions, onSearch, searchPlaceholder }
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         {onSearch && (
-          <label className="search-field" style={{ margin: 0 }}>
+          <label className="search-field" style={{ margin: 0, minWidth: '320px' }}>
             <FaSearch style={{ color: 'var(--muted)', marginLeft: '4px' }} />
             <input 
               placeholder={searchPlaceholder || "Buscar..."} 
               onChange={(e) => onSearch(e.target.value)}
+              style={{ width: '100%' }}
             />
           </label>
         )}

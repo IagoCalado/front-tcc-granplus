@@ -4,8 +4,9 @@ import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import StatusPill from "../components/common/StatusPill";
+import ProductModal from "../components/common/ProductModal";
 import { useAuth } from "../contexts/AuthContext";
-import { getOutputAvailableLots, getStock } from "../services/api";
+import { getOutputAvailableLots, getStock, createProduct } from "../services/api";
 import { formatNumber } from "../utils/format";
 import {
   STOCK_MOVEMENT_EVENT,
@@ -80,6 +81,7 @@ const StockPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [availableLotsCountByProduct, setAvailableLotsCountByProduct] =
     useState({});
+  const [isInputModalOpen, setIsInputModalOpen] = useState(false);
 
   const loadData = useCallback(async (options = {}) => {
     const { silent = false } = options;
@@ -291,6 +293,19 @@ const StockPage = () => {
     loadAvailableLotsCount(stockByProduct);
   }, [loadAvailableLotsCount, stockByProduct, token]);
 
+  const handleSaveInput = async (payload) => {
+    try {
+      await createProduct(token, payload);
+      setIsInputModalOpen(false);
+      loadData({ silent: true });
+    } catch (err) {
+      alert(
+        "Erro ao adicionar produto. Detalhe: " + err.message,
+      );
+      console.error(err);
+    }
+  };
+
   if (!token) {
     return (
       <EmptyState
@@ -375,6 +390,11 @@ const StockPage = () => {
           title="Estoque"
           subtitle="Visualize o estoque atual dos produtos."
           onSearch={setSearchTerm}
+          actions={
+            <button className="btn btn-primary" onClick={() => setIsInputModalOpen(true)}>
+              Adicionar Produto
+            </button>
+          }
         />
       </div>
 
@@ -487,6 +507,12 @@ const StockPage = () => {
           </div>
         </div>
       )}
+
+      <ProductModal
+        isOpen={isInputModalOpen}
+        onClose={() => setIsInputModalOpen(false)}
+        onSave={handleSaveInput}
+      />
     </div>
   );
 };

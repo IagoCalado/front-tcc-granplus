@@ -8,6 +8,7 @@ const UserProfileModal = ({ isOpen, onClose }) => {
   const { user, token } = useAuth();
   const [current, setCurrent] = useState("");
   const [nueva, setNueva] = useState("");
+  const [confirmNew, setConfirmNew] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
 
@@ -16,6 +17,12 @@ const UserProfileModal = ({ isOpen, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!token || !user?.user_id) return;
+
+    if (nueva !== confirmNew) {
+      setStatus("A nova senha e a confirmação não conferem.");
+      return;
+    }
+
     setLoading(true);
     setStatus("");
     try {
@@ -26,6 +33,7 @@ const UserProfileModal = ({ isOpen, onClose }) => {
       setStatus("Senha atualizada com sucesso.");
       setCurrent("");
       setNueva("");
+      setConfirmNew("");
     } catch (err) {
       setStatus("Erro: " + (err.message || "Falha ao atualizar senha"));
     } finally {
@@ -70,6 +78,17 @@ const UserProfileModal = ({ isOpen, onClose }) => {
             />
           </div>
 
+          <div className="input-field">
+            <label>Confirmar nova senha</label>
+            <input
+              type="password"
+              value={confirmNew}
+              onChange={(e) => setConfirmNew(e.target.value)}
+              required
+              minLength={6}
+            />
+          </div>
+
           <div className="modal-footer">
             <button type="button" className="btn btn-ghost" onClick={onClose}>
               Fechar
@@ -80,7 +99,10 @@ const UserProfileModal = ({ isOpen, onClose }) => {
           </div>
 
           {status && (
-            <div className={`auth-${status.startsWith("Erro") ? "error" : "success"}-box`} style={{ marginTop: 12 }}>
+            <div
+              className={`auth-${status.startsWith("Erro") || status.includes("não conferem") ? "error" : "success"}-box`}
+              style={{ marginTop: 12 }}
+            >
               {status}
             </div>
           )}
