@@ -23,7 +23,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product }) {
         pdt_ativo: product.pdt_ativo ?? 1,
         cat_id: product.cat_id || 1,
         unid_med_id: product.unid_med_id || 1,
-      });
+      });  
     } else {
       setFormData({
         pdt_nome: '',
@@ -33,7 +33,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product }) {
         pdt_ativo: 1,
         cat_id: 1,
         unid_med_id: 1,
-      });
+      });     
     }
   }, [product, isOpen]);
 
@@ -49,7 +49,10 @@ export default function ProductModal({ isOpen, onClose, onSave, product }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData, product?.pdt_id); // Pass pdt_id if editing
+    const submitData = {
+      ...formData,
+    };
+    onSave(submitData, product?.pdt_id);
   };
 
   return (
@@ -88,7 +91,6 @@ export default function ProductModal({ isOpen, onClose, onSave, product }) {
             <input type="number" name="pdt_estoque_minimo" value={formData.pdt_estoque_minimo} onChange={handleChange} required placeholder="Ex: 5"
               style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }} />
           </div>
-          
           <div style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
             <button type="button" onClick={onClose} style={{
               flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #ccc', background: 'transparent', cursor: 'pointer'

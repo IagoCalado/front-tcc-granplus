@@ -62,7 +62,7 @@ const ProductInputsPage = () => {
       loadData(); // Recarrega os dados da tabela
     } catch (err) {
       alert(
-        "Erro ao salvar entrada de produtos. Detalhe do banco: " + err.message,
+        "Erro ao salvar entrada de produtos",
       );
       console.error(err);
     }
