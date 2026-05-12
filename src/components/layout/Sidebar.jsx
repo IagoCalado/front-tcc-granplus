@@ -76,7 +76,7 @@ const navItems = [
  * @param {boolean} props.isOpen - (Legado) Controla se o sidebar está aberto
  * @param {Function} props.onNavigate - Callback executado ao clicar em um item
  */
-const Sidebar = ({ onNavigate }) => {
+const Sidebar = ({ isOpen = false, onNavigate }) => {
   const { user, logout, token, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -88,7 +88,7 @@ const Sidebar = ({ onNavigate }) => {
   });
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${isOpen ? " sidebar--open" : ""}`}>
       <nav className="sidebar-nav">
         {visibleItems.map((item) => (
           <NavLink

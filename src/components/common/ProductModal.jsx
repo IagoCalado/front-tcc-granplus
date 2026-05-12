@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
 
 export default function ProductModal({ isOpen, onClose, onSave, product }) {
   const [formData, setFormData] = useState({
@@ -19,7 +18,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product }) {
         pdt_nome: product.pdt_nome || '',
         pdt_codigo: product.pdt_codigo || '',
         pdt_descricao: product.pdt_descricao || '',
-        pdt_estoque_minimo: product.pdt_estoque_minimo ?? '',
+        pdt_estoque_minimo: product.pdt_estoque_minimo ?? 0,
         pdt_ativo: product.pdt_ativo ?? 1,
         cat_id: product.cat_id || 1,
         unid_med_id: product.unid_med_id || 1,
@@ -29,7 +28,7 @@ export default function ProductModal({ isOpen, onClose, onSave, product }) {
         pdt_nome: '',
         pdt_codigo: '',
         pdt_descricao: '',
-        pdt_estoque_minimo: '',
+        pdt_estoque_minimo: 0,
         pdt_ativo: 1,
         cat_id: 1,
         unid_med_id: 1,
@@ -50,54 +49,46 @@ export default function ProductModal({ isOpen, onClose, onSave, product }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     const submitData = {
-      ...formData,
+      pdt_nome: formData.pdt_nome?.trim() || '',
+      pdt_codigo: formData.pdt_codigo?.trim() || '',
+      pdt_descricao: formData.pdt_descricao?.trim() || '',
+      pdt_estoque_minimo: Number(formData.pdt_estoque_minimo) || 0,
+      pdt_ativo: Number(formData.pdt_ativo) || 1,
+      cat_id: Number(formData.cat_id) || 1,
+      unid_med_id: Number(formData.unid_med_id) || 1,
     };
     onSave(submitData, product?.pdt_id);
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-    }}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{
-        background: '#fff', padding: '24px', borderRadius: '12px', width: '90%', maxWidth: '500px', color: '#1f2937'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <h2 style={{ margin: 0, fontSize: '20px', color: '#111827' }}>{product ? 'Editar Produto' : 'Novo Produto'}</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-            <X size={24} />
-          </button>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content card" onClick={e => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Fechar">×</button>
+
+        <div className="modal-header">
+          <h3 style={{ margin: 0 }}>{product ? 'Editar Produto' : 'Novo Produto'}</h3>
         </div>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Nome do Produto</label>
-            <input type="text" name="pdt_nome" value={formData.pdt_nome} onChange={handleChange} required placeholder="Ex: Ração GranPlus Adultos"
-              style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }} />
+
+        <form className="modal-body" onSubmit={handleSubmit}>
+          <div className="input-field">
+            <label>Nome do Produto</label>
+            <input type="text" name="pdt_nome" value={formData.pdt_nome} onChange={handleChange} required placeholder="Ex: Ração GranPlus Adultos" />
           </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Código do Produto</label>
-            <input type="text" name="pdt_codigo" value={formData.pdt_codigo} onChange={handleChange} required placeholder="Ex: GP-1025"
-              style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }} />
+          <div className="input-field">
+            <label>Código do Produto</label>
+            <input type="text" name="pdt_codigo" value={formData.pdt_codigo} onChange={handleChange} required placeholder="Ex: GP-1025" />
           </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Descrição</label>
-            <input type="text" name="pdt_descricao" value={formData.pdt_descricao} onChange={handleChange} placeholder="Descreva brevemente o produto"
-              style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }} />
+          <div className="input-field">
+            <label>Descrição</label>
+            <input type="text" name="pdt_descricao" value={formData.pdt_descricao} onChange={handleChange} placeholder="Descreva brevemente o produto" />
           </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '2px', fontSize: '14px', fontWeight: '500' }}>Estoque Mínimo</label>
-            <span style={{ display: 'block', color: '#64748b', fontSize: '12px', marginBottom: '8px' }}>Estoque Mínimo.</span>
-            <input type="number" name="pdt_estoque_minimo" value={formData.pdt_estoque_minimo} onChange={handleChange} required placeholder="Ex: 5"
-              style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }} />
+          <div className="input-field">
+            <label>Estoque Mínimo</label>
+            <input type="number" name="pdt_estoque_minimo" value={formData.pdt_estoque_minimo} onChange={handleChange} required placeholder="Ex: 5" />
           </div>
-          <div style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
-            <button type="button" onClick={onClose} style={{
-              flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #ccc', background: 'transparent', cursor: 'pointer'
-            }}>Cancelar</button>
-            <button type="submit" style={{
-              flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: '#0284c7', color: '#fff', cursor: 'pointer', fontWeight: '600'
-            }}>Salvar</button>
+          <div style={{ display: "flex", gap: "16px", marginTop: "20px" }}>
+            <button type="button" onClick={onClose} className="btn btn-ghost">Cancelar</button>
+            <button type="submit" className="btn btn-primary">Salvar</button>
           </div>
         </form>
       </div>

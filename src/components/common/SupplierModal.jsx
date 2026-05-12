@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
 
 const normalizeDigits = (value) => String(value || "").replace(/\D/g, "");
 
@@ -178,58 +177,17 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
   };
 
   return (
-    <div
-      className="modal-overlay"
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0,0,0,0.4)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-      }}
-    >
-      <div
-        className="modal-content"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "#fff",
-          padding: "24px",
-          borderRadius: "12px",
-          width: "90%",
-          maxWidth: "500px",
-          maxHeight: "85vh",
-          overflowY: "auto",
-          color: "#1f2937",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: "20px",
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: "20px", color: "#111827" }}>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Fechar">×</button>
+
+        <div className="modal-header">
+          <h3 style={{ margin: 0 }}>
             {supplier ? "Editar Fornecedor" : "Novo Fornecedor"}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{ background: "none", border: "none", cursor: "pointer" }}
-          >
-            <X size={24} />
-          </button>
+          </h3>
         </div>
-        <form
-          onSubmit={handleSubmit}
-          style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-        >
+
+        <form className="modal-body" onSubmit={handleSubmit}>
           <div>
             <label
               style={{
@@ -267,21 +225,39 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
             >
               CEP
             </label>
-            <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               <input
                 type="text"
                 name="fncd_cep"
                 value={formData.fncd_cep}
                 onChange={handleChange}
                 required
-                placeholder="Ex: 01001000"
+                placeholder="Ex: 01001-000"
                 style={{
-                  width: "100%",
+                  flex: 1,
                   padding: "10px",
                   borderRadius: "6px",
                   border: "1px solid #ccc",
                 }}
               />
+
+              <input
+                type="text"
+                name="fncd_estado"
+                value={formData.fncd_estado}
+                onChange={handleChange}
+                required
+                placeholder="UF"
+                maxLength={2}
+                style={{
+                  width: "72px",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                  textTransform: "uppercase",
+                }}
+              />
+
               <button
                 type="button"
                 onClick={handleConsultarCep}
@@ -335,11 +311,11 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
               gap: "10px",
             }}
           >
-            <div>
+            {/* <div>
               <label
                 style={{
                   display: "block",
@@ -387,35 +363,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
                   </button>
                 </div>
               </div>
-            </div>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                }}
-              >
-                Estado (UF)
-              </label>
-              <input
-                type="text"
-                name="fncd_estado"
-                value={formData.fncd_estado}
-                onChange={handleChange}
-                required
-                placeholder="Ex: SP"
-                maxLength={2}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                  textTransform: "uppercase",
-                }}
-              />
-            </div>
+            </div> */}
           </div>
 
           <div>
@@ -449,7 +397,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
               gap: "10px",
             }}
           >
@@ -509,7 +457,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
               gap: "10px",
             }}
           >
