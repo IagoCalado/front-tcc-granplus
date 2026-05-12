@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from "react";
-import { X, AlertCircle } from "lucide-react";
+import { AlertCircle, X } from "lucide-react";
 import {
   getLocations,
   getOutputAvailableLots,
@@ -279,49 +279,11 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
 
   return (
     <>
-      <div
-        className="modal-overlay"
-        onClick={closeAll}
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "rgba(0,0,0,0.4)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000,
-        }}
-      >
-        <div
-          className="modal-content"
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            background: "#fff",
-            padding: "24px",
-            borderRadius: "12px",
-            width: "90%",
-            maxWidth: "500px",
-            color: "#1f2937",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: "20px",
-            }}
-          >
-            <h2 style={{ margin: 0, fontSize: "20px", color: "#111827" }}>
-              Registrar Nova Saída
-            </h2>
-            <button
-              type="button"
-              onClick={closeAll}
-              style={{ background: "none", border: "none", cursor: "pointer" }}
-            >
+      <div className="modal-overlay" onClick={closeAll}>
+        <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h3 style={{ margin: 0 }}>Registrar Nova Saída</h3>
+            <button className="modal-close" onClick={closeAll} aria-label="Fechar">
               <X size={24} />
             </button>
           </div>
@@ -345,10 +307,7 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
             </div>
           )}
 
-          <form
-            onSubmit={handleSubmit}
-            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-          >
+          <form onSubmit={handleSubmit} className="modal-body">
             <div>
               <label
                 style={{
@@ -543,36 +502,11 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
               />
             </div>
 
-            <div style={{ display: "flex", gap: "16px", marginTop: "10px" }}>
-              <button
-                type="button"
-                onClick={closeAll}
-                style={{
-                  flex: 1,
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: "1px solid #ccc",
-                  background: "transparent",
-                  cursor: "pointer",
-                  fontWeight: "500",
-                }}
-              >
+            <div style={{ display: "flex", gap: "16px", marginTop: "10px" }} className="modal-footer">
+              <button type="button" onClick={closeAll} className="btn btn-ghost">
                 Cancelar
               </button>
-              <button
-                type="submit"
-                disabled={loadingLots}
-                style={{
-                  flex: 1,
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: loadingLots ? "#facc15" : "#eab308",
-                  color: "#fff",
-                  cursor: loadingLots ? "wait" : "pointer",
-                  fontWeight: "600",
-                }}
-              >
+              <button type="submit" disabled={loadingLots} className="btn btn-primary">
                 {loadingLots ? "Carregando lotes..." : "Confirmar Saída"}
               </button>
             </div>
@@ -581,53 +515,11 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
       </div>
 
       {isLotsModalOpen && (
-        <div
-          className="modal-overlay"
-          onClick={() => setIsLotsModalOpen(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1100,
-          }}
-        >
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#fff",
-              padding: "24px",
-              borderRadius: "12px",
-              width: "92%",
-              maxWidth: "760px",
-              color: "#1f2937",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "16px",
-              }}
-            >
-              <h2 style={{ margin: 0, fontSize: "20px", color: "#111827" }}>
-                Selecionar Lotes da Saída
-              </h2>
-              <button
-                type="button"
-                onClick={() => setIsLotsModalOpen(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
+        <div className="modal-overlay" onClick={() => setIsLotsModalOpen(false)}>
+          <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 style={{ margin: 0 }}>Selecionar Lotes da Saída</h3>
+              <button className="modal-close" onClick={() => setIsLotsModalOpen(false)} aria-label="Fechar">
                 <X size={24} />
               </button>
             </div>
@@ -772,36 +664,15 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
               {Number(formData.lcl_qtde || 0)}
             </div>
 
-            <div style={{ display: "flex", gap: "16px", marginTop: "16px" }}>
-              <button
-                type="button"
-                onClick={() => setIsLotsModalOpen(false)}
-                style={{
-                  flex: 1,
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: "1px solid #ccc",
-                  background: "transparent",
-                  cursor: "pointer",
-                  fontWeight: "500",
-                }}
-              >
+            <div style={{ display: "flex", gap: "16px", marginTop: "16px" }} className="modal-footer">
+              <button type="button" onClick={() => setIsLotsModalOpen(false)} className="btn btn-ghost">
                 Voltar
               </button>
               <button
                 type="button"
                 onClick={handleConfirmLots}
                 disabled={!isLotsTotalValid}
-                style={{
-                  flex: 1,
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: isLotsTotalValid ? "#eab308" : "#fde68a",
-                  color: "#fff",
-                  cursor: isLotsTotalValid ? "pointer" : "not-allowed",
-                  fontWeight: "600",
-                }}
+                className="btn btn-primary"
               >
                 Confirmar Lotes e Registrar
               </button>

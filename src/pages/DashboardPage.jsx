@@ -388,7 +388,7 @@ const DashboardPage = () => {
   const anyLoading = Object.values(status).some((s) => s === "loading");
 
   return (
-    <div className="app-content">
+    <div className="app-content app-content--no-watermark">
       <SectionHeader
         title="Painel Principal"
         subtitle="Visão geral do estoque, movimentações e alertas."

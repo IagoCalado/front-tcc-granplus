@@ -14,7 +14,7 @@ export default function InputModal({
   const [products, setProducts] = useState([]);
 
   const [formData, setFormData] = useState({
-    loc_id: 1, // Defaulting to Localização Central for now unless you have a dropdown
+    loc_id: 1,
     fncd_id: "",
     ent_data_compra: "",
     ent_valor_compra: "",
@@ -22,19 +22,15 @@ export default function InputModal({
   });
 
   const getLocalISODate = (dateInput) => {
-    // Se houver uma data do banco, usa ela; senão, usa a data atual
     const d = dateInput ? new Date(dateInput) : new Date();
     if (isNaN(d.getTime())) return "";
 
-    // Subtrai o fuso horário (ex: -3 horas do Brasil viram +3 no UTC)
-    // Isso garante que o '.toISOString()' imprima o seu horário local exato corrigido!
     const offset = d.getTimezoneOffset() * 60000;
     return new Date(d.getTime() - offset).toISOString().substring(0, 16);
   };
 
   useEffect(() => {
     if (isOpen && token) {
-      // Carrega Fornecedores e Produtos para usar nos Selects (Combo box)
       getSuppliers(token)
         .then((data) => setSuppliers(data || []))
         .catch(() => {});
@@ -43,7 +39,6 @@ export default function InputModal({
         .catch(() => {});
 
       if (inputData) {
-        // Modo de edição: preenche os campos com os dados existentes
         const rawDate = inputData.ent_data_compra || inputData.ent_data || "";
         const ISODate = rawDate ? getLocalISODate(rawDate) : "";
 
@@ -62,11 +57,10 @@ export default function InputModal({
           ],
         });
       } else {
-        // Reseta os dados ao abrir o Modal Novo
         setFormData({
           loc_id: 1,
           fncd_id: "",
-          ent_data_compra: getLocalISODate(), // Preenche data e hora atual no fuso local
+          ent_data_compra: getLocalISODate(),
           ent_valor_compra: "",
           produtos: [
             { pdt_id: "", quantidade: "", lote: "", pdt_validade: "" },
@@ -134,135 +128,45 @@ export default function InputModal({
   };
 
   return (
-    <div
-      className="modal-overlay"
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0,0,0,0.4)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-      }}
-    >
-      <div
-        className="modal-content"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "#fff",
-          padding: "24px",
-          borderRadius: "12px",
-          width: "90%",
-          maxWidth: "600px",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          color: "#1f2937",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: "20px",
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: "20px", color: "#111827" }}>
-            Nova Entrada de Produto
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{ background: "none", border: "none", cursor: "pointer" }}
-          >
-            <X size={24} />
-          </button>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Fechar">×</button>
+
+        <div className="modal-header">
+          <h3 style={{ margin: 0 }}>Nova Entrada de Produto</h3>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-        >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "10px",
-            }}
-          >
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                }}
-              >
-                Fornecedor
-              </label>
-              <select
-                name="fncd_id"
-                value={formData.fncd_id}
-                onChange={handleChange}
-                required
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                }}
-              >
-                <option value="">Selecione...</option>
-                {suppliers.map((sup) => (
-                  <option key={sup.fncd_id} value={sup.fncd_id}>
-                    {sup.fncd_nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                }}
-              >
-                Data / Hora da Compra
-              </label>
-              <input
-                type="datetime-local"
-                name="ent_data_compra"
-                value={formData.ent_data_compra}
-                onChange={handleChange}
-                required
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                }}
-              />
-            </div>
+        <form className="modal-body" onSubmit={handleSubmit}>
+          <div className="input-field">
+            <label>Fornecedor</label>
+            <select
+              name="fncd_id"
+              value={formData.fncd_id}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Selecione...</option>
+              {suppliers.map((sup) => (
+                <option key={sup.fncd_id} value={sup.fncd_id}>
+                  {sup.fncd_nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="input-field">
+            <label>Data / Hora da Compra</label>
+            <input
+              type="datetime-local"
+              name="ent_data_compra"
+              value={formData.ent_data_compra}
+              onChange={handleChange}
+              required
+            />
           </div>
 
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "6px",
-                fontSize: "14px",
-                fontWeight: "500",
-              }}
-            >
-              Valor Total da Compra (R$)
-            </label>
+          <div className="input-field">
+            <label>Valor Total da Compra (R$)</label>
             <input
               type="number"
               step="0.01"
@@ -271,59 +175,29 @@ export default function InputModal({
               onChange={handleChange}
               required
               placeholder="Ex: 1500.50"
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-              }}
             />
           </div>
 
-          <div style={{ borderTop: "1px solid #eee", paddingTop: "15px" }}>
-            <h3 style={{ fontSize: "16px", marginBottom: "10px" }}>
-              Itens da Entrada
-            </h3>
+          <div style={{ paddingTop: "15px" }}>
+            <h4 style={{ fontSize: "16px", marginBottom: "10px", marginTop: 0 }}>Itens da Entrada</h4>
 
             {formData.produtos.map((prod, index) => (
               <div key={index}>
                 {index === 0 && (
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "2fr 1fr 1fr 1fr",
-                      gap: "10px",
-                      marginBottom: "4px",
-                    }}
-                  >
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "10px", marginBottom: "4px" }}>
                     <div />
                     <div />
                     <div />
-                    <label style={{ fontSize: "14px", fontWeight: "500" }}>
-                      Validade
-                    </label>
+                    <label style={{ fontSize: "14px", fontWeight: "500" }}>Validade</label>
                   </div>
                 )}
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr 1fr 1fr",
-                    gap: "10px",
-                    marginBottom: "10px",
-                    alignItems: "center",
-                  }}
-                >
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "10px", marginBottom: "10px", alignItems: "center" }}>
                   <select
                     name="pdt_id"
                     value={prod.pdt_id}
                     onChange={(e) => handleProductChange(index, e)}
                     required
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      borderRadius: "6px",
-                      border: "1px solid #ccc",
-                    }}
+                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--border)" }}
                   >
                     <option value="">Produto...</option>
                     {products.map((p) => (
@@ -339,12 +213,7 @@ export default function InputModal({
                     onChange={(e) => handleProductChange(index, e)}
                     required
                     placeholder="Qtd"
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      borderRadius: "6px",
-                      border: "1px solid #ccc",
-                    }}
+                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--border)" }}
                   />
                   <input
                     type="text"
@@ -352,12 +221,7 @@ export default function InputModal({
                     value={prod.lote}
                     onChange={(e) => handleProductChange(index, e)}
                     placeholder="Lote (Opcional)"
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      borderRadius: "6px",
-                      border: "1px solid #ccc",
-                    }}
+                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--border)" }}
                   />
                   <input
                     type="date"
@@ -365,12 +229,7 @@ export default function InputModal({
                     value={prod.pdt_validade || ""}
                     onChange={(e) => handleProductChange(index, e)}
                     placeholder="Validade (Opcional)"
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      borderRadius: "6px",
-                      border: "1px solid #ccc",
-                    }}
+                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--border)" }}
                   />
                 </div>
               </div>
@@ -379,15 +238,7 @@ export default function InputModal({
             <button
               type="button"
               onClick={addProductRow}
-              style={{
-                color: "#0284c7",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                fontWeight: "600",
-                padding: "0",
-                marginTop: "5px",
-              }}
+              style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", fontWeight: "600", padding: "0", marginTop: "5px" }}
             >
               + Adicionar mais um produto
             </button>
@@ -397,29 +248,13 @@ export default function InputModal({
             <button
               type="button"
               onClick={onClose}
-              style={{
-                flex: 1,
-                padding: "12px",
-                borderRadius: "8px",
-                border: "1px solid #ccc",
-                background: "transparent",
-                cursor: "pointer",
-              }}
+              className="btn btn-ghost"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              style={{
-                flex: 1,
-                padding: "12px",
-                borderRadius: "8px",
-                border: "none",
-                background: "#10b981",
-                color: "#fff",
-                cursor: "pointer",
-                fontWeight: "600",
-              }}
+              className="btn btn-primary"
             >
               Registrar Entrada
             </button>

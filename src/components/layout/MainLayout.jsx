@@ -1,11 +1,12 @@
-import { Outlet } from "react-router-dom";
-import Header from "./Header";
-import Sidebar from "./Sidebar";
+import { Outlet, useLocation } from "react-router-dom";
 import { useState } from "react";
+import Sidebar from "./Sidebar";
 
 const MainLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isDashboardPage = location.pathname === "/dashboard";
 
   const handleCloseSidebar = () => {
     setSidebarOpen(false);
@@ -18,7 +19,20 @@ const MainLayout = () => {
       ) : null}
       <Sidebar isOpen={sidebarOpen} onNavigate={handleCloseSidebar} />
       <div className="app-main">
-        <main className="app-content">
+        <div className="mobile-topbar">
+          <button
+            type="button"
+            className="mobile-menu-button"
+            onClick={() => setSidebarOpen((current) => !current)}
+            aria-label="Abrir menu"
+          >
+            ☰ Menu
+          </button>
+          <div className="mobile-topbar-title">
+            GranPlus Estoque
+          </div>
+        </div>
+        <main className={`app-content${isDashboardPage ? " app-content--no-watermark" : ""}`}>
           <Outlet context={{ searchTerm, setSearchTerm }} />
         </main>
       </div>
