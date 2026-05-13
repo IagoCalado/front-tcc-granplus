@@ -1,24 +1,44 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { KeyRound, ShieldCheck, UserRound } from "lucide-react";
-import Input from "../components/auth/Input";
-import Button from "../components/auth/Button";
 import { useAuth } from "../contexts/AuthContext";
 import useLoginForm from "../hooks/useLoginForm";
-import BorderBeam from "../components/common/BorderBeam";
-import Meteors from "../components/common/Meteors";
+import NeonParticles from "../components/common/NeonParticles";
+import logoMark from "../assets/granPlus.png";
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, token, status, error } = useAuth();
   const [friendlyError, setFriendlyError] = useState("");
+  const [phase, setPhase] = useState("splash");
+  const [cardVisible, setCardVisible] = useState(false);
   const { form, fieldErrors, isValid, handleChange, validate } = useLoginForm();
 
   const redirectTarget = useMemo(
     () => location.state?.from?.pathname || "/dashboard",
     [location.state]
   );
+
+  useEffect(() => {
+    const revealTimer = window.setTimeout(() => {
+      setPhase("split");
+    }, 1500);
+
+    return () => window.clearTimeout(revealTimer);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== "split") {
+      setCardVisible(false);
+      return undefined;
+    }
+
+    const cardTimer = window.setTimeout(() => {
+      setCardVisible(true);
+    }, 140);
+
+    return () => window.clearTimeout(cardTimer);
+  }, [phase]);
 
   if (token) {
     return <Navigate to="/dashboard" replace />;
@@ -51,71 +71,86 @@ const LoginPage = () => {
 
   return (
     <main className="login-page">
-      <div className="login-aurora" aria-hidden="true" />
+      <NeonParticles />
 
-      <Meteors number={30} />
+      <div className={`login-stage ${phase === "split" ? "is-split" : "is-splash"}`}>
+        <div className="login-brand-panel" aria-hidden="true">
+          <img
+            src={logoMark}
+            alt="GranPlus"
+            className="login-brand-logo"
+            draggable="false"
+          />
+        </div>
 
-      <div className="login-card-container">
-        <BorderBeam>
-          <section className="auth-card login-card">
-            <div className="auth-card-header">
-              <h1>Acesso ao GranPlus</h1>
-              <p>Entre com suas credenciais para acessar o painel de estoque</p>
-            </div>
+        {phase !== "splash" ? (
+          <section
+            className={`login-card-panel ${cardVisible ? "is-visible" : ""}`.trim()}
+            aria-label="Acesso ao sistema"
+          >
+            <div className="login-card">
+              <div className="login-card-header">
+                <span className="login-kicker">Acesso restrito</span>
+                <h1>Entre no GranPlus</h1>
+                <p>Use suas credenciais para acessar o painel de estoque.</p>
+              </div>
 
-            <form className="login-form" onSubmit={handleSubmit} noValidate>
-              <Input
-                id="usuario"
-                name="usuario"
-                label="Usuario"
-                value={form.usuario}
-                onChange={handleChange}
-                placeholder="Seu usuario"
-                autoComplete="username"
-                icon={<UserRound size={18} />}
-                error={fieldErrors.usuario}
-              />
+              <form className="login-form" onSubmit={handleSubmit} noValidate>
+                <div className="login-field">
+                  <label htmlFor="usuario">Usuário</label>
+                  <input
+                    id="usuario"
+                    name="usuario"
+                    type="text"
+                    value={form.usuario}
+                    onChange={handleChange}
+                    placeholder="Digite seu usuário"
+                    autoComplete="username"
+                    aria-invalid={fieldErrors.usuario ? "true" : "false"}
+                  />
+                  {fieldErrors.usuario ? (
+                    <p className="login-field-error">{fieldErrors.usuario}</p>
+                  ) : null}
+                </div>
 
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                label="Senha"
-                value={form.password}
-                onChange={handleChange}
-                placeholder="Sua senha"
-                autoComplete="current-password"
-                icon={<KeyRound size={18} />}
-                error={fieldErrors.password}
-              />
+                <div className="login-field">
+                  <label htmlFor="password">Senha</label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="Digite sua senha"
+                    autoComplete="current-password"
+                    aria-invalid={fieldErrors.password ? "true" : "false"}
+                  />
+                  {fieldErrors.password ? (
+                    <p className="login-field-error">{fieldErrors.password}</p>
+                  ) : null}
+                </div>
 
-              {friendlyError || error ? (
-                <p className="auth-error-box" role="alert">
-                  {friendlyError || error || "Credenciais invalidas."}
-                </p>
-              ) : null}
+                {friendlyError || error ? (
+                  <p className="login-form-error" role="alert">
+                    {friendlyError || error || "Credenciais inválidas."}
+                  </p>
+                ) : null}
 
-              <Button
-                type="submit"
-                loading={status === "loading"}
-                disabled={!isValid}
-              >
-                Entrar
-              </Button>
+                <button
+                  type="submit"
+                  className="login-submit"
+                  disabled={!isValid || status === "loading"}
+                >
+                  {status === "loading" ? "Entrando..." : "Entrar"}
+                </button>
 
-              <div className="auth-actions-row">
-                <Link to="/recuperar-senha" className="forgot-link">
+                <Link to="/recuperar-senha" className="login-link">
                   Esqueci minha senha
                 </Link>
-              </div>
-            </form>
-
-            <div className="auth-footer-tip">
-              <ShieldCheck size={16} />
-              <span>Seu acesso protegido com a melhor tecnologia.</span>
+              </form>
             </div>
           </section>
-        </BorderBeam>
+        ) : null}
       </div>
     </main>
   );
