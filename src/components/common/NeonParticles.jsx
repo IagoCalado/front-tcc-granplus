@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-export const NEON_NET_OPTIONS = {
+const NEON_NET_OPTIONS = {
 	mouseControls: true,
 	touchControls: true,
 	gyroControls: false,
@@ -131,7 +131,7 @@ const NeonParticles = () => {
 					...NEON_NET_OPTIONS,
 				});
 				return vantaEffect;
-			} catch (err) {
+			} catch {
 				return null;
 			}
 		});

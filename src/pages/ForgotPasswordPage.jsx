@@ -1,30 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowLeft,
-  CheckCircle2,
-  Hash,
-  KeyRound,
-  Mail,
-  Send,
-  ShieldCheck,
-  UserRound,
-} from "lucide-react";
-import Button from "../components/auth/Button";
-import Input from "../components/auth/Input";
-import {
   resetPasswordWithPin,
   sendResetPin,
   verifyUserForReset,
 } from "../services/api";
-import BorderBeam from "../components/common/BorderBeam";
-import Meteors from "../components/common/Meteors";
+import NeonParticles from "../components/common/NeonParticles";
+import logoMark from "../assets/granPlus.png";
 
 const ForgotPasswordPage = () => {
   const [step, setStep] = useState("request");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  // const [message, setMessage] = useState("");
   const [maskedEmail, setMaskedEmail] = useState("");
   const [form, setForm] = useState({
     usuario: "",
@@ -42,7 +30,7 @@ const ForgotPasswordPage = () => {
   const resetFlow = () => {
     setStep("request");
     setError("");
-    setMessage("");
+    // setMessage("");
     setMaskedEmail("");
     setForm({
       usuario: "",
@@ -55,7 +43,7 @@ const ForgotPasswordPage = () => {
   const handleSendPin = async (event) => {
     event.preventDefault();
     setError("");
-    setMessage("");
+    // setMessage("");
 
     const usuario = form.usuario.trim();
     if (usuario.length < 3) {
@@ -70,9 +58,9 @@ const ForgotPasswordPage = () => {
 
       setMaskedEmail(verification?.emailMascarado || "seu e-mail cadastrado");
       setStep("confirm");
-      setMessage(
-        `Codigo enviado com sucesso para ${verification?.emailMascarado || "seu e-mail cadastrado"}.`,
-      );
+      // setMessage(
+      //   `Codigo enviado com sucesso para ${verification?.emailMascarado || "seu e-mail cadastrado"}.`,
+      // );
     } catch (requestError) {
       setError(
         requestError.message ||
@@ -86,7 +74,7 @@ const ForgotPasswordPage = () => {
   const handleResetPassword = async (event) => {
     event.preventDefault();
     setError("");
-    setMessage("");
+    // setMessage("");
 
     const usuario = form.usuario.trim();
     const pin = form.pin.trim();
@@ -121,9 +109,9 @@ const ForgotPasswordPage = () => {
       });
 
       setStep("done");
-      setMessage(
-        "Senha redefinida com sucesso. Voce ja pode entrar no sistema.",
-      );
+      // setMessage(
+      //   "Senha redefinida com sucesso. Voce ja pode entrar no sistema.",
+      // );
     } catch (resetError) {
       setError(
         resetError.message ||
@@ -134,45 +122,66 @@ const ForgotPasswordPage = () => {
     }
   };
 
+  const handleResendPin = async () => {
+    if (!form.usuario.trim()) {
+      setError("Informe o usuario antes de reenviar o codigo.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await sendResetPin({ user_nome: form.usuario.trim() });
+      setStep("confirm");
+      // setMessage(
+      //   `Novo codigo reenviado para ${maskedEmail || "seu e-mail cadastrado"}.`,
+      // );
+      setError("");
+    } catch (resendError) {
+      setError(
+        resendError.message ||
+          "Nao foi possivel reenviar o codigo no momento.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="login-page">
-      {/* 1. O fundo de Aurora */}
-      <div className="login-aurora" aria-hidden="true" />
+      <NeonParticles />
 
-      {/* 2. AQUI ENTRAM OS METEOROS! Ficam no fundo, atrás do card */}
-      <Meteors number={100} />
+      <div className="login-stage is-split">
+        <div className="login-brand-panel" aria-hidden="true">
+          <img
+            src={logoMark}
+            alt="GranPlus"
+            className="login-brand-logo"
+            draggable="false"
+          />
+        </div>
 
-      {/* 3. O Container do Card (Fica por cima de tudo) */}
-
-      <div className="login-card-container">
-        <BorderBeam
-          title="Recuperação de senha"
-          subtitle="Solicite um PIN por e-mail, confirme o codigo e defina uma nova
-                senha."
-        >
-          <section className="auth-card forgot-password-card">
-            <div className="auth-card-header">
-              <h1>Recuperação de senha</h1>
-              <p>
-                Solicite um PIN por e-mail, confirme o codigo e defina uma nova
-                senha.
-              </p>
+        <section className="login-card-panel is-visible" aria-label="Recuperacao de senha">
+          <div className="login-card">
+            <div className="login-card-header">
+              <span className="login-kicker">Seguranca de acesso</span>
+              <h1>Recuperar senha</h1>
+              <p>Solicite um PIN por e-mail, confirme o codigo e defina uma nova senha.</p>
             </div>
 
-            {message ? (
-              <p className="auth-success-box" role="status">
+            {/* {message ? (
+              <p className="login-form-error" role="status">
                 {message}
               </p>
-            ) : null}
+            ) : null} */}
 
             {error ? (
-              <p className="auth-error-box" role="alert">
+              <p className="login-form-error" role="alert">
                 {error}
               </p>
             ) : null}
 
             <form
-              className="login-form forgot-password-form"
+              className="login-form"
               onSubmit={
                 step === "request"
                   ? handleSendPin
@@ -182,180 +191,108 @@ const ForgotPasswordPage = () => {
               }
               noValidate
             >
-              <Input
-                id="usuario"
-                name="usuario"
-                label="Usuario"
-                value={form.usuario}
-                onChange={handleChange}
-                placeholder="Seu usuario"
-                autoComplete="username"
-                icon={<UserRound size={18} />}
-                disabled={step !== "request"}
-              />
+              <div className="login-field">
+                <label htmlFor="usuario">Usuario</label>
+                <input
+                  id="usuario"
+                  name="usuario"
+                  type="text"
+                  value={form.usuario}
+                  onChange={handleChange}
+                  placeholder="Digite seu usuario"
+                  autoComplete="username"
+                  disabled={step !== "request"}
+                />
+              </div>
 
               {step !== "request" ? (
-                <div className="forgot-step-summary">
-                  <div className="forgot-step-summary-icon">
-                    <Mail size={18} />
-                  </div>
-
-                  <div>
-                    <strong>PIN enviado</strong>
-
-                    <p>
-                      {maskedEmail || "Seu e-mail cadastrado recebeu o codigo."}
-                    </p>
-                  </div>
-                </div>
+                <p className="login-form-error" role="status">
+                  PIN enviado para {maskedEmail || "seu e-mail cadastrado"}.
+                </p>
               ) : null}
 
               {step === "confirm" ? (
                 <>
-                  <Input
-                    id="pin"
-                    name="pin"
-                    label="PIN de 6 digitos"
-                    value={form.pin}
-                    onChange={handleChange}
-                    placeholder="000000"
-                    autoComplete="one-time-code"
-                    icon={<Hash size={18} />}
-                  />
+                  <div className="login-field">
+                    <label htmlFor="pin">PIN de 6 digitos</label>
+                    <input
+                      id="pin"
+                      name="pin"
+                      type="text"
+                      value={form.pin}
+                      onChange={handleChange}
+                      placeholder="000000"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                    />
+                  </div>
 
-                  <Input
-                    id="novaSenha"
-                    name="novaSenha"
-                    type="password"
-                    label="Nova senha"
-                    value={form.novaSenha}
-                    onChange={handleChange}
-                    placeholder="Digite a nova senha"
-                    autoComplete="new-password"
-                    icon={<KeyRound size={18} />}
-                  />
+                  <div className="login-field">
+                    <label htmlFor="novaSenha">Nova senha</label>
+                    <input
+                      id="novaSenha"
+                      name="novaSenha"
+                      type="password"
+                      value={form.novaSenha}
+                      onChange={handleChange}
+                      placeholder="Digite a nova senha"
+                      autoComplete="new-password"
+                    />
+                  </div>
 
-                  <Input
-                    id="confirmarSenha"
-                    name="confirmarSenha"
-                    type="password"
-                    label="Confirmar nova senha"
-                    value={form.confirmarSenha}
-                    onChange={handleChange}
-                    placeholder="Repita a nova senha"
-                    autoComplete="new-password"
-                    icon={<ShieldCheck size={18} />}
-                  />
+                  <div className="login-field">
+                    <label htmlFor="confirmarSenha">Confirmar nova senha</label>
+                    <input
+                      id="confirmarSenha"
+                      name="confirmarSenha"
+                      type="password"
+                      value={form.confirmarSenha}
+                      onChange={handleChange}
+                      placeholder="Repita a nova senha"
+                      autoComplete="new-password"
+                    />
+                  </div>
                 </>
               ) : null}
 
               {step === "request" ? (
-                <Button
+                <button
                   type="submit"
-                  loading={loading}
-                  loadingLabel="Enviando codigo..."
-                  disabled={form.usuario.trim().length < 3}
+                  className="login-submit"
+                  disabled={loading || form.usuario.trim().length < 3}
                 >
-                  Enviar codigo
-                </Button>
+                  {loading ? "Enviando codigo..." : "Enviar codigo"}
+                </button>
               ) : step === "confirm" ? (
-                <Button
-                  type="submit"
-                  loading={loading}
-                  loadingLabel="Redefinindo senha..."
-                >
-                  Redefinir senha
-                </Button>
+                <button type="submit" className="login-submit" disabled={loading}>
+                  {loading ? "Redefinindo senha..." : "Redefinir senha"}
+                </button>
               ) : (
-                <div className="forgot-password-actions forgot-password-actions-final">
-                  <button
-                    type="button"
-                    className="forgot-link-button"
-                    onClick={resetFlow}
-                  >
-                    <ArrowLeft size={16} />
-                    Fazer nova tentativa
-                  </button>
-
-                  <Link to="/login" className="forgot-link">
-                    Ir para login
-                  </Link>
-                </div>
+                <button type="button" className="login-submit" onClick={resetFlow}>
+                  Fazer nova tentativa
+                </button>
               )}
             </form>
 
-            <div className="forgot-password-actions">
+            <div className="login-link-row forgot-actions-inline">
               {step === "confirm" ? (
-                <button
-                  type="button"
-                  className="forgot-link-button"
-                  onClick={resetFlow}
-                >
-                  <ArrowLeft size={16} />
-                  Alterar usuário
+                <button type="button" className="login-link" onClick={resetFlow}>
+                  Alterar usuario
                 </button>
               ) : null}
 
               {step !== "done" ? (
-                <button
-                  type="button"
-                  className="forgot-link-button"
-                  onClick={async () => {
-                    if (!form.usuario.trim()) {
-                      setError("Informe o usuário antes de reenviar o codigo.");
-
-                      return;
-                    }
-
-                    try {
-                      setLoading(true);
-
-                      await sendResetPin({ user_nome: form.usuario.trim() });
-
-                      setStep("confirm");
-
-                      setMessage(
-                        `Novo codigo reenviado para ${maskedEmail || "seu e-mail cadastrado"}.`,
-                      );
-
-                      setError("");
-                    } catch (resendError) {
-                      setError(
-                        resendError.message ||
-                          "Nao foi possivel reenviar o codigo no momento.",
-                      );
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                >
-                  <Send size={16} />
+                <button type="button" className="login-link" onClick={handleResendPin}>
                   Reenviar codigo
                 </button>
               ) : null}
+
+              <Link to="/login" className="login-link">
+                Voltar para login
+              </Link>
             </div>
-
-            {step === "done" ? (
-              <div className="forgot-complete-box">
-                <CheckCircle2 size={18} />
-
-                <span>
-                  Sua senha foi atualizada. Você pode entrar novamente.
-                </span>
-              </div>
-            ) : null}
-
-            <div className="auth-footer-tip">
-              <ShieldCheck size={16} />
-
-              <span>O PIN expira em 15 minutos por segurança.</span>
-            </div>
-
-            <Link to="/login" className="forgot-link forgot-link-back">
-              Voltar para login
-            </Link>
-          </section>
-        </BorderBeam>
+          </div>
+        </section>
       </div>
     </main>
   );

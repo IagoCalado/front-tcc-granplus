@@ -1332,6 +1332,22 @@
   justify-content: flex-end;
 }
 
+.forgot-actions-inline {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: center;
+}
+
+.forgot-actions-inline .login-link {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 8px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
 @media (max-width: 980px) {
   .login-stage {
     flex-direction: column;
@@ -1391,6 +1407,18 @@
 
   .login-link {
     width: 100%;
+  }
+
+  .forgot-actions-inline {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .forgot-actions-inline .login-link {
+    width: 100%;
+    min-height: 40px;
+    padding: 0 6px;
+    font-size: 0.76rem;
   }
 }
 
