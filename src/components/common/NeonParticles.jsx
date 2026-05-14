@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { useTheme } from "../../contexts/ThemeContext";
 
-const NEON_NET_OPTIONS = {
+const NET_COMMON_OPTIONS = {
 	mouseControls: true,
 	touchControls: true,
 	gyroControls: false,
@@ -9,12 +10,23 @@ const NEON_NET_OPTIONS = {
 	minWidth: 200.0,
 	scale: 1.0,
 	scaleMobile: 1.0,
-	color: "#00d2ff",
-	backgroundColor: "#050505",
 	points: 12.0,
 	maxDistance: 24.0,
 	spacing: 18.0,
 	showDots: true,
+};
+
+const THEME_CONFIG = {
+	dark: {
+		color: "#00d2ff",
+		backgroundColor: "#050505",
+		fallbackColor: "#00d2ff",
+	},
+	light: {
+		color: "#111111",
+		backgroundColor: "#eef6ff",
+		fallbackColor: "#111111",
+	},
 };
 
 // Lightweight canvas fallback to guarantee visible particles if Vanta fails
@@ -112,9 +124,18 @@ function createFallback(canvas, opts = {}) {
 const NeonParticles = () => {
 	const containerRef = useRef(null);
 	const canvasRef = useRef(null);
+	const { theme } = useTheme();
 
 	useEffect(() => {
 		if (!containerRef.current) return undefined;
+
+		const themeName = theme === "light" ? "light" : "dark";
+		const activeTheme = THEME_CONFIG[themeName];
+		const netOptions = {
+			...NET_COMMON_OPTIONS,
+			color: activeTheme.color,
+			backgroundColor: activeTheme.backgroundColor,
+		};
 
 		let vantaEffect;
 		let fallbackHandle;
@@ -128,7 +149,7 @@ const NeonParticles = () => {
 			try {
 				vantaEffect = module.default({
 					el: containerRef.current,
-					...NEON_NET_OPTIONS,
+					...netOptions,
 				});
 				return vantaEffect;
 			} catch {
@@ -141,7 +162,7 @@ const NeonParticles = () => {
 			if (!resolved && !isCancelled && canvasRef.current) {
 				// start fallback
 				fallbackHandle = createFallback(canvasRef.current, {
-					color: "#00d2ff",
+					color: activeTheme.fallbackColor,
 					points: 360, /* Quantidade de particula */
 					maxDistance: 140,
 				});
@@ -161,7 +182,7 @@ const NeonParticles = () => {
 			}
 			window.THREE = previousThree;
 		};
-	}, []);
+	}, [theme]);
 
 	return (
 		<div ref={containerRef} className="login-particles" aria-hidden="true">

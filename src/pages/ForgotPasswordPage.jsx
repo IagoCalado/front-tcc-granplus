@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   resetPasswordWithPin,
@@ -12,6 +12,8 @@ const ForgotPasswordPage = () => {
   const [step, setStep] = useState("request");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [phase, setPhase] = useState("splash");
+  const [cardVisible, setCardVisible] = useState(false);
   // const [message, setMessage] = useState("");
   const [maskedEmail, setMaskedEmail] = useState("");
   const [form, setForm] = useState({
@@ -20,6 +22,27 @@ const ForgotPasswordPage = () => {
     novaSenha: "",
     confirmarSenha: "",
   });
+
+  useEffect(() => {
+    const revealTimer = window.setTimeout(() => {
+      setPhase("split");
+    }, 1500);
+
+    return () => window.clearTimeout(revealTimer);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== "split") {
+      setCardVisible(false);
+      return undefined;
+    }
+
+    const cardTimer = window.setTimeout(() => {
+      setCardVisible(true);
+    }, 140);
+
+    return () => window.clearTimeout(cardTimer);
+  }, [phase]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -150,7 +173,7 @@ const ForgotPasswordPage = () => {
     <main className="login-page">
       <NeonParticles />
 
-      <div className="login-stage is-split">
+      <div className={`login-stage ${phase === "split" ? "is-split" : "is-splash"}`}>
         <div className="login-brand-panel" aria-hidden="true">
           <img
             src={logoMark}
@@ -160,139 +183,144 @@ const ForgotPasswordPage = () => {
           />
         </div>
 
-        <section className="login-card-panel is-visible" aria-label="Recuperacao de senha">
-          <div className="login-card">
-            <div className="login-card-header">
-              <span className="login-kicker">Seguranca de acesso</span>
-              <h1>Recuperar senha</h1>
-              <p>Solicite um PIN por e-mail, confirme o codigo e defina uma nova senha.</p>
-            </div>
-
-            {/* {message ? (
-              <p className="login-form-error" role="status">
-                {message}
-              </p>
-            ) : null} */}
-
-            {error ? (
-              <p className="login-form-error" role="alert">
-                {error}
-              </p>
-            ) : null}
-
-            <form
-              className="login-form"
-              onSubmit={
-                step === "request"
-                  ? handleSendPin
-                  : step === "confirm"
-                    ? handleResetPassword
-                    : (event) => event.preventDefault()
-              }
-              noValidate
-            >
-              <div className="login-field">
-                <label htmlFor="usuario">Usuario</label>
-                <input
-                  id="usuario"
-                  name="usuario"
-                  type="text"
-                  value={form.usuario}
-                  onChange={handleChange}
-                  placeholder="Digite seu usuario"
-                  autoComplete="username"
-                  disabled={step !== "request"}
-                />
+        {phase !== "splash" ? (
+          <section
+            className={`login-card-panel ${cardVisible ? "is-visible" : ""}`.trim()}
+            aria-label="Recuperacao de senha"
+          >
+            <div className="login-card">
+              <div className="login-card-header">
+                <span className="login-kicker">Seguranca de acesso</span>
+                <h1>Recuperar senha</h1>
+                <p>Confirme o codigo e defina uma nova senha</p>
               </div>
 
-              {step !== "request" ? (
+              {/* {message ? (
                 <p className="login-form-error" role="status">
-                  PIN enviado para {maskedEmail || "seu e-mail cadastrado"}.
+                  {message}
+                </p>
+              ) : null} */}
+
+              {error ? (
+                <p className="login-form-error" role="alert">
+                  {error}
                 </p>
               ) : null}
 
-              {step === "confirm" ? (
-                <>
-                  <div className="login-field">
-                    <label htmlFor="pin">PIN de 6 digitos</label>
-                    <input
-                      id="pin"
-                      name="pin"
-                      type="text"
-                      value={form.pin}
-                      onChange={handleChange}
-                      placeholder="000000"
-                      autoComplete="one-time-code"
-                      maxLength={6}
-                    />
-                  </div>
+              <form
+                className="login-form"
+                onSubmit={
+                  step === "request"
+                    ? handleSendPin
+                    : step === "confirm"
+                      ? handleResetPassword
+                      : (event) => event.preventDefault()
+                }
+                noValidate
+              >
+                <div className="login-field">
+                  <label htmlFor="usuario">Usuario</label>
+                  <input
+                    id="usuario"
+                    name="usuario"
+                    type="text"
+                    value={form.usuario}
+                    onChange={handleChange}
+                    placeholder="Digite seu usuario"
+                    autoComplete="username"
+                    disabled={step !== "request"}
+                  />
+                </div>
 
-                  <div className="login-field">
-                    <label htmlFor="novaSenha">Nova senha</label>
-                    <input
-                      id="novaSenha"
-                      name="novaSenha"
-                      type="password"
-                      value={form.novaSenha}
-                      onChange={handleChange}
-                      placeholder="Digite a nova senha"
-                      autoComplete="new-password"
-                    />
-                  </div>
+                {step !== "request" ? (
+                  <p className="login-form-error" role="status">
+                    PIN enviado para {maskedEmail || "seu e-mail cadastrado"}.
+                  </p>
+                ) : null}
 
-                  <div className="login-field">
-                    <label htmlFor="confirmarSenha">Confirmar nova senha</label>
-                    <input
-                      id="confirmarSenha"
-                      name="confirmarSenha"
-                      type="password"
-                      value={form.confirmarSenha}
-                      onChange={handleChange}
-                      placeholder="Repita a nova senha"
-                      autoComplete="new-password"
-                    />
-                  </div>
-                </>
-              ) : null}
+                {step === "confirm" ? (
+                  <>
+                    <div className="login-field">
+                      <label htmlFor="pin">PIN de 6 digitos</label>
+                      <input
+                        id="pin"
+                        name="pin"
+                        type="text"
+                        value={form.pin}
+                        onChange={handleChange}
+                        placeholder="000000"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                      />
+                    </div>
 
-              {step === "request" ? (
-                <button
-                  type="submit"
-                  className="login-submit"
-                  disabled={loading || form.usuario.trim().length < 3}
-                >
-                  {loading ? "Enviando codigo..." : "Enviar codigo"}
-                </button>
-              ) : step === "confirm" ? (
-                <button type="submit" className="login-submit" disabled={loading}>
-                  {loading ? "Redefinindo senha..." : "Redefinir senha"}
-                </button>
-              ) : (
-                <button type="button" className="login-submit" onClick={resetFlow}>
-                  Fazer nova tentativa
-                </button>
-              )}
-            </form>
+                    <div className="login-field">
+                      <label htmlFor="novaSenha">Nova senha</label>
+                      <input
+                        id="novaSenha"
+                        name="novaSenha"
+                        type="password"
+                        value={form.novaSenha}
+                        onChange={handleChange}
+                        placeholder="Digite a nova senha"
+                        autoComplete="new-password"
+                      />
+                    </div>
 
-            <div className="login-link-row forgot-actions-inline">
-              {step === "confirm" ? (
-                <button type="button" className="login-link" onClick={resetFlow}>
-                  Alterar usuario
-                </button>
-              ) : null}
+                    <div className="login-field">
+                      <label htmlFor="confirmarSenha">Confirmar nova senha</label>
+                      <input
+                        id="confirmarSenha"
+                        name="confirmarSenha"
+                        type="password"
+                        value={form.confirmarSenha}
+                        onChange={handleChange}
+                        placeholder="Repita a nova senha"
+                        autoComplete="new-password"
+                      />
+                    </div>
+                  </>
+                ) : null}
 
-              {step !== "done" ? (
-                <button type="button" className="login-link" onClick={handleResendPin}>
-                  Reenviar codigo
-                </button>
-              ) : null}
+                {step === "request" ? (
+                  <button
+                    type="submit"
+                    className="login-submit"
+                    disabled={loading || form.usuario.trim().length < 3}
+                  >
+                    {loading ? "Enviando codigo..." : "Enviar codigo"}
+                  </button>
+                ) : step === "confirm" ? (
+                  <button type="submit" className="login-submit" disabled={loading}>
+                    {loading ? "Redefinindo senha..." : "Redefinir senha"}
+                  </button>
+                ) : (
+                  <button type="button" className="login-submit" onClick={resetFlow}>
+                    Fazer nova tentativa
+                  </button>
+                )}
+              </form>
 
-              <Link to="/login" className="login-link">
-                Voltar para login
-              </Link>
+              <div className="login-link-row forgot-actions-inline">
+                {step === "confirm" ? (
+                  <button type="button" className="login-link" onClick={resetFlow}>
+                    Alterar usuário
+                  </button>
+                ) : null}
+
+                {step !== "done" ? (
+                  <button type="button" className="login-link" onClick={handleResendPin}>
+                    Reenviar codigo
+                  </button>
+                ) : null}
+
+                <Link to="/login" className="login-link">
+                  Voltar para tela de login
+                </Link>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
       </div>
     </main>
   );
