@@ -366,7 +366,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
             </div> */}
           </div>
 
-          <div>
+          {/* <div>
             <label
               style={{
                 display: "block",
@@ -392,7 +392,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
                 textTransform: "uppercase",
               }}
             />
-          </div>
+          </div> */}
 
           <div
             style={{

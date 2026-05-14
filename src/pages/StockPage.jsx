@@ -390,11 +390,11 @@ const StockPage = () => {
           title="Estoque"
           subtitle="Visualize o estoque atual dos produtos."
           onSearch={setSearchTerm}
-          actions={
-            <button className="btn btn-primary" onClick={() => setIsInputModalOpen(true)}>
-              Adicionar Produto
-            </button>
-          }
+          // actions={
+          //   <button className="btn btn-primary" onClick={() => setIsInputModalOpen(true)}>
+          //     Adicionar Produto
+          //   </button>
+          // }
         />
       </div>
 

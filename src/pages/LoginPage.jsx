@@ -95,7 +95,7 @@ const LoginPage = () => {
                 <p>Use suas credenciais para acessar o painel de estoque.</p>
               </div>
 
-              <form className="login-form" onSubmit={handleSubmit} noValidate>
+              <form id="login-form" className="login-form" onSubmit={handleSubmit} noValidate>
                 <div className="login-field">
                   <label htmlFor="usuario">Usuário</label>
                   <input
@@ -135,11 +135,14 @@ const LoginPage = () => {
                     {friendlyError || error || "Credenciais inválidas."}
                   </p>
                 ) : null}
+              </form>
 
+              <div className="login-link-row">
                 <button
                   type="submit"
                   className="login-submit"
                   disabled={!isValid || status === "loading"}
+                  form="login-form"
                 >
                   {status === "loading" ? "Entrando..." : "Entrar"}
                 </button>
@@ -147,7 +150,7 @@ const LoginPage = () => {
                 <Link to="/recuperar-senha" className="login-link">
                   Esqueci minha senha
                 </Link>
-              </form>
+              </div>
             </div>
           </section>
         ) : null}
