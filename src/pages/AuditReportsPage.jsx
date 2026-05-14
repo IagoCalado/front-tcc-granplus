@@ -9,7 +9,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { matchesSearch } from "../utils/search";
 
 // Agora importamos certinho as duas funções do seu api.js!
-import { getAuditReports, getAuditReportsByDate } from "../services/api";
+import { getAuditReports, getAuditReportsByDate, getRelatorioDinamico } from "../services/api";
 
 const TableNameLabels = {
   saida_produtos: "Saidas de Produtos",
@@ -48,6 +48,7 @@ const AuditReportsPage = () => {
   const [isModalAberto, setIsModalAberto] = useState(false);
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
+  const [tipoRelatorio, setTipoRelatorio] = useState("geral"); 
 
   // Função para carregar a tabela
   const loadData = useCallback(async () => {
@@ -71,51 +72,55 @@ const AuditReportsPage = () => {
   // A MÁGICA DO PDF
   const handleGerarPDF = async (e) => {
     e.preventDefault();
-    
     try {
-      // Usamos a função nova que criamos no api.js
-      const dadosAuditoria = await getAuditReportsByDate(token, dataInicio, dataFim);
+      // Usando a função correta que está no seu api.js
+      const dados = await getRelatorioDinamico(token, tipoRelatorio, dataInicio, dataFim);
 
-      if (!dadosAuditoria || dadosAuditoria.length === 0) {
-        alert("Nenhum dado encontrado para as datas selecionadas!");
+      if (!dados || dados.length === 0) {
+        alert("Nenhum dado encontrado para este filtro!");
         return;
       }
 
-      // Inicializa o PDF
       const doc = new jsPDF();
-      
-      // Cabeçalho
       doc.setFontSize(18);
-      doc.text(`Relatorio de Auditoria - GranPlus`, 14, 22);
-      
+      doc.text(`Relatorio GranPlus - ${tipoRelatorio.toUpperCase()}`, 14, 22);
       doc.setFontSize(11);
       doc.text(`Periodo: ${dataInicio.split('-').reverse().join('/')} ate ${dataFim.split('-').reverse().join('/')}`, 14, 30);
 
-      // Desenha a tabela perfeita
+      // Variáveis para guardar as colunas e as linhas que vão pro PDF
+      let colunasTabela = [];
+      let linhasTabela = [];
+
+      // A MÁGICA ACONTECE AQUI: Define as colunas dependendo do tipo!
+      if (tipoRelatorio === "geral") {
+        colunasTabela = [['ID', 'Usuario', 'Acao', 'Data', 'Hora']];
+        linhasTabela = dados.map(item => [item.aud_id, item.user_nome, item.aud_acao, new Date(item.aud_data).toLocaleDateString("pt-BR"), item.aud_time]);
+      
+      } else if (tipoRelatorio === "entradas") {
+        colunasTabela = [['Produto', 'Quantidade', 'Data Entrada']];
+        // Adapte os nomes (pdt_nome, ent_qtde) conforme as colunas reais do seu banco
+        linhasTabela = dados.map(item => [item.pdt_nome, item.quantidade, new Date(item.data).toLocaleDateString("pt-BR")]);
+      
+      } else if (tipoRelatorio === "abaixo_estoque") {
+        colunasTabela = [['Produto', 'Estoque Minimo', 'Estoque Atual']];
+        linhasTabela = dados.map(item => [item.pdt_nome, item.pdt_estoque_minimo, item.total_estoque]);
+      }
+      // Você pode adicionar os outros IFs (saidas, negativos) seguindo a mesma lógica!
+
       autoTable(doc, {
         startY: 35,
-        head: [['ID', 'Usuario', 'Acao', 'Data', 'Hora', 'Tabela']],
-        body: dadosAuditoria.map(item => [
-          item.aud_id,
-          item.user_nome || item.user_id || 'Administrador',
-          item.aud_acao,
-          item.aud_data ? new Date(item.aud_data).toLocaleDateString("pt-BR") : "-",
-          item.aud_time,
-          item.aud_tabela_afetada
-        ]),
+        head: colunasTabela,
+        body: linhasTabela,
         theme: 'striped',
         headStyles: { fillColor: [44, 62, 80] }, 
       });
 
-      // Salva o arquivo e fecha tudo
-      doc.save(`Auditoria_${dataInicio}_a_${dataFim}.pdf`);
+      doc.save(`Relatorio_${tipoRelatorio}_${dataInicio}.pdf`);
       setIsModalAberto(false);
-      setDataInicio("");
-      setDataFim("");
 
     } catch (erro) {
       console.error("Erro ao gerar PDF:", erro);
-      alert("Erro ao buscar dados para o relatório. Verifique o F12.");
+      alert("Erro ao buscar dados. Verifique o F12.");
     }
   };
 
@@ -226,6 +231,21 @@ const AuditReportsPage = () => {
             <hr style={{ borderColor: '#334155', marginBottom: '20px' }} />
             
             <form onSubmit={handleGerarPDF} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '5px', color: 'white' }}>
+                Tipo de Relatório:
+                <select 
+                  value={tipoRelatorio} 
+                  onChange={(e) => setTipoRelatorio(e.target.value)}
+                  style={{ padding: '10px', borderRadius: '4px', border: '1px solid #334155', outline: 'none', backgroundColor: '#0f172a', color: 'white' }}
+                >
+                  <option value="geral">Geral (Auditoria)</option>
+                  <option value="entradas">Somente Entradas</option>
+                  <option value="saidas">Somente Saídas</option>
+                  <option value="abaixo_estoque">Produtos Abaixo do Estoque</option>
+                  <option value="negativos">Produtos Negativos</option>
+                </select>
+              </label>
               
               <label style={{ display: 'flex', flexDirection: 'column', gap: '5px', color: 'white' }}>
                 Data de Início:

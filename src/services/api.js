@@ -129,3 +129,6 @@ export const getAuditReportsByDate = (token, startDate, endDate) =>
   request(`/relatorios/auditoria?startDate=${startDate}&endDate=${endDate}`, {
     token,
   });
+
+export const getRelatorioDinamico = (token, tipo, startDate, endDate) => 
+  request(`/relatorios/dinamico?tipo=${tipo}&startDate=${startDate}&endDate=${endDate}`, { token });
