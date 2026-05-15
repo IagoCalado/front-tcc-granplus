@@ -29,7 +29,7 @@ const THEME_CONFIG = {
 	},
 };
 
-// Lightweight canvas fallback to guarantee visible particles if Vanta fails
+// Alternativa de lona leve para garantir a visibilidade das partículas caso a Vanta falhe.
 function createFallback(canvas, opts = {}) {
 	const ctx = canvas.getContext("2d");
 	let w = (canvas.width = canvas.clientWidth);
@@ -60,7 +60,7 @@ function createFallback(canvas, opts = {}) {
 	function draw() {
 		ctx.clearRect(0, 0, w, h);
 
-		// draw lines
+		// desenhar linhas
 		for (let i = 0; i < points.length; i++) {
 			const p = points[i];
 			for (let j = i + 1; j < points.length; j++) {
@@ -81,7 +81,7 @@ function createFallback(canvas, opts = {}) {
 			}
 		}
 
-		// dots
+		// pontos
 		for (let i = 0; i < points.length; i++) {
 			const p = points[i];
 			ctx.beginPath();
@@ -91,7 +91,7 @@ function createFallback(canvas, opts = {}) {
 			ctx.fill();
 		}
 
-		// move
+		// mover
 		for (let i = 0; i < points.length; i++) {
 			const p = points[i];
 			p.x += p.vx;
@@ -143,7 +143,7 @@ const NeonParticles = () => {
 		const previousThree = window.THREE;
 		window.THREE = THREE;
 
-		// try vanta, but if it doesn't initialize within 700ms use fallback
+		// Tente o Vanta, mas se ele não inicializar em 700 ms, use o fallback
 		const vantaPromise = import("vanta/dist/vanta.net.min").then((module) => {
 			if (isCancelled || !containerRef.current) return null;
 			try {
