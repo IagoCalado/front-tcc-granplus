@@ -4,9 +4,8 @@ import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import StatusPill from "../components/common/StatusPill";
-import ProductModal from "../components/common/ProductModal";
 import { useAuth } from "../contexts/AuthContext";
-import { getOutputAvailableLots, getStock, createProduct } from "../services/api";
+import { getOutputAvailableLots, getStock } from "../services/api";
 import { formatNumber } from "../utils/format";
 import {
   STOCK_MOVEMENT_EVENT,
@@ -81,87 +80,97 @@ const StockPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [availableLotsCountByProduct, setAvailableLotsCountByProduct] =
     useState({});
-  const [isInputModalOpen, setIsInputModalOpen] = useState(false);
 
-  const loadData = useCallback(async (options = {}) => {
-    const { silent = false } = options;
+  const loadData = useCallback(
+    async (options = {}) => {
+      const { silent = false } = options;
 
-    if (!silent) setLoading(true);
-    setError("");
-    try {
-      const data = await getStock(token);
-      const rows = Array.isArray(data) ? data : [];
-      const uniqueRows = Array.from(
-        new Map(rows.map((item) => [item.pdt_id, item])).values(),
+      if (!silent) setLoading(true);
+      setError("");
+      try {
+        const data = await getStock(token);
+        const rows = Array.isArray(data) ? data : [];
+        const uniqueRows = Array.from(
+          new Map(rows.map((item) => [item.pdt_id, item])).values(),
+        );
+        setStock(uniqueRows);
+      } catch (loadError) {
+        setError(loadError.message || "Erro ao carregar estoque");
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [token],
+  );
+
+  const loadSelectedProductLots = useCallback(
+    async (productId) => {
+      if (!token || !productId) return;
+
+      setLoadingModalLots(true);
+      try {
+        const data = await getOutputAvailableLots(token, productId);
+        const lotes = Array.isArray(data?.lotes) ? data.lotes : [];
+
+        const normalizedLots = lotes
+          .map((lote) => ({
+            loc_nome: lote?.loc_nome || null,
+            lote: lote?.lote ?? null,
+            validade: lote?.validade ?? null,
+            quantidade:
+              Number(lote?.quantidade_disponivel ?? lote?.quantidade ?? 0) || 0,
+          }))
+          .filter((lote) => lote.quantidade > 0);
+
+        setModalLots(normalizedLots);
+        setAvailableLotsCountByProduct((prev) => ({
+          ...prev,
+          [productId]: normalizedLots.length,
+        }));
+      } catch {
+        setModalLots([]);
+        setAvailableLotsCountByProduct((prev) => ({
+          ...prev,
+          [productId]: 0,
+        }));
+      } finally {
+        setLoadingModalLots(false);
+      }
+    },
+    [token],
+  );
+
+  const loadAvailableLotsCount = useCallback(
+    async (products) => {
+      if (!token) return;
+
+      if (!Array.isArray(products) || products.length === 0) {
+        setAvailableLotsCountByProduct({});
+        return;
+      }
+
+      const entries = await Promise.all(
+        products.map(async (product) => {
+          try {
+            const data = await getOutputAvailableLots(token, product.pdt_id);
+            const lotes = Array.isArray(data?.lotes) ? data.lotes : [];
+            const total = lotes.filter(
+              (lote) =>
+                Number(lote?.quantidade_disponivel ?? lote?.quantidade ?? 0) >
+                0,
+            ).length;
+
+            return [product.pdt_id, total];
+          } catch {
+            return [product.pdt_id, 0];
+          }
+        }),
       );
-      setStock(uniqueRows);
-    } catch (loadError) {
-      setError(loadError.message || "Erro ao carregar estoque");
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, [token]);
 
-  const loadSelectedProductLots = useCallback(async (productId) => {
-    if (!token || !productId) return;
-
-    setLoadingModalLots(true);
-    try {
-      const data = await getOutputAvailableLots(token, productId);
-      const lotes = Array.isArray(data?.lotes) ? data.lotes : [];
-
-      const normalizedLots = lotes
-        .map((lote) => ({
-          lote: lote?.lote ?? null,
-          validade: lote?.validade ?? null,
-          quantidade:
-            Number(lote?.quantidade_disponivel ?? lote?.quantidade ?? 0) || 0,
-        }))
-        .filter((lote) => lote.quantidade > 0);
-
-      setModalLots(normalizedLots);
-      setAvailableLotsCountByProduct((prev) => ({
-        ...prev,
-        [productId]: normalizedLots.length,
-      }));
-    } catch {
-      setModalLots([]);
-      setAvailableLotsCountByProduct((prev) => ({
-        ...prev,
-        [productId]: 0,
-      }));
-    } finally {
-      setLoadingModalLots(false);
-    }
-  }, [token]);
-
-  const loadAvailableLotsCount = useCallback(async (products) => {
-    if (!token) return;
-
-    if (!Array.isArray(products) || products.length === 0) {
-      setAvailableLotsCountByProduct({});
-      return;
-    }
-
-    const entries = await Promise.all(
-      products.map(async (product) => {
-        try {
-          const data = await getOutputAvailableLots(token, product.pdt_id);
-          const lotes = Array.isArray(data?.lotes) ? data.lotes : [];
-          const total = lotes.filter(
-            (lote) =>
-              Number(lote?.quantidade_disponivel ?? lote?.quantidade ?? 0) > 0,
-          ).length;
-
-          return [product.pdt_id, total];
-        } catch {
-          return [product.pdt_id, 0];
-        }
-      }),
-    );
-
-    setAvailableLotsCountByProduct(Object.fromEntries(entries));
-  }, [token]);
+      setAvailableLotsCountByProduct(Object.fromEntries(entries));
+    },
+    [token],
+  );
 
   useEffect(() => {
     if (!token) return;
@@ -293,19 +302,6 @@ const StockPage = () => {
     loadAvailableLotsCount(stockByProduct);
   }, [loadAvailableLotsCount, stockByProduct, token]);
 
-  const handleSaveInput = async (payload) => {
-    try {
-      await createProduct(token, payload);
-      setIsInputModalOpen(false);
-      loadData({ silent: true });
-    } catch (err) {
-      alert(
-        "Erro ao adicionar produto. Detalhe: " + err.message,
-      );
-      console.error(err);
-    }
-  };
-
   if (!token) {
     return (
       <EmptyState
@@ -390,11 +386,6 @@ const StockPage = () => {
           title="Estoque"
           subtitle="Visualize o estoque atual dos produtos."
           onSearch={setSearchTerm}
-          actions={
-            <button className="btn btn-primary" onClick={() => setIsInputModalOpen(true)}>
-              Adicionar Produto
-            </button>
-          }
         />
       </div>
 
@@ -466,10 +457,14 @@ const StockPage = () => {
             {loadingModalLots ? (
               <LoadingSpinner />
             ) : modalLots.length ? (
-              <div className="table-shell" style={{ maxHeight: "320px", overflowY: "auto" }}>
+              <div
+                className="table-shell"
+                style={{ maxHeight: "320px", overflowY: "auto" }}
+              >
                 <table className="table">
                   <thead>
                     <tr>
+                      <th>Localização</th>
                       <th style={{ textAlign: "center" }}>Quantidade</th>
                       <th>Lote</th>
                       <th>Validade</th>
@@ -484,6 +479,7 @@ const StockPage = () => {
                         <tr
                           key={`${item.lote ?? "sem-lote"}-${item.validade ?? "sem-validade"}-${index}`}
                         >
+                          <td>{item.loc_nome || "Sem localização"}</td>
                           <td style={{ textAlign: "center" }}>
                             {formatNumber(item.quantidade)}
                           </td>
@@ -507,12 +503,6 @@ const StockPage = () => {
           </div>
         </div>
       )}
-
-      <ProductModal
-        isOpen={isInputModalOpen}
-        onClose={() => setIsInputModalOpen(false)}
-        onSave={handleSaveInput}
-      />
     </div>
   );
 };

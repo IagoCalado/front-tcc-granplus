@@ -1,10 +1,6 @@
 ﻿import { useState, useEffect } from "react";
 import { AlertCircle, X } from "lucide-react";
-import {
-  getLocations,
-  getOutputAvailableLots,
-  getProducts,
-} from "../../services/api";
+import { getOutputAvailableLots, getProducts } from "../../services/api";
 
 const formatLotLabel = (lote) => {
   if (lote === null || lote === undefined || lote === "") return "Sem lote";
@@ -18,8 +14,10 @@ const formatDate = (dateValue) => {
   return parsed.toLocaleDateString("pt-BR");
 };
 
-const buildLotKey = (lote, validade) =>
-  `${lote ?? "sem-lote"}|${validade ?? "sem-validade"}`;
+const buildLotKey = (lote, validade, locId) =>
+  `${lote ?? "sem-lote"}|${validade ?? "sem-validade"}|${
+    locId ?? "sem-localizacao"
+  }`;
 
 const getValidDate = (value) => {
   if (!value) return null;
@@ -63,7 +61,6 @@ const getValidityStatus = (value) => {
 
 export default function OutputModal({ isOpen, onClose, onSave, token }) {
   const [products, setProducts] = useState([]);
-  const [locations, setLocations] = useState([]);
   const [errorMsg, setErrorMsg] = useState("");
   const [isLotsModalOpen, setIsLotsModalOpen] = useState(false);
   const [loadingLots, setLoadingLots] = useState(false);
@@ -72,7 +69,6 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
 
   const [formData, setFormData] = useState({
     pdt_id: "",
-    loc_id: "",
     lcl_qtde: "",
     lcl_destino: "",
     lcl_tipo: "", // vai ser usado como Motivo
@@ -84,13 +80,9 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
       getProducts(token)
         .then((data) => setProducts(data || []))
         .catch(() => {});
-      getLocations(token)
-        .then((data) => setLocations(Array.isArray(data) ? data : []))
-        .catch(() => setLocations([]));
 
       setFormData({
         pdt_id: "",
-        loc_id: "",
         lcl_qtde: "",
         lcl_destino: "",
         lcl_tipo: "", // Motivo
@@ -179,11 +171,6 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
       return;
     }
 
-    if (!formData.loc_id) {
-      setErrorMsg("Selecione a localização.");
-      return;
-    }
-
     if (!formData.lcl_qtde || formData.lcl_qtde <= 0) {
       setErrorMsg("A quantidade deve ser maior que zero.");
       return;
@@ -225,7 +212,7 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
   };
 
   const handleChangeLotQuantity = (lot, value) => {
-    const key = buildLotKey(lot.lote, lot.validade);
+    const key = buildLotKey(lot.lote, lot.validade, lot.loc_id);
     const available = Number(lot.quantidade_disponivel || 0);
     const parsed = value === "" ? "" : Number(value);
 
@@ -248,12 +235,13 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
 
     const lotesSelecionados = availableLots
       .map((lot) => {
-        const key = buildLotKey(lot.lote, lot.validade);
+        const key = buildLotKey(lot.lote, lot.validade, lot.loc_id);
         const quantidade = Number(lotSelections[key] || 0);
 
         if (!quantidade) return null;
 
         return {
+          loc_id: lot.loc_id,
           lote: lot.lote,
           validade: lot.validade,
           quantidade,
@@ -269,6 +257,7 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
     try {
       await onSave({
         ...formData,
+        loc_id: lotesSelecionados[0]?.loc_id || null,
         lotes_selecionados: lotesSelecionados,
       });
       closeAll();
@@ -280,10 +269,22 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
   return (
     <>
       <div className="modal-overlay" onClick={closeAll}>
-        <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="modal-content card"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: "min(94vw, 1120px)",
+            maxHeight: "none",
+            overflow: "visible",
+          }}
+        >
           <div className="modal-header">
             <h3 style={{ margin: 0 }}>Registrar Nova Saída</h3>
-            <button className="modal-close" onClick={closeAll} aria-label="Fechar">
+            <button
+              className="modal-close"
+              onClick={closeAll}
+              aria-label="Fechar"
+            >
               <X size={24} />
             </button>
           </div>
@@ -343,46 +344,6 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
                 {products.map((p) => (
                   <option key={p.pdt_id} value={p.pdt_id}>
                     {p.pdt_nome} (Estoque: {p.pdt_estoque_atual})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                }}
-              >
-                Localização{" "}
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "#888",
-                    fontWeight: "normal",
-                  }}
-                >
-                  (Ex: Almoxarifado Central)
-                </span>
-              </label>
-              <select
-                name="loc_id"
-                value={formData.loc_id}
-                onChange={handleChange}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                }}
-              >
-                <option value="">Selecione a localização...</option>
-                {locations.map((loc) => (
-                  <option key={loc.loc_id} value={loc.loc_id}>
-                    {loc.loc_nome}
                   </option>
                 ))}
               </select>
@@ -502,11 +463,22 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
               />
             </div>
 
-            <div style={{ display: "flex", gap: "16px", marginTop: "10px" }} className="modal-footer">
-              <button type="button" onClick={closeAll} className="btn btn-ghost">
+            <div
+              style={{ display: "flex", gap: "16px", marginTop: "10px" }}
+              className="modal-footer"
+            >
+              <button
+                type="button"
+                onClick={closeAll}
+                className="btn btn-ghost"
+              >
                 Cancelar
               </button>
-              <button type="submit" disabled={loadingLots} className="btn btn-primary">
+              <button
+                type="submit"
+                disabled={loadingLots}
+                className="btn btn-primary"
+              >
                 {loadingLots ? "Carregando lotes..." : "Confirmar Saída"}
               </button>
             </div>
@@ -515,11 +487,26 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
       </div>
 
       {isLotsModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsLotsModalOpen(false)}>
-          <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="modal-overlay"
+          onClick={() => setIsLotsModalOpen(false)}
+        >
+          <div
+            className="modal-content card"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(94vw, 1180px)",
+              maxHeight: "none",
+              overflow: "visible",
+            }}
+          >
             <div className="modal-header">
               <h3 style={{ margin: 0 }}>Selecionar Lotes da Saída</h3>
-              <button className="modal-close" onClick={() => setIsLotsModalOpen(false)} aria-label="Fechar">
+              <button
+                className="modal-close"
+                onClick={() => setIsLotsModalOpen(false)}
+                aria-label="Fechar"
+              >
                 <X size={24} />
               </button>
             </div>
@@ -531,15 +518,28 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
 
             <div
               style={{
-                maxHeight: "320px",
-                overflow: "auto",
                 border: "1px solid #e5e7eb",
                 borderRadius: "8px",
               }}
             >
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  tableLayout: "fixed",
+                }}
+              >
                 <thead>
                   <tr style={{ background: "#f9fafb" }}>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: "10px",
+                        fontSize: "13px",
+                      }}
+                    >
+                      Localização
+                    </th>
                     <th
                       style={{
                         textAlign: "left",
@@ -590,13 +590,16 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
                 </thead>
                 <tbody>
                   {availableLots.map((lot, index) => {
-                    const key = buildLotKey(lot.lote, lot.validade);
+                    const key = buildLotKey(lot.lote, lot.validade, lot.loc_id);
                     const statusInfo = getValidityStatus(lot.validade);
                     return (
                       <tr
                         key={`${key}-${index}`}
                         style={{ borderTop: "1px solid #f3f4f6" }}
                       >
+                        <td style={{ padding: "10px" }}>
+                          {lot.loc_nome || "Sem localização"}
+                        </td>
                         <td style={{ padding: "10px" }}>
                           {formatLotLabel(lot.lote)}
                         </td>
@@ -664,8 +667,15 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
               {Number(formData.lcl_qtde || 0)}
             </div>
 
-            <div style={{ display: "flex", gap: "16px", marginTop: "16px" }} className="modal-footer">
-              <button type="button" onClick={() => setIsLotsModalOpen(false)} className="btn btn-ghost">
+            <div
+              style={{ display: "flex", gap: "16px", marginTop: "16px" }}
+              className="modal-footer"
+            >
+              <button
+                type="button"
+                onClick={() => setIsLotsModalOpen(false)}
+                className="btn btn-ghost"
+              >
                 Voltar
               </button>
               <button
