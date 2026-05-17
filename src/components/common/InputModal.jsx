@@ -89,6 +89,16 @@ export default function InputModal({
     }
   }, [isOpen, token, inputData]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    if (Array.isArray(locations) && locations.length > 0) {
+      setFormData((prev) => {
+        if (prev.loc_id && prev.loc_id !== 1) return prev;
+        return { ...prev, loc_id: locations[0].loc_id };
+      });
+    }
+  }, [locations, isOpen]);
+
   if (!isOpen) return null;
 
   const handleChange = (e) => {
@@ -96,7 +106,7 @@ export default function InputModal({
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "fncd_id" || name === "ent_valor_compra"
+        name === "fncd_id" || name === "ent_valor_compra" || name === "loc_id"
           ? Number(value)
           : value,
     }));
@@ -119,7 +129,7 @@ export default function InputModal({
         ...formData.produtos,
         {
           pdt_id: "",
-          loc_id: "",
+          loc_id: formData.loc_id || "",
           quantidade: "",
           lote: "",
           pdt_validade: "",
@@ -207,6 +217,23 @@ export default function InputModal({
           </div>
 
           <div className="input-field">
+            <label>Localização</label>
+            <select
+              name="loc_id"
+              value={formData.loc_id}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Selecione...</option>
+              {locations.map((loc) => (
+                <option key={loc.loc_id} value={loc.loc_id}>
+                  {loc.loc_nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="input-field">
             <label>Data / Hora da Compra</label>
             <input
               type="datetime-local"
@@ -249,12 +276,18 @@ export default function InputModal({
                       marginBottom: "4px",
                     }}
                   >
-                    <div />
+                    <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                      Produto
+                    </label>
                     <label style={{ fontSize: "14px", fontWeight: "500" }}>
                       Localização
                     </label>
-                    <div />
-                    <div />
+                    <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                      Quantidade
+                    </label>
+                    <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                      Lote
+                    </label>
                     <label style={{ fontSize: "14px", fontWeight: "500" }}>
                       Validade
                     </label>
@@ -289,20 +322,6 @@ export default function InputModal({
                       </option>
                     ))}
                   </select>
-                  <input
-                    type="number"
-                    name="quantidade"
-                    value={prod.quantidade}
-                    onChange={(e) => handleProductChange(index, e)}
-                    required
-                    placeholder="Qtd"
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border)",
-                    }}
-                  />
                   <select
                     name="loc_id"
                     value={prod.loc_id}
@@ -322,6 +341,20 @@ export default function InputModal({
                       </option>
                     ))}
                   </select>
+                  <input
+                    type="number"
+                    name="quantidade"
+                    value={prod.quantidade}
+                    onChange={(e) => handleProductChange(index, e)}
+                    required
+                    placeholder="Qtd"
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      border: "1px solid var(--border)",
+                    }}
+                  />
                   <input
                     type="text"
                     name="lote"
