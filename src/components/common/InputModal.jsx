@@ -22,7 +22,6 @@ export default function InputModal({
     produtos: [
       {
         pdt_id: "",
-        loc_id: "",
         quantidade: "",
         lote: "",
         pdt_validade: "",
@@ -62,7 +61,6 @@ export default function InputModal({
           produtos: [
             {
               pdt_id: inputData.pdt_id || "",
-              loc_id: inputData.loc_id || 1,
               quantidade: inputData.ent_quantidade || "",
               lote: inputData.lote || "",
               pdt_validade: inputData.pdt_validade || "",
@@ -78,7 +76,6 @@ export default function InputModal({
           produtos: [
             {
               pdt_id: "",
-              loc_id: "",
               quantidade: "",
               lote: "",
               pdt_validade: "",
@@ -116,7 +113,7 @@ export default function InputModal({
     const { name, value } = e.target;
     const newProdutos = [...formData.produtos];
     newProdutos[index][name] =
-      name === "pdt_id" || name === "loc_id" || name === "quantidade"
+      name === "pdt_id" || name === "quantidade"
         ? Number(value)
         : value;
     setFormData({ ...formData, produtos: newProdutos });
@@ -129,7 +126,6 @@ export default function InputModal({
         ...formData.produtos,
         {
           pdt_id: "",
-          loc_id: formData.loc_id || "",
           quantidade: "",
           lote: "",
           pdt_validade: "",
@@ -156,10 +152,10 @@ export default function InputModal({
 
     if (
       !formData.fncd_id ||
-      formData.produtos.some((p) => !p.pdt_id || !p.loc_id || !p.quantidade)
+      formData.produtos.some((p) => !p.pdt_id || !p.quantidade)
     ) {
       alert(
-        "Preencha todos os campos do fornecedor, produto, localização e quantidade.",
+        "Preencha todos os campos do fornecedor, produto e quantidade.",
       );
       return;
     }
@@ -280,9 +276,6 @@ export default function InputModal({
                       Produto
                     </label>
                     <label style={{ fontSize: "14px", fontWeight: "500" }}>
-                      Localização
-                    </label>
-                    <label style={{ fontSize: "14px", fontWeight: "500" }}>
                       Quantidade
                     </label>
                     <label style={{ fontSize: "14px", fontWeight: "500" }}>
@@ -319,25 +312,6 @@ export default function InputModal({
                     {products.map((p) => (
                       <option key={p.pdt_id} value={p.pdt_id}>
                         {p.pdt_nome}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    name="loc_id"
-                    value={prod.loc_id}
-                    onChange={(e) => handleProductChange(index, e)}
-                    required
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border)",
-                    }}
-                  >
-                    <option value="">Localização...</option>
-                    {locations.map((loc) => (
-                      <option key={loc.loc_id} value={loc.loc_id}>
-                        {loc.loc_nome}
                       </option>
                     ))}
                   </select>
