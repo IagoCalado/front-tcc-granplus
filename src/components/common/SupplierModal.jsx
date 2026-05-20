@@ -197,7 +197,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
                 fontWeight: "500",
               }}
             >
-              Nome do Fornecedor
+              Nome do Fornecedor              
             </label>
             <input
               type="text"
@@ -206,6 +206,33 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
               onChange={handleChange}
               required
               placeholder="Ex: Higiene & Limpeza LTDA"
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: "6px",
+                border: "1px solid #ccc",
+              }}
+            />
+          </div>
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "6px",
+                fontSize: "14px",
+                fontWeight: "500",
+              }}
+            >
+              CPF/CNPJ
+            </label>
+            <input
+              type="text"
+              name="fncd_documento"
+              value={formData.fncd_documento}
+              onChange={handleChange}
+              required
+              placeholder="Ex: 000.000.000-00 ou 00.000.000/0000-00"
+              inputMode="numeric"
               style={{
                 width: "100%",
                 padding: "10px",

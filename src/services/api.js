@@ -104,7 +104,7 @@ export const getOutputs = (token) => request("/saidas", { token });
 export const createOutput = (token, payload) =>
   request("/saidas", { token, method: "POST", body: payload });
 export const getOutputAvailableLots = (token, pdtId) =>
-  request(`/saidas/lotes-disponiveis?pdt_id=${pdtId}`, { token });
+  request(`/saidas/lotes-disponiveis/${pdtId}`, { token });
 
 // Fornecedores
 export const getSuppliers = (token) => request("/fornecedores", { token });
