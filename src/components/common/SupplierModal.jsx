@@ -280,7 +280,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
               </small>
             ) : null}
           </div>
-          <div>
+        <div>
             <label
               style={{
                 display: "block",
@@ -289,12 +289,12 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
                 fontWeight: "500",
               }}
             >
-              Nome da Rua
+              CPF/CNPJ
             </label>
             <input
               type="text"
-              name="fncd_logradouro"
-              value={formData.fncd_logradouro}
+              name="fncd_documento" /* <--- CORRIGIDO AQUI */
+              value={formData.fncd_documento || ""} /* <--- CORRIGIDO AQUI (O || "" mata o erro vermelho do React) */
               onChange={handleChange}
               required
               placeholder="Ex: 12.345.678/0001-90"

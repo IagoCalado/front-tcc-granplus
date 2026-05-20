@@ -91,21 +91,54 @@ const AuditReportsPage = () => {
       let colunasTabela = [];
       let linhasTabela = [];
 
-      // A MÁGICA ACONTECE AQUI: Define as colunas dependendo do tipo!
+      // Dependendo do tipo de relatório, a estrutura da tabela muda. Por isso, temos essa lógica para montar as colunas e linhas dinamicamente.
       if (tipoRelatorio === "geral") {
         colunasTabela = [['ID', 'Usuario', 'Acao', 'Data', 'Hora']];
-        linhasTabela = dados.map(item => [item.aud_id, item.user_nome, item.aud_acao, new Date(item.aud_data).toLocaleDateString("pt-BR"), item.aud_time]);
+        linhasTabela = dados.map(item => [item.aud_id, item.user_nome, item.aud_acao, item.aud_data, item.aud_time]);
+        // Auditoria não tem totalizador numérico.
       
       } else if (tipoRelatorio === "entradas") {
-        colunasTabela = [['Produto', 'Quantidade', 'Data Entrada']];
-        // Adapte os nomes (pdt_nome, ent_qtde) conforme as colunas reais do seu banco
-        linhasTabela = dados.map(item => [item.pdt_nome, item.quantidade, new Date(item.data).toLocaleDateString("pt-BR")]);
+        colunasTabela = [['Produto', 'Quantidade', 'Valor Total (R$)', 'Usuário', 'Data Entrada']]; // Coluna adicionada
+        
+        linhasTabela = dados.map(item => [
+          item.pdt_nome, 
+          item.quantidade,
+          Number(item.valor_total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+          item.usuario, // Dado inserido na linha
+          item.data ? item.data.slice(0, 10).split('-').reverse().join('/') : '-'
+        ]);
+
+        const totalQuantidade = dados.reduce((acc, item) => acc + Number(item.quantidade), 0);
+        const totalFinanceiro = dados.reduce((acc, item) => acc + Number(item.valor_total), 0);
+        
+        linhasTabela.push([
+          'TOTAL GERAL', 
+          totalQuantidade.toString(),
+          totalFinanceiro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 
+          '-', // Espaço vazio para a coluna de Usuário no Total
+          '-'
+        ]);
       
-      } else if (tipoRelatorio === "abaixo_estoque") {
-        colunasTabela = [['Produto', 'Estoque Minimo', 'Estoque Atual']];
+      } else if (tipoRelatorio === "abaixo_estoque" || tipoRelatorio === "negativos") {
+        // Juntei os dois porque a estrutura visual é idêntica
+        colunasTabela = [['Produto', 'Estoque Mínimo', 'Estoque Atual']];
         linhasTabela = dados.map(item => [item.pdt_nome, item.pdt_estoque_minimo, item.total_estoque]);
+        
+        // Aqui por exemplo não faz sentido nenhum somar o estoque de milho com estoque de vacina, então não tem o totalizador.
+
+      } else if (tipoRelatorio === "saidas") {
+        colunasTabela = [['Produto', 'Quantidade', 'Destino', 'Usuário', 'Data Saída']]; // Coluna adicionada
+        linhasTabela = dados.map(item => [
+          item.pdt_nome, 
+          item.quantidade, 
+          item.destino || 'Não informado',
+          item.usuario,
+          item.data ? item.data.slice(0, 10).split('-').reverse().join('/') : '-'
+        ]);
+
+        const totalQuantidade = dados.reduce((acc, item) => acc + Number(item.quantidade), 0);
+        linhasTabela.push(['TOTAL GERAL', totalQuantidade.toString(), '-', '-', '-']); // Espaço vazio para a coluna de Usuário no Total
       }
-      // Você pode adicionar os outros IFs (saidas, negativos) seguindo a mesma lógica!
 
       autoTable(doc, {
         startY: 35,
@@ -175,52 +208,79 @@ const AuditReportsPage = () => {
   ];
 
   return (
-    <div className="app-content">
+
+  <div className="app-content">
       <div
         style={{
           position: "sticky",
           top: 0,
           zIndex: 30,
-          // background: "var(--bg)",
           paddingTop: "4px",
           paddingBottom: "8px",
         }}
       >
+        {/* 1. O SectionHeader agora fica mais limpo, cuidando só do Título e Subtítulo */}
         <SectionHeader 
           title="Relatórios" 
           subtitle="Acompanhe as movimentações no sistema (semanal, mensal, anual)." 
-          onSearch={setSearchTerm}
-          searchPlaceholder="Buscar tabela ou usuário..."
-          actions={
-            <button className="btn btn-primary" onClick={() => setIsModalAberto(true)}>
-              Exportar Relatório
-            </button>
-          }
         />
       </div>
 
-      <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
-        <button 
-          onClick={() => setFilterPeriod("weekly")}
-          style={{ fontWeight: filterPeriod === "weekly" ? "bold" : "normal" }}
-        >
-          Semanal
-        </button>
-        <button 
-          onClick={() => setFilterPeriod("monthly")}
-          style={{ fontWeight: filterPeriod === "monthly" ? "bold" : "normal" }}
-        >
-          Mensal
-        </button>
-        <button 
-          onClick={() => setFilterPeriod("annual")}
-          style={{ fontWeight: filterPeriod === "annual" ? "bold" : "normal" }}
-        >
-          Anual
-        </button>
+      {/* 2. NOSSA NOVA LINHA (TOOLBAR) - Alinha Esquerda e Direita */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        
+        {/* LADO ESQUERDO: Botões de Filtro */}
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button 
+            className="filter-button"
+            onClick={() => setFilterPeriod("weekly")}
+            style={{ opacity: filterPeriod === "weekly" ? 1 : 0.6 }}
+          >
+            Semanal
+          </button>
+          <button 
+            className="filter-button"
+            onClick={() => setFilterPeriod("monthly")}
+            style={{ opacity: filterPeriod === "monthly" ? 1 : 0.6 }}
+          >
+            Mensal
+          </button>
+          <button 
+            className="filter-button"
+            onClick={() => setFilterPeriod("annual")}
+            style={{ opacity: filterPeriod === "annual" ? 1 : 0.6 }}
+          >
+            Anual
+          </button>
+        </div>
+
+        {/* LADO DIREITO: Barra de Pesquisa + Botão de Exportar */}
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          
+          {/* Recriamos o input conectando direto no seu setSearchTerm */}
+          <input
+            type="text"
+            placeholder="Buscar tabela ou usuário..."
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              padding: "10px 16px",
+              borderRadius: "8px",
+              border: "1px solid var(--border)",
+              background: "transparent",
+              color: "inherit",
+              minWidth: "250px"
+            }}
+          />
+
+          <button className="btn btn-primary" onClick={() => setIsModalAberto(true)}>
+            Exportar Relatório
+          </button>
+
+        </div>
       </div>
 
       <DataTable columns={columns} rows={filteredReports} rowKey="aud_id" />
+    
 
       {/* MODAL DE FILTRO DO PDF (Design Dark) */}
       {isModalAberto && (
@@ -277,9 +337,8 @@ const AuditReportsPage = () => {
           </div>
         </div>
       )}
-
     </div>
   );
-};
+}
 
 export default AuditReportsPage;
