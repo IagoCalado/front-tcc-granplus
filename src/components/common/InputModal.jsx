@@ -113,9 +113,7 @@ export default function InputModal({
     const { name, value } = e.target;
     const newProdutos = [...formData.produtos];
     newProdutos[index][name] =
-      name === "pdt_id" || name === "quantidade"
-        ? Number(value)
-        : value;
+      name === "pdt_id" || name === "quantidade" ? Number(value) : value;
     setFormData({ ...formData, produtos: newProdutos });
   };
 
@@ -154,9 +152,7 @@ export default function InputModal({
       !formData.fncd_id ||
       formData.produtos.some((p) => !p.pdt_id || !p.quantidade)
     ) {
-      alert(
-        "Preencha todos os campos do fornecedor, produto e quantidade.",
-      );
+      alert("Preencha todos os campos do fornecedor, produto e quantidade.");
       return;
     }
 
