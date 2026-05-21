@@ -93,27 +93,37 @@ const ProductOutputsPage = () => {
   }
 
   const columns = [
-    { key: "sai_id", label: "ID" },
+    { key: "sai_id", label: "ID", sortable: true, sortType: "number" },
     {
       key: "sai_data",
       label: "Data",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) =>
+        row.sai_data ? new Date(row.sai_data).getTime() : 0,
       render: (row) =>
         row.sai_data ? new Date(row.sai_data).toLocaleDateString("pt-BR") : "-",
     },
     {
       key: "sai_hora",
       label: "Horário",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) =>
+        row.sai_data ? new Date(row.sai_data).getTime() : 0,
       render: (row) =>
         row.sai_data ? new Date(row.sai_data).toLocaleTimeString("pt-BR") : "-",
     },
-    { key: "pdt_nome", label: "Produto" },
+    { key: "pdt_nome", label: "Produto", sortable: true },
     {
       key: "sai_quantidade",
       label: "Quantidade",
+      sortable: true,
+      sortType: "number",
       render: (row) => formatNumber(row.sai_quantidade),
     },
-    { key: "sai_motivo", label: "Motivo" },
-    { key: "sai_destino", label: "Destino" },
+    { key: "sai_motivo", label: "Motivo", sortable: true },
+    { key: "sai_destino", label: "Destino", sortable: true },
   ];
 
   return (

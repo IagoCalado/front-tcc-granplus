@@ -226,15 +226,18 @@ const SuppliersPage = () => {
 
   // Colunas contendo as chaves para match correspondente de chaves vindas da API de fornecedores
   const columns = [
-    { key: "fncd_nome", label: "Nome do Fornecedor" },
+    { key: "fncd_nome", label: "Nome do Fornecedor", sortable: true },
     {
       key: "fncd_documento",
       label: "CPF/CNPJ",
+      sortable: true,
       render: (row) => formatCpfCnpj(row.fncd_documento),
     },
     {
       key: "fncd_endereco",
       label: "Endereço",
+      sortable: true,
+      sortAccessor: (row) => formatSupplierAddress(row),
       render: (row) => {
         const hasSomeAddress =
           row?.fncd_endereco ||
@@ -279,9 +282,10 @@ const SuppliersPage = () => {
     {
       key: "fncd_tel",
       label: "Telefone",
+      sortable: true,
       render: (row) => formatPhone(row.fncd_tel),
     },
-    { key: "fncd_email", label: "E-mail" },
+    { key: "fncd_email", label: "E-mail", sortable: true },
     {
       key: "actions",
       label: "Ações",

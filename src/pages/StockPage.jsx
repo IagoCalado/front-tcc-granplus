@@ -311,25 +311,33 @@ const StockPage = () => {
     );
   }
   const columns = [
-    { key: "pdt_nome", label: "Produto" },
+    { key: "pdt_nome", label: "Produto", sortable: true },
     {
       key: "pdt_codigo",
       label: "Codigo",
+      sortable: true,
       render: (row) => row.pdt_codigo || "-",
     },
     {
       key: "pdt_estoque_minimo",
       label: "Estoque minimo",
+      sortable: true,
+      sortType: "number",
       render: (row) => formatNumber(row.pdt_estoque_minimo),
     },
     {
       key: "pdt_descricao",
       label: "Descrição",
+      sortable: true,
       render: (row) => row.pdt_descricao || "-",
     },
     {
       key: "lotes",
       label: "Lotes / Validade",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) =>
+        availableLotsCountByProduct[row.pdt_id] ?? row.lotes?.length ?? 0,
       render: (row) => {
         const lotsCount =
           availableLotsCountByProduct[row.pdt_id] ?? row.lotes?.length ?? 0;
@@ -356,11 +364,16 @@ const StockPage = () => {
     {
       key: "estoque_atual",
       label: "Estoque atual",
+      sortable: true,
+      sortType: "number",
       render: (row) => formatNumber(row.estoque_atual),
     },
     {
       key: "status",
       label: "Status",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) => (row.estoque_atual > 0 ? 1 : 0),
       render: (row) => (
         <StatusPill
           label={row.estoque_atual > 0 ? "Disponivel" : "Zerado"}

@@ -4,10 +4,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Legend,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -21,6 +18,7 @@ import {
   getMostMovedProducts,
   getMinimumStock,
   getProducts,
+  getTopSuppliersBySpend,
   getStock,
   getUsers,
 } from "../services/api";
@@ -144,6 +142,8 @@ const DashboardTooltip = (props) => {
   );
 };
 
+const dashboardTooltipCursor = { fill: "rgba(0, 0, 0, 0)" };
+
 const DashboardStatCard = ({ title, value, meta, loading }) => {
   if (!loading) {
     return <StatCard title={title} value={value} meta={meta} />;
@@ -174,6 +174,7 @@ const DashboardPage = () => {
     stock: "idle",
     moved: "idle",
     min: "idle",
+    suppliersTop: "idle",
     users: "idle",
   });
   const [errors, setErrors] = useState({
@@ -181,6 +182,7 @@ const DashboardPage = () => {
     stock: "",
     moved: "",
     min: "",
+    suppliersTop: "",
     users: "",
   });
 
@@ -189,6 +191,7 @@ const DashboardPage = () => {
   const [users, setUsers] = useState([]);
   const [mostMoved, setMostMoved] = useState([]);
   const [minStock, setMinStock] = useState([]);
+  const [topSuppliers, setTopSuppliers] = useState([]);
   const [topLimit, setTopLimit] = useState(8);
 
   useEffect(() => {
@@ -201,17 +204,26 @@ const DashboardPage = () => {
         stock: "loading",
         moved: "loading",
         min: "loading",
+        suppliersTop: "loading",
         users: isAdmin ? "loading" : "ready",
       }));
-      setErrors({ products: "", stock: "", moved: "", min: "", users: "" });
+      setErrors({
+        products: "",
+        stock: "",
+        moved: "",
+        min: "",
+        suppliersTop: "",
+        users: "",
+      });
 
       try {
-        const [productsRes, stockRes, movedRes, minRes] =
+        const [productsRes, stockRes, movedRes, minRes, suppliersTopRes] =
           await Promise.allSettled([
             getProducts(token),
             getStock(token),
             getMostMovedProducts(token),
             getMinimumStock(token),
+            getTopSuppliersBySpend(token),
           ]);
 
         if (productsRes.status === "fulfilled") {
@@ -268,6 +280,20 @@ const DashboardPage = () => {
           }));
         }
 
+        if (suppliersTopRes.status === "fulfilled") {
+          setTopSuppliers(suppliersTopRes.value || []);
+          setStatus((prev) => ({ ...prev, suppliersTop: "ready" }));
+        } else {
+          setTopSuppliers([]);
+          setStatus((prev) => ({ ...prev, suppliersTop: "error" }));
+          setErrors((prev) => ({
+            ...prev,
+            suppliersTop:
+              suppliersTopRes.reason?.message ||
+              "Falha ao carregar fornecedores.",
+          }));
+        }
+
         if (isAdmin) {
           try {
             const usersData = await getUsers(token);
@@ -312,10 +338,6 @@ const DashboardPage = () => {
     return products.filter((p) => Boolean(p?.pdt_ativo)).length;
   }, [products]);
 
-  const productsInactiveCount = useMemo(() => {
-    return products.filter((p) => !p?.pdt_ativo).length;
-  }, [products]);
-
   const productsWithStockCount = useMemo(() => {
     return products.filter((p) => Number(p?.pdt_estoque_atual || 0) > 0).length;
   }, [products]);
@@ -355,18 +377,15 @@ const DashboardPage = () => {
       .slice(0, topLimit);
   }, [products, topLimit]);
 
-  const productStatusChartData = useMemo(() => {
-    const ativo = productsActiveCount;
-    const inativo = productsInactiveCount;
-    const total = ativo + inativo;
-
-    if (!total) return [];
-
-    return [
-      { name: "Ativos", value: ativo },
-      { name: "Inativos", value: inativo },
-    ];
-  }, [productsActiveCount, productsInactiveCount]);
+  const topSuppliersList = useMemo(() => {
+    return (topSuppliers || [])
+      .map((item) => ({
+        name: item?.fncd_nome || "Fornecedor",
+        total: Number(item?.total_gasto || 0),
+      }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+  }, [topSuppliers]);
 
   if (!token) {
     return (
@@ -382,6 +401,7 @@ const DashboardPage = () => {
     status.stock === "error" ? "Estoque" : null,
     status.moved === "error" ? "Movimentações" : null,
     status.min === "error" ? "Mínimo" : null,
+    status.suppliersTop === "error" ? "Top fornecedores" : null,
     isAdmin && status.users === "error" ? "Usuários" : null,
   ].filter(Boolean);
 
@@ -525,7 +545,7 @@ const DashboardPage = () => {
                     axisLine={{ stroke: "var(--border)" }}
                     tickLine={{ stroke: "var(--border)" }}
                   />
-                  <Tooltip content={<DashboardTooltip />} />
+                  <Tooltip content={<DashboardTooltip />} cursor={dashboardTooltipCursor} />
                   <Legend
                     wrapperStyle={{ color: "var(--muted)", fontSize: 12 }}
                   />
@@ -594,11 +614,11 @@ const DashboardPage = () => {
                     axisLine={{ stroke: "var(--border)" }}
                     tickLine={{ stroke: "var(--border)" }}
                   />
-                  <Tooltip content={<DashboardTooltip />} />
+                  <Tooltip content={<DashboardTooltip />} cursor={dashboardTooltipCursor} />
                   <Bar
                     dataKey="estoque"
                     name="Estoque"
-                    fill="var(--cor-grafico)" 
+                    fill="var(--cor-grafico)"
                     radius={[0, 10, 10, 0]}
                   />
                 </BarChart>
@@ -668,7 +688,7 @@ const DashboardPage = () => {
                     axisLine={{ stroke: "var(--border)" }}
                     tickLine={{ stroke: "var(--border)" }}
                   />
-                  <Tooltip content={<DashboardTooltip />} />
+                  <Tooltip content={<DashboardTooltip />} cursor={dashboardTooltipCursor} />
                   <Legend
                     wrapperStyle={{ color: "var(--muted)", fontSize: 12 }}
                   />
@@ -697,88 +717,69 @@ const DashboardPage = () => {
 
         <div className="card">
           <ChartCardHeader
-            title="Saúde do catálogo"
-            subtitle="Distribuição de produtos ativos e inativos"
+            title="Top fornecedores"
+            subtitle="Quem mais recebeu em compras"
+            actions={
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => navigate("/fornecedores")}
+                style={{ padding: "6px 10px", fontSize: 12 }}
+              >
+                Ver fornecedores
+              </button>
+            }
           />
 
-          {status.products === "loading" ? (
-            <div style={{ height: 320, display: "grid", gap: 10, alignContent: "center" }}>
-              <div className="skeleton" style={{ height: 16, width: "40%" }} />
-              <div className="skeleton" style={{ height: 12, width: "60%" }} />
-              <div className="skeleton" style={{ height: 240, width: "100%", borderRadius: 16 }} />
+          {status.suppliersTop === "loading" ? (
+            <div style={{ display: "grid", gap: 10, alignContent: "center" }}>
+              <div className="skeleton" style={{ height: 16, width: "45%" }} />
+              <div className="skeleton" style={{ height: 12, width: "65%" }} />
+              <div className="skeleton" style={{ height: 160, width: "100%", borderRadius: 16 }} />
             </div>
-          ) : status.products === "error" ? (
+          ) : status.suppliersTop === "error" ? (
             <div className="dashboard-error">
-              <strong>Falha ao carregar produtos</strong>
+              <strong>Falha ao carregar fornecedores</strong>
               <div style={{ marginTop: 6, color: "var(--ink-soft)", fontSize: 13 }}>
-                {errors.products || "Tente recarregar a página."}
+                {errors.suppliersTop || "Tente recarregar a página."}
               </div>
             </div>
-          ) : productStatusChartData.length ? (
-            <div style={{ height: 320, display: "grid", placeItems: "center", minWidth: 0, minHeight: 0 }}>
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Tooltip content={<DashboardTooltip />} />
-                  <Legend
-                    verticalAlign="bottom"
-                    wrapperStyle={{ color: "var(--muted)", fontSize: 12 }}
-                  />
-                  <Pie
-                    data={productStatusChartData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={70}
-                    outerRadius={110}
-                    paddingAngle={4}
-                    stroke="var(--bg-elevated)"
-                  >
-                    {productStatusChartData.map((entry) => (
-                      <Cell
-                        key={entry.name}
-                        fill={
-                          entry.name === "Ativos" ? "var(--accent)" : "var(--border-strong)"
-                        }
-                      />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+          ) : topSuppliersList.length ? (
+            <div style={{ display: "grid", gap: 10 }}>
+              {topSuppliersList.map((item, index) => (
+                <div
+                  key={`${item.name}-${index}`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px 12px",
+                    borderRadius: 12,
+                    background: "var(--bg-soft)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <div style={{ display: "grid", gap: 2 }}>
+                    <span style={{ fontSize: 13, color: "var(--muted)" }}>#{index + 1}</span>
+                    <strong style={{ fontSize: 14, color: "var(--ink)" }}>
+                      {item.name}
+                    </strong>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>Total gasto</div>
+                    <strong style={{ fontSize: 14, color: "var(--ink)" }}>
+                      R$ {formatNumber(item.total)}
+                    </strong>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <EmptyState
-              title="Sem dados"
-              description="Não foi possível montar a distribuição de status."
+              title="Sem compras registradas"
+              description="Ainda não há entradas vinculadas a fornecedores."
             />
           )}
-
-          <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                color: "var(--ink-soft)",
-                fontSize: 13,
-              }}
-            >
-              <span>Ativos</span>
-              <strong style={{ color: "var(--ink)" }}>
-                {formatNumber(productsActiveCount)}
-              </strong>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                color: "var(--ink-soft)",
-                fontSize: 13,
-              }}
-            >
-              <span>Inativos</span>
-              <strong style={{ color: "var(--ink)" }}>
-                {formatNumber(productsInactiveCount)}
-              </strong>
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -138,31 +138,42 @@ const ProductsPage = () => {
   };
 
   const columns = [
-    { key: "pdt_nome", label: "Produto" },
-    { key: "pdt_codigo", label: "Codigo" },
+    { key: "pdt_nome", label: "Produto", sortable: true },
+    { key: "pdt_codigo", label: "Codigo", sortable: true },
     {
       key: "pdt_estoque_atual",
       label: "Estoque",
+      sortable: true,
+      sortType: "number",
       render: (row) => formatNumber(row.pdt_estoque_atual),
     },
     {
       key: "pdt_estoque_minimo",
       label: "Minimo",
+      sortable: true,
+      sortType: "number",
       render: (row) => formatNumber(row.pdt_estoque_minimo),
     },
     { 
       key: "cat_id", 
       label: "Categoria",
-      render: (row) => categoriaMap[row.cat_id] || row.cat_id 
+      sortable: true,
+      sortAccessor: (row) => categoriaMap[row.cat_id] || row.cat_id,
+      render: (row) => categoriaMap[row.cat_id] || row.cat_id,
     },
     { 
       key: "unid_med_id", 
       label: "Unidade",
-      render: (row) => unidadeMap[row.unid_med_id] || row.unid_med_id 
+      sortable: true,
+      sortAccessor: (row) => unidadeMap[row.unid_med_id] || row.unid_med_id,
+      render: (row) => unidadeMap[row.unid_med_id] || row.unid_med_id, 
     },
     {
       key: "pdt_ativo",
       label: "Status",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) => (row.pdt_ativo ? 1 : 0),
       render: (row) => (
         <StatusPill
           label={row.pdt_ativo ? "Ativo" : "Inativo"}

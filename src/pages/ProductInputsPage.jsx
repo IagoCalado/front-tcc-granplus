@@ -123,10 +123,16 @@ const ProductInputsPage = () => {
 
   // Colunas contendo o map das chaves do endpoint de Entradas com renderizadores personalizados para valores/moedas/data
   const columns = [
-    { key: "ent_id", label: "ID" },
+    { key: "ent_id", label: "ID", sortable: true, sortType: "number" },
     {
       key: "ent_data",
       label: "Data",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) => {
+        const dataCompleta = row.ent_data_compra || row.ent_data;
+        return dataCompleta ? new Date(dataCompleta).getTime() : 0;
+      },
       render: (row) => {
         const dataCompleta = row.ent_data_compra || row.ent_data;
         if (!dataCompleta) return "-";
@@ -136,6 +142,12 @@ const ProductInputsPage = () => {
     {
       key: "ent_hora",
       label: "Horário",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) => {
+        const dataCompleta = row.ent_data_compra || row.ent_data;
+        return dataCompleta ? new Date(dataCompleta).getTime() : 0;
+      },
       render: (row) => {
         const dataCompleta = row.ent_data_compra || row.ent_data;
         if (!dataCompleta) return "-";
@@ -147,20 +159,27 @@ const ProductInputsPage = () => {
         });
       },
     },
-    { key: "pdt_nome", label: "Produto" },
+    { key: "pdt_nome", label: "Produto", sortable: true },
     {
       key: "forn_nome",
       label: "Fornecedor",
+      sortable: true,
+      sortAccessor: (row) => row.forn_nome || "N/D",
       render: (row) => row.forn_nome || "N/D",
     },
     {
       key: "ent_quantidade",
       label: "Quantidade",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) => Number(row.ent_quantidade || row.ep_quantidade || 0),
       render: (row) => formatNumber(row.ent_quantidade || row.ep_quantidade),
     },
     {
       key: "ent_valor_compra",
       label: "Valor",
+      sortable: true,
+      sortType: "number",
       render: (row) => `R$ ${formatNumber(row.ent_valor_compra || 0)}`,
     },
     {

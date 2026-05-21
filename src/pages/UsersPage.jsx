@@ -108,7 +108,7 @@ const UsersPage = () => {
   const filteredUsers = useMemo(() => {
     return users.filter((row) =>
       matchesSearch(
-        [row?.user_nome, row?.user_nivel_acesso, row?.user_ativo],
+        [row?.user_nome, row?.user_email, row?.user_nivel_acesso, row?.user_ativo],
         searchTerm,
       ),
     );
@@ -135,15 +135,21 @@ const UsersPage = () => {
 
   if (isAdmin) {
     const columns = [
-      { key: "user_nome", label: "Usuário" },
+      { key: "user_nome", label: "Usuário", sortable: true },
+      { key: "user_email", label: "Email", sortable: true },
       {
         key: "user_nivel_acesso",
         label: "Nivel",
+        sortable: true,
+        sortAccessor: (row) => formatRole(row.user_nivel_acesso),
         render: (row) => formatRole(row.user_nivel_acesso),
       },
       {
         key: "user_ativo",
         label: "Status",
+        sortable: true,
+        sortType: "number",
+        sortAccessor: (row) => (row.user_ativo ? 1 : 0),
         render: (row) => (
           <StatusPill
             label={row.user_ativo ? "Ativo" : "Inativo"}
@@ -251,7 +257,7 @@ const UsersPage = () => {
           <p>Nome: {profile.user_nome}</p>
           <p>Nivel: {formatRole(profile.user_nivel_acesso)}</p>
           <p>Status: {profile.user_ativo ? "Ativo" : "Inativo"}</p>
-          <p>Email: {user?.email || "Nao informado"}</p>
+          <p>Email: {profile.user_email || "Nao informado"}</p>
         </div>
         <div className="card">
           <h3>Mudar senha</h3>

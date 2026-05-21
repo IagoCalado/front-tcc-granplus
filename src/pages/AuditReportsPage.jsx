@@ -193,20 +193,32 @@ const AuditReportsPage = () => {
   if (error) return <EmptyState title="Não foi possível carregar" description={error} />;
 
   const columns = [
-    { key: "aud_id", label: "ID" },
-    { key: "user_id", label: "Usuário", render: (row) => row.user_nome || row.user_id || "administrador" },
-    { key: "aud_acao", label: "Ação realizada" },
-    { key: "aud_data",
+    { key: "aud_id", label: "ID", sortable: true, sortType: "number" },
+    {
+      key: "user_id",
+      label: "Usuário",
+      sortable: true,
+      sortAccessor: (row) => row.user_nome || row.user_id || "administrador",
+      render: (row) => row.user_nome || row.user_id || "administrador",
+    },
+    { key: "aud_acao", label: "Ação realizada", sortable: true },
+    {
+      key: "aud_data",
       label: "Data",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) => (row.aud_data ? new Date(row.aud_data).getTime() : 0),
       render: (row) => (row.aud_data ? new Date(row.aud_data).toLocaleDateString("pt-BR") : "-"),
     },
-    { key: "aud_time", label: "Hora" },
+    { key: "aud_time", label: "Hora", sortable: true },
     {
       key: "aud_tabela_afetada",
       label: "Tabela Afetada",
+      sortable: true,
+      sortAccessor: (row) => formatTableName(row.aud_tabela_afetada),
       render: (row) => formatTableName(row.aud_tabela_afetada),
     },
-    { key: "aud_id_evento", label: "ID do Evento" },
+    { key: "aud_id_evento", label: "ID do Evento", sortable: true, sortType: "number" },
   ];
 
   return (
