@@ -859,20 +859,26 @@
 }
 
 .filter-button {
-  background: #6366f1; /* Cor roxa/azulada padrão de dashboards */
-  color: #fff;
+  background: #00d4ff !important; /* Azul Neon */
+  color: #080c16 !important; /* Texto escuro para dar contraste */
   font-weight: 600;
-  border: 0;
+  border: none;
   border-radius: 8px;
   padding: 8px 16px;
   cursor: pointer;
-  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3) !important;
 }
 
 .filter-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35); /* Sombra na mesma cor */
-  opacity: 0.95;
+  background: #33e0ff !important;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.6) !important;
+  filter: brightness(1.1);
+}
+
+/* Isso garante que quando o botão estiver "ativo" (selecionado), ele continue neon */
+.filter-button:active {
+  transform: scale(0.95);
 }
 
 .auth-spinner {
@@ -1796,4 +1802,207 @@
     opacity: 0;
     transform: rotate(45deg) translateX(1200px); /* Distância que ele viaja */
   }
+}
+/* ============================================================================
+   CORES GLOBAIS (Modo Escuro / Padrão)
+   ============================================================================ */
+:root {
+  --accent: #00d5ffea !important;       /* Azul Neon principal */
+  --accent-rgb: 0, 212, 255 !important;   /* RGB para usar em backgrounds com transparência */
+  --cor-grafico: #8b5cf6 !important;    /* Roxo Neon para gráficos e destaques */   
+}
+
+/* ============================================================================
+   MENU LATERAL (SIDEBAR) - MANTIDO
+   ============================================================================ */
+.sidebar-item.active {
+  background-color: rgba(0, 212, 255, 0.1) !important;
+  border: 1px solid rgba(0, 212, 255, 0.5) !important;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.2) !important;
+}
+
+.sidebar-item.active svg {
+  color: #00d4ff !important;
+  filter: drop-shadow(0 0 5px rgba(0, 212, 255, 0.6));
+}
+
+/* ============================================================================
+   1. BOTÃO PRIMÁRIO (Novo Produto, Exportar, etc)
+   ============================================================================ */
+.btn-primary {
+  background-color: rgba(0, 212, 255, 0.1) !important; 
+  color: #00d4ff !important; 
+  border: 1px solid rgba(0, 212, 255, 0.5) !important;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.1) !important; 
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: rgba(0, 212, 255, 0.2) !important; 
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.4) !important;
+}
+
+/* ============================================================================
+   2. BOTÕES DE FILTRO (Semanal, Mensal, Anual)
+   ============================================================================ */
+.filter-button {
+  background-color: transparent !important;
+  color: #00d4ff !important;
+  border: 1px solid rgba(0, 212, 255, 0.3) !important;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-button[style*="opacity: 1"] {
+  background-color: rgba(0, 212, 255, 0.1) !important;
+  border: 1px solid rgba(0, 212, 255, 0.6) !important;
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.2) !important;
+}
+
+.filter-button:hover {
+  background-color: rgba(0, 212, 255, 0.15) !important;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.3) !important;
+}
+
+/* ============================================================================
+   3. BOTÕES OUTLINE (Editar - Azul Neon)
+   ============================================================================ */
+/* Adicionamos o :not(.btn-danger) para ele não afetar o botão de excluir! */
+.btn-outline, 
+.btn-ghost,
+td .btn:not(.btn-danger) {
+  background-color: transparent !important;
+  color: #00d4ff !important;
+  border: 1px solid rgba(0, 212, 255, 0.4) !important;
+  box-shadow: none !important;
+}
+
+.btn-outline:hover, 
+.btn-ghost:hover,
+td .btn:not(.btn-danger):hover {
+  background-color: rgba(0, 212, 255, 0.15) !important;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.4) !important;
+}
+
+/* ============================================================================
+   4. BOTÃO DE EXCLUIR (Danger - Vermelho Neon)
+   ============================================================================ */
+.btn-danger, 
+td .btn-danger {
+  background-color: rgba(255, 77, 77, 0.05) !important; 
+  color: #ff4d4d !important; 
+  border: 1px solid rgba(255, 77, 77, 0.5) !important; 
+  box-shadow: 0 0 5px rgba(255, 77, 77, 0.1) !important;
+}
+
+.btn-danger:hover, 
+td .btn-danger:hover {
+  background-color: rgba(255, 77, 77, 0.2) !important;
+  box-shadow: 0 0 15px rgba(255, 77, 77, 0.6) !important; 
+  color: #ffffff !important; 
+}
+
+/* ============================================================================
+   🌞 MODO CLARO (LIGHT THEME OVERRIDES) 🌞
+   ============================================================================ */
+
+[data-theme="light"] {
+  --accent: #0284c7 !important; /* Azul Oceano mais escuro */
+  --accent-rgb: 2, 132, 199 !important; /* RGB para usar em backgrounds com transparência */
+  --cor-grafico: #6d28d9 !important; /* Roxo mais sóbrio para gráficos no tema claro */
+}
+
+/* 2. Menu Lateral - Sem brilho, fundo mais limpo */
+[data-theme="light"] .sidebar-item.active {
+  background-color: rgba(2, 132, 199, 0.1) !important;
+  border: 1px solid rgba(2, 132, 199, 0.3) !important;
+  box-shadow: none !important; /* Sem neon no branco! */
+}
+
+[data-theme="light"] .sidebar-item.active svg {
+  color: var(--accent) !important;
+  filter: none !important; /* Tira o efeito de luz do ícone */
+}
+
+/* 3. Botão Primário - Cor sólida, texto branco e sombra clássica */
+[data-theme="light"] .btn-primary {
+  background-color: var(--accent) !important;
+  color: #ffffff !important; 
+  border: none !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important; /* Sombra preta comum, não glow */
+}
+
+[data-theme="light"] .btn-primary:hover {
+  background-color: #0369a1 !important; /* Azul ainda mais escuro no hover */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 4. Botões de Tabela, Filtros e Outline - Sem brilho */
+[data-theme="light"] .btn-outline,
+[data-theme="light"] .btn-ghost,
+[data-theme="light"] td .btn:not(.btn-danger),
+[data-theme="light"] .filter-button {
+  background-color: transparent !important;
+  color: var(--accent) !important;
+  border: 1px solid var(--accent) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="light"] .btn-outline:hover,
+[data-theme="light"] .btn-ghost:hover,
+[data-theme="light"] td .btn:not(.btn-danger):hover,
+[data-theme="light"] .filter-button:hover,
+[data-theme="light"] .filter-button[style*="opacity: 1"] {
+  background-color: rgba(2, 132, 199, 0.1) !important;
+  box-shadow: none !important;
+}
+
+/* 5. Botão Excluir - Vermelho Sólido */
+[data-theme="light"] .btn-danger, 
+[data-theme="light"] td .btn-danger {
+  color: #dc2626 !important; /* Vermelho clássico e forte */
+  border: 1px solid #dc2626 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+[data-theme="light"] .btn-danger:hover, 
+[data-theme="light"] td .btn-danger:hover {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+/* 🟢 ESTADO DE SUCESSO/VÁLIDO */
+.is-valid,
+.has-success .form-control,
+[data-theme="dark"] .form-control.is-valid,
+[data-theme="dark"] .form-select.is-valid {
+  border-color: rgba(0, 212, 255, 0.6) !important; 
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.2) !important;
+  background-image: none !important;
+}
+
+.valid-feedback,
+.has-success .help-block {
+  color: #a3e635 !important;
+}
+
+
+/* 🟡 ESTADO DE AVISO */
+.is-warning,
+.has-warning .form-control,
+[data-theme="dark"] .form-control.is-warning {
+  border-color: rgba(139, 92, 246, 0.6) !important; /* Violeta Neon */
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.2) !important;
+}
+
+
+/* 🔴 ESTADO DE ERRO */
+.is-invalid,
+.has-error .form-control,
+[data-theme="dark"] .form-control.is-invalid {
+  border-color: rgba(255, 77, 77, 0.6) !important; /* Vermelho Neon */
+  box-shadow: 0 0 10px rgba(255, 77, 77, 0.3) !important;
 }

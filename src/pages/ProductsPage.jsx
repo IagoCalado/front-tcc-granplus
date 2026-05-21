@@ -123,7 +123,19 @@ const ProductsPage = () => {
     return <EmptyState title="Nao foi possivel carregar" description={error} />;
   }
 
-  
+  const categoriaMap = {
+    1: 'Limpeza',
+    2: 'Escritório',
+    3: 'Informática',
+    4: 'Alimentos'
+  };
+
+  const unidadeMap = {
+    1: 'UN',
+    2: 'CX',
+    3: 'KG',
+    4: 'LT'
+  };
 
   const columns = [
     { key: "pdt_nome", label: "Produto" },
@@ -138,8 +150,16 @@ const ProductsPage = () => {
       label: "Minimo",
       render: (row) => formatNumber(row.pdt_estoque_minimo),
     },
-    { key: "cat_id", label: "Categoria" },
-    { key: "unid_med_id", label: "Unidade" },
+    { 
+      key: "cat_id", 
+      label: "Categoria",
+      render: (row) => categoriaMap[row.cat_id] || row.cat_id 
+    },
+    { 
+      key: "unid_med_id", 
+      label: "Unidade",
+      render: (row) => unidadeMap[row.unid_med_id] || row.unid_med_id 
+    },
     {
       key: "pdt_ativo",
       label: "Status",

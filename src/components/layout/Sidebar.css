@@ -124,37 +124,27 @@
   align-items: center;
   justify-content: center;
   
-  /* Estilo do ícone pedido */
-  background-color: var(--accent); /* Fundo com a cor do sistema */
-  color: #ffffff; /* Ícone branco */
+  /* Removemos o fundo sólido e passamos a cor neon para o ícone em si */
+  background-color: transparent; 
+  color: var(--accent); 
   border-radius: 12px;
   font-size: 20px;
   
-  /* Sombra para destacar */
-  box-shadow: var(--shadow-sm);
+  /* Removemos a sombra padrão pra não poluir os inativos */
   transition: all var(--transition-smooth);
-}
-
-/**
- * Reduz a opacidade dos não ativos, a menos que em hover
- */
-.sidebar-item:not(.active) .sidebar-icon {
-  opacity: 0.85;
 }
 
 .sidebar-item:hover:not(.active) .sidebar-icon {
   opacity: 1;
-  transform: scale(1.05); /* Pequeno pulo ao hover */
+  transform: scale(1.05);
+  background-color: rgba(0, 212, 255, 0.05); /* Vidro super transparente */
 }
 
-/**
- * ESTADO ATIVO
- * Fundo branco, ícone com a cor do sistema e leve borda/sombra para não sumir no fundo
- */
 .sidebar-item.active .sidebar-icon {
-  background-color: #ffffff;
+  background-color: rgba(0, 212, 255, 0.1);
   color: var(--accent);
-  box-shadow: 0 0 0 1px var(--border), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+  border: 1px solid rgba(0, 212, 255, 0.4);
   opacity: 1;
 }
 

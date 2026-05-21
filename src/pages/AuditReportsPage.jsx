@@ -8,7 +8,6 @@ import EmptyState from "../components/common/EmptyState";
 import { useAuth } from "../contexts/AuthContext";
 import { matchesSearch } from "../utils/search";
 
-// Agora importamos certinho as duas funções do seu api.js!
 import { getAuditReports, getAuditReportsByDate, getRelatorioDinamico } from "../services/api";
 
 const TableNameLabels = {
@@ -36,6 +35,12 @@ const formatTableName = (tableName) => {
     .join(" ");
 };
 
+// Função para formatar datas no formato brasileiro (dd/mm/yyyy)
+const formatDataPDF = (dataString) => {
+  if (!dataString) return '-';
+  return String(dataString).slice(0, 10).split('-').reverse().join('/');
+};
+
 const AuditReportsPage = () => {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -44,13 +49,12 @@ const AuditReportsPage = () => {
   const [error, setError] = useState("");
   const [filterPeriod, setFilterPeriod] = useState("monthly"); 
 
-  // Estados para o Modal e Datas do PDF
   const [isModalAberto, setIsModalAberto] = useState(false);
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
-  const [tipoRelatorio, setTipoRelatorio] = useState("geral"); 
+  const [tipoRelatorio, setTipoRelatorio] = useState("geral");
+  const [toastAviso, setToastAviso] = useState("");
 
-  // Função para carregar a tabela
   const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -69,15 +73,14 @@ const AuditReportsPage = () => {
     loadData();
   }, [loadData, token]);
 
-  // A MÁGICA DO PDF
   const handleGerarPDF = async (e) => {
     e.preventDefault();
     try {
-      // Usando a função correta que está no seu api.js
       const dados = await getRelatorioDinamico(token, tipoRelatorio, dataInicio, dataFim);
 
       if (!dados || dados.length === 0) {
-        alert("Nenhum dado encontrado para este filtro!");
+        setToastAviso("Nenhum dado encontrado para este filtro!");
+        setTimeout(() => setToastAviso(""), 5000);
         return;
       }
 
@@ -85,34 +88,31 @@ const AuditReportsPage = () => {
       doc.setFontSize(18);
       doc.text(`Relatorio GranPlus - ${tipoRelatorio.toUpperCase()}`, 14, 22);
       doc.setFontSize(11);
-      doc.text(`Periodo: ${dataInicio.split('-').reverse().join('/')} ate ${dataFim.split('-').reverse().join('/')}`, 14, 30);
+      
+      doc.text(`Periodo: ${formatDataPDF(dataInicio)} ate ${formatDataPDF(dataFim)}`, 14, 30);
 
-      // Variáveis para guardar as colunas e as linhas que vão pro PDF
       let colunasTabela = [];
       let linhasTabela = [];
 
-      // Dependendo do tipo de relatório, a estrutura da tabela muda. Por isso, temos essa lógica para montar as colunas e linhas dinamicamente.
       if (tipoRelatorio === "geral") {
         colunasTabela = [['ID', 'Usuario', 'Acao', 'Data', 'Hora']];
         linhasTabela = dados.map(item => [
           item.aud_id, 
           item.user_nome, 
           item.aud_acao, 
-          // Esse slice pega só os primeiros 10 caracteres (YYYY-MM-DD) e inverte para DD/MM/YYYY
-          item.aud_data ? String(item.aud_data).slice(0, 10).split('-').reverse().join('/') : '-', 
+          formatDataPDF(item.aud_data),
           item.aud_time
         ]);
-        // Auditoria não tem totalizador numérico.
       
       } else if (tipoRelatorio === "entradas") {
-        colunasTabela = [['Produto', 'Quantidade', 'Valor Total (R$)', 'Usuário', 'Data Entrada']]; // Coluna adicionada
+        colunasTabela = [['Produto', 'Quantidade', 'Valor Total (R$)', 'Usuário', 'Data Entrada']]; 
         
         linhasTabela = dados.map(item => [
           item.pdt_nome, 
           item.quantidade,
           Number(item.valor_total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-          item.usuario, // Dado inserido na linha
-          item.data ? item.data.slice(0, 10).split('-').reverse().join('/') : '-'
+          item.usuario, 
+          formatDataPDF(item.data)
         ]);
 
         const totalQuantidade = dados.reduce((acc, item) => acc + Number(item.quantidade), 0);
@@ -122,29 +122,26 @@ const AuditReportsPage = () => {
           'TOTAL GERAL', 
           totalQuantidade.toString(),
           totalFinanceiro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 
-          '-', // Espaço vazio para a coluna de Usuário no Total
+          '-', 
           '-'
         ]);
       
-      } else if (tipoRelatorio === "abaixo_estoque" || tipoRelatorio === "negativos") {
-        // Juntei os dois porque a estrutura visual é idêntica
+      } else if (tipoRelatorio === "abaixo_estoque") {
         colunasTabela = [['Produto', 'Estoque Mínimo', 'Estoque Atual']];
         linhasTabela = dados.map(item => [item.pdt_nome, item.pdt_estoque_minimo, item.total_estoque]);
-        
-        // Aqui por exemplo não faz sentido nenhum somar o estoque de milho com estoque de vacina, então não tem o totalizador.
 
       } else if (tipoRelatorio === "saidas") {
-        colunasTabela = [['Produto', 'Quantidade', 'Destino', 'Usuário', 'Data Saída']]; // Coluna adicionada
+        colunasTabela = [['Produto', 'Quantidade', 'Destino', 'Usuário', 'Data Saída']]; 
         linhasTabela = dados.map(item => [
           item.pdt_nome, 
           item.quantidade, 
           item.destino || 'Não informado',
           item.usuario,
-          item.data ? item.data.slice(0, 10).split('-').reverse().join('/') : '-'
+          formatDataPDF(item.data)
         ]);
 
         const totalQuantidade = dados.reduce((acc, item) => acc + Number(item.quantidade), 0);
-        linhasTabela.push(['TOTAL GERAL', totalQuantidade.toString(), '-', '-', '-']); // Espaço vazio para a coluna de Usuário no Total
+        linhasTabela.push(['TOTAL GERAL', totalQuantidade.toString(), '-', '-', '-']); 
       }
 
       autoTable(doc, {
@@ -195,8 +192,6 @@ const AuditReportsPage = () => {
   
   if (error) return <EmptyState title="Não foi possível carregar" description={error} />;
 
-  
-
   const columns = [
     { key: "aud_id", label: "ID" },
     { key: "user_id", label: "Usuário", render: (row) => row.user_nome || row.user_id || "administrador" },
@@ -215,7 +210,6 @@ const AuditReportsPage = () => {
   ];
 
   return (
-
   <div className="app-content">
       <div
         style={{
@@ -226,17 +220,14 @@ const AuditReportsPage = () => {
           paddingBottom: "8px",
         }}
       >
-        {/* 1. O SectionHeader agora fica mais limpo, cuidando só do Título e Subtítulo */}
         <SectionHeader 
           title="Relatórios" 
           subtitle="Acompanhe as movimentações no sistema (semanal, mensal, anual)." 
         />
       </div>
 
-      {/* 2. NOSSA NOVA LINHA (TOOLBAR) - Alinha Esquerda e Direita */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         
-        {/* LADO ESQUERDO: Botões de Filtro */}
         <div style={{ display: "flex", gap: "10px" }}>
           <button 
             className="filter-button"
@@ -261,10 +252,7 @@ const AuditReportsPage = () => {
           </button>
         </div>
 
-        {/* LADO DIREITO: Barra de Pesquisa + Botão de Exportar */}
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-          
-          {/* Recriamos o input conectando direto no seu setSearchTerm */}
           <input
             type="text"
             placeholder="Buscar tabela ou usuário..."
@@ -282,14 +270,11 @@ const AuditReportsPage = () => {
           <button className="btn btn-primary" onClick={() => setIsModalAberto(true)}>
             Exportar Relatório
           </button>
-
         </div>
       </div>
 
       <DataTable columns={columns} rows={filteredReports} rowKey="aud_id" />
     
-
-      {/* MODAL DE FILTRO DO PDF (Design Dark) */}
       {isModalAberto && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: '#1e293b', padding: '30px', borderRadius: '8px', width: '400px', color: 'white', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>
@@ -310,7 +295,7 @@ const AuditReportsPage = () => {
                   <option value="entradas">Somente Entradas</option>
                   <option value="saidas">Somente Saídas</option>
                   <option value="abaixo_estoque">Produtos Abaixo do Estoque</option>
-                  <option value="negativos">Produtos Negativos</option>
+                  {/* 💡 CORREÇÃO: Opção de produtos negativos removida daqui */}
                 </select>
               </label>
               
@@ -344,7 +329,35 @@ const AuditReportsPage = () => {
           </div>
         </div>
       )}
-    </div>
+
+      {toastAviso && (
+        <div 
+          style={{
+            position: "fixed",
+            top: "24px",
+            right: "24px",
+            backgroundColor: "#080c16", /* Fundo bem escuro pra dar contraste */
+            color: "#00d4ff", /* Azul neon do seu login */
+            padding: "16px 24px",
+            borderRadius: "8px",
+            border: "1px solid #00d4ff", /* Borda brilhante */
+            boxShadow: "0 0 15px rgba(0, 212, 255, 0.3)", /* Aquele glow maroto */
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            fontWeight: "600",
+            fontSize: "15px",
+            letterSpacing: "0.5px",
+            transition: "all 0.3s ease-in-out"
+          }}
+        >
+          <span style={{ fontSize: "20px" }}>⚠️</span>
+          {toastAviso}
+        </div>
+      )}
+
+    </div> 
   );
 }
 

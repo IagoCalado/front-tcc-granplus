@@ -598,7 +598,7 @@ const DashboardPage = () => {
                   <Bar
                     dataKey="estoque"
                     name="Estoque"
-                    fill="var(--accent-2)"
+                    fill="var(--cor-grafico)" 
                     radius={[0, 10, 10, 0]}
                   />
                 </BarChart>
