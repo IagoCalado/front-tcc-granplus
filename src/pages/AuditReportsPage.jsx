@@ -94,7 +94,14 @@ const AuditReportsPage = () => {
       // Dependendo do tipo de relatório, a estrutura da tabela muda. Por isso, temos essa lógica para montar as colunas e linhas dinamicamente.
       if (tipoRelatorio === "geral") {
         colunasTabela = [['ID', 'Usuario', 'Acao', 'Data', 'Hora']];
-        linhasTabela = dados.map(item => [item.aud_id, item.user_nome, item.aud_acao, item.aud_data, item.aud_time]);
+        linhasTabela = dados.map(item => [
+          item.aud_id, 
+          item.user_nome, 
+          item.aud_acao, 
+          // Esse slice pega só os primeiros 10 caracteres (YYYY-MM-DD) e inverte para DD/MM/YYYY
+          item.aud_data ? String(item.aud_data).slice(0, 10).split('-').reverse().join('/') : '-', 
+          item.aud_time
+        ]);
         // Auditoria não tem totalizador numérico.
       
       } else if (tipoRelatorio === "entradas") {
