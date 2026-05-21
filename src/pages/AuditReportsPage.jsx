@@ -9,7 +9,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { matchesSearch } from "../utils/search";
 
 // Agora importamos certinho as duas funções do seu api.js!
-import { getAuditReports, getAuditReportsByDate } from "../services/api";
+import { getAuditReports, getAuditReportsByDate, getRelatorioDinamico } from "../services/api";
 
 const TableNameLabels = {
   saida_produtos: "Saidas de Produtos",
@@ -48,6 +48,7 @@ const AuditReportsPage = () => {
   const [isModalAberto, setIsModalAberto] = useState(false);
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
+  const [tipoRelatorio, setTipoRelatorio] = useState("geral"); 
 
   // Função para carregar a tabela
   const loadData = useCallback(async () => {
@@ -71,51 +72,95 @@ const AuditReportsPage = () => {
   // A MÁGICA DO PDF
   const handleGerarPDF = async (e) => {
     e.preventDefault();
-    
     try {
-      // Usamos a função nova que criamos no api.js
-      const dadosAuditoria = await getAuditReportsByDate(token, dataInicio, dataFim);
+      // Usando a função correta que está no seu api.js
+      const dados = await getRelatorioDinamico(token, tipoRelatorio, dataInicio, dataFim);
 
-      if (!dadosAuditoria || dadosAuditoria.length === 0) {
-        alert("Nenhum dado encontrado para as datas selecionadas!");
+      if (!dados || dados.length === 0) {
+        alert("Nenhum dado encontrado para este filtro!");
         return;
       }
 
-      // Inicializa o PDF
       const doc = new jsPDF();
-      
-      // Cabeçalho
       doc.setFontSize(18);
-      doc.text(`Relatorio de Auditoria - GranPlus`, 14, 22);
-      
+      doc.text(`Relatorio GranPlus - ${tipoRelatorio.toUpperCase()}`, 14, 22);
       doc.setFontSize(11);
       doc.text(`Periodo: ${dataInicio.split('-').reverse().join('/')} ate ${dataFim.split('-').reverse().join('/')}`, 14, 30);
 
-      // Desenha a tabela perfeita
+      // Variáveis para guardar as colunas e as linhas que vão pro PDF
+      let colunasTabela = [];
+      let linhasTabela = [];
+
+      // Dependendo do tipo de relatório, a estrutura da tabela muda. Por isso, temos essa lógica para montar as colunas e linhas dinamicamente.
+      if (tipoRelatorio === "geral") {
+        colunasTabela = [['ID', 'Usuario', 'Acao', 'Data', 'Hora']];
+        linhasTabela = dados.map(item => [
+          item.aud_id, 
+          item.user_nome, 
+          item.aud_acao, 
+          // Esse slice pega só os primeiros 10 caracteres (YYYY-MM-DD) e inverte para DD/MM/YYYY
+          item.aud_data ? String(item.aud_data).slice(0, 10).split('-').reverse().join('/') : '-', 
+          item.aud_time
+        ]);
+        // Auditoria não tem totalizador numérico.
+      
+      } else if (tipoRelatorio === "entradas") {
+        colunasTabela = [['Produto', 'Quantidade', 'Valor Total (R$)', 'Usuário', 'Data Entrada']]; // Coluna adicionada
+        
+        linhasTabela = dados.map(item => [
+          item.pdt_nome, 
+          item.quantidade,
+          Number(item.valor_total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+          item.usuario, // Dado inserido na linha
+          item.data ? item.data.slice(0, 10).split('-').reverse().join('/') : '-'
+        ]);
+
+        const totalQuantidade = dados.reduce((acc, item) => acc + Number(item.quantidade), 0);
+        const totalFinanceiro = dados.reduce((acc, item) => acc + Number(item.valor_total), 0);
+        
+        linhasTabela.push([
+          'TOTAL GERAL', 
+          totalQuantidade.toString(),
+          totalFinanceiro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 
+          '-', // Espaço vazio para a coluna de Usuário no Total
+          '-'
+        ]);
+      
+      } else if (tipoRelatorio === "abaixo_estoque" || tipoRelatorio === "negativos") {
+        // Juntei os dois porque a estrutura visual é idêntica
+        colunasTabela = [['Produto', 'Estoque Mínimo', 'Estoque Atual']];
+        linhasTabela = dados.map(item => [item.pdt_nome, item.pdt_estoque_minimo, item.total_estoque]);
+        
+        // Aqui por exemplo não faz sentido nenhum somar o estoque de milho com estoque de vacina, então não tem o totalizador.
+
+      } else if (tipoRelatorio === "saidas") {
+        colunasTabela = [['Produto', 'Quantidade', 'Destino', 'Usuário', 'Data Saída']]; // Coluna adicionada
+        linhasTabela = dados.map(item => [
+          item.pdt_nome, 
+          item.quantidade, 
+          item.destino || 'Não informado',
+          item.usuario,
+          item.data ? item.data.slice(0, 10).split('-').reverse().join('/') : '-'
+        ]);
+
+        const totalQuantidade = dados.reduce((acc, item) => acc + Number(item.quantidade), 0);
+        linhasTabela.push(['TOTAL GERAL', totalQuantidade.toString(), '-', '-', '-']); // Espaço vazio para a coluna de Usuário no Total
+      }
+
       autoTable(doc, {
         startY: 35,
-        head: [['ID', 'Usuario', 'Acao', 'Data', 'Hora', 'Tabela']],
-        body: dadosAuditoria.map(item => [
-          item.aud_id,
-          item.user_nome || item.user_id || 'Administrador',
-          item.aud_acao,
-          item.aud_data ? new Date(item.aud_data).toLocaleDateString("pt-BR") : "-",
-          item.aud_time,
-          item.aud_tabela_afetada
-        ]),
+        head: colunasTabela,
+        body: linhasTabela,
         theme: 'striped',
         headStyles: { fillColor: [44, 62, 80] }, 
       });
 
-      // Salva o arquivo e fecha tudo
-      doc.save(`Auditoria_${dataInicio}_a_${dataFim}.pdf`);
+      doc.save(`Relatorio_${tipoRelatorio}_${dataInicio}.pdf`);
       setIsModalAberto(false);
-      setDataInicio("");
-      setDataFim("");
 
     } catch (erro) {
       console.error("Erro ao gerar PDF:", erro);
-      alert("Erro ao buscar dados para o relatório. Verifique o F12.");
+      alert("Erro ao buscar dados. Verifique o F12.");
     }
   };
 
@@ -170,52 +215,79 @@ const AuditReportsPage = () => {
   ];
 
   return (
-    <div className="app-content">
+
+  <div className="app-content">
       <div
         style={{
           position: "sticky",
           top: 0,
           zIndex: 30,
-          // background: "var(--bg)",
           paddingTop: "4px",
           paddingBottom: "8px",
         }}
       >
+        {/* 1. O SectionHeader agora fica mais limpo, cuidando só do Título e Subtítulo */}
         <SectionHeader 
           title="Relatórios" 
           subtitle="Acompanhe as movimentações no sistema (semanal, mensal, anual)." 
-          onSearch={setSearchTerm}
-          searchPlaceholder="Buscar tabela ou usuário..."
-          actions={
-            <button className="btn btn-primary" onClick={() => setIsModalAberto(true)}>
-              Exportar Relatório
-            </button>
-          }
         />
       </div>
 
-      <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
-        <button 
-          onClick={() => setFilterPeriod("weekly")}
-          style={{ fontWeight: filterPeriod === "weekly" ? "bold" : "normal" }}
-        >
-          Semanal
-        </button>
-        <button 
-          onClick={() => setFilterPeriod("monthly")}
-          style={{ fontWeight: filterPeriod === "monthly" ? "bold" : "normal" }}
-        >
-          Mensal
-        </button>
-        <button 
-          onClick={() => setFilterPeriod("annual")}
-          style={{ fontWeight: filterPeriod === "annual" ? "bold" : "normal" }}
-        >
-          Anual
-        </button>
+      {/* 2. NOSSA NOVA LINHA (TOOLBAR) - Alinha Esquerda e Direita */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        
+        {/* LADO ESQUERDO: Botões de Filtro */}
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button 
+            className="filter-button"
+            onClick={() => setFilterPeriod("weekly")}
+            style={{ opacity: filterPeriod === "weekly" ? 1 : 0.6 }}
+          >
+            Semanal
+          </button>
+          <button 
+            className="filter-button"
+            onClick={() => setFilterPeriod("monthly")}
+            style={{ opacity: filterPeriod === "monthly" ? 1 : 0.6 }}
+          >
+            Mensal
+          </button>
+          <button 
+            className="filter-button"
+            onClick={() => setFilterPeriod("annual")}
+            style={{ opacity: filterPeriod === "annual" ? 1 : 0.6 }}
+          >
+            Anual
+          </button>
+        </div>
+
+        {/* LADO DIREITO: Barra de Pesquisa + Botão de Exportar */}
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          
+          {/* Recriamos o input conectando direto no seu setSearchTerm */}
+          <input
+            type="text"
+            placeholder="Buscar tabela ou usuário..."
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              padding: "10px 16px",
+              borderRadius: "8px",
+              border: "1px solid var(--border)",
+              background: "transparent",
+              color: "inherit",
+              minWidth: "250px"
+            }}
+          />
+
+          <button className="btn btn-primary" onClick={() => setIsModalAberto(true)}>
+            Exportar Relatório
+          </button>
+
+        </div>
       </div>
 
       <DataTable columns={columns} rows={filteredReports} rowKey="aud_id" />
+    
 
       {/* MODAL DE FILTRO DO PDF (Design Dark) */}
       {isModalAberto && (
@@ -226,6 +298,21 @@ const AuditReportsPage = () => {
             <hr style={{ borderColor: '#334155', marginBottom: '20px' }} />
             
             <form onSubmit={handleGerarPDF} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '5px', color: 'white' }}>
+                Tipo de Relatório:
+                <select 
+                  value={tipoRelatorio} 
+                  onChange={(e) => setTipoRelatorio(e.target.value)}
+                  style={{ padding: '10px', borderRadius: '4px', border: '1px solid #334155', outline: 'none', backgroundColor: '#0f172a', color: 'white' }}
+                >
+                  <option value="geral">Geral (Auditoria)</option>
+                  <option value="entradas">Somente Entradas</option>
+                  <option value="saidas">Somente Saídas</option>
+                  <option value="abaixo_estoque">Produtos Abaixo do Estoque</option>
+                  <option value="negativos">Produtos Negativos</option>
+                </select>
+              </label>
               
               <label style={{ display: 'flex', flexDirection: 'column', gap: '5px', color: 'white' }}>
                 Data de Início:
@@ -257,9 +344,8 @@ const AuditReportsPage = () => {
           </div>
         </div>
       )}
-
     </div>
   );
-};
+}
 
 export default AuditReportsPage;
