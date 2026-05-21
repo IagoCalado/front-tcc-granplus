@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import { getSuppliers, getProducts } from "../../services/api";
+import { getLocations, getSuppliers, getProducts } from "../../services/api";
 
 export default function InputModal({
   isOpen,
@@ -12,13 +12,21 @@ export default function InputModal({
 }) {
   const [suppliers, setSuppliers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [locations, setLocations] = useState([]);
 
   const [formData, setFormData] = useState({
     loc_id: 1,
     fncd_id: "",
     ent_data_compra: "",
     ent_valor_compra: "",
-    produtos: [{ pdt_id: "", quantidade: "", lote: "", pdt_validade: "" }],
+    produtos: [
+      {
+        pdt_id: "",
+        quantidade: "",
+        lote: "",
+        pdt_validade: "",
+      },
+    ],
   });
 
   const getLocalISODate = (dateInput) => {
@@ -37,6 +45,9 @@ export default function InputModal({
       getProducts(token)
         .then((data) => setProducts(data || []))
         .catch(() => {});
+      getLocations(token)
+        .then((data) => setLocations(Array.isArray(data) ? data : []))
+        .catch(() => setLocations([]));
 
       if (inputData) {
         const rawDate = inputData.ent_data_compra || inputData.ent_data || "";
@@ -63,12 +74,27 @@ export default function InputModal({
           ent_data_compra: getLocalISODate(),
           ent_valor_compra: "",
           produtos: [
-            { pdt_id: "", quantidade: "", lote: "", pdt_validade: "" },
+            {
+              pdt_id: "",
+              quantidade: "",
+              lote: "",
+              pdt_validade: "",
+            },
           ],
         });
       }
     }
   }, [isOpen, token, inputData]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (Array.isArray(locations) && locations.length > 0) {
+      setFormData((prev) => {
+        if (prev.loc_id && prev.loc_id !== 1) return prev;
+        return { ...prev, loc_id: locations[0].loc_id };
+      });
+    }
+  }, [locations, isOpen]);
 
   if (!isOpen) return null;
 
@@ -77,7 +103,7 @@ export default function InputModal({
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "fncd_id" || name === "ent_valor_compra"
+        name === "fncd_id" || name === "ent_valor_compra" || name === "loc_id"
           ? Number(value)
           : value,
     }));
@@ -96,8 +122,26 @@ export default function InputModal({
       ...formData,
       produtos: [
         ...formData.produtos,
-        { pdt_id: "", quantidade: "", lote: "", pdt_validade: "" },
+        {
+          pdt_id: "",
+          quantidade: "",
+          lote: "",
+          pdt_validade: "",
+        },
       ],
+    });
+  };
+
+  const removeProductRow = (index) => {
+    setFormData((prev) => {
+      if (prev.produtos.length === 1) return prev;
+
+      return {
+        ...prev,
+        produtos: prev.produtos.filter(
+          (_, currentIndex) => currentIndex !== index,
+        ),
+      };
     });
   };
 
@@ -129,8 +173,18 @@ export default function InputModal({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="Fechar">×</button>
+      <div
+        className="modal-content card"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "min(94vw, 1180px)",
+          maxHeight: "none",
+          overflow: "visible",
+        }}
+      >
+        <button className="modal-close" onClick={onClose} aria-label="Fechar">
+          ×
+        </button>
 
         <div className="modal-header">
           <h3 style={{ margin: 0 }}>Nova Entrada de Produto</h3>
@@ -153,7 +207,24 @@ export default function InputModal({
               ))}
             </select>
           </div>
-          
+
+          <div className="input-field">
+            <label>Localização</label>
+            <select
+              name="loc_id"
+              value={formData.loc_id}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Selecione...</option>
+              {locations.map((loc) => (
+                <option key={loc.loc_id} value={loc.loc_id}>
+                  {loc.loc_nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="input-field">
             <label>Data / Hora da Compra</label>
             <input
@@ -179,25 +250,59 @@ export default function InputModal({
           </div>
 
           <div style={{ paddingTop: "15px" }}>
-            <h4 style={{ fontSize: "16px", marginBottom: "10px", marginTop: 0 }}>Itens da Entrada</h4>
+            <h4
+              style={{ fontSize: "16px", marginBottom: "10px", marginTop: 0 }}
+            >
+              Itens da Entrada
+            </h4>
 
             {formData.produtos.map((prod, index) => (
               <div key={index}>
                 {index === 0 && (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "10px", marginBottom: "4px" }}>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(140px, 1fr))",
+                      gap: "10px",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                      Produto
+                    </label>
+                    <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                      Quantidade
+                    </label>
+                    <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                      Lote
+                    </label>
+                    <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                      Validade
+                    </label>
                     <div />
-                    <div />
-                    <div />
-                    <label style={{ fontSize: "14px", fontWeight: "500" }}>Validade</label>
                   </div>
                 )}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "10px", marginBottom: "10px", alignItems: "center" }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                    gap: "10px",
+                    marginBottom: "10px",
+                    alignItems: "center",
+                  }}
+                >
                   <select
                     name="pdt_id"
                     value={prod.pdt_id}
                     onChange={(e) => handleProductChange(index, e)}
                     required
-                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--border)" }}
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      border: "1px solid var(--border)",
+                    }}
                   >
                     <option value="">Produto...</option>
                     {products.map((p) => (
@@ -213,7 +318,12 @@ export default function InputModal({
                     onChange={(e) => handleProductChange(index, e)}
                     required
                     placeholder="Qtd"
-                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--border)" }}
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      border: "1px solid var(--border)",
+                    }}
                   />
                   <input
                     type="text"
@@ -221,7 +331,12 @@ export default function InputModal({
                     value={prod.lote}
                     onChange={(e) => handleProductChange(index, e)}
                     placeholder="Lote (Opcional)"
-                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--border)" }}
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      border: "1px solid var(--border)",
+                    }}
                   />
                   <input
                     type="date"
@@ -229,8 +344,42 @@ export default function InputModal({
                     value={prod.pdt_validade || ""}
                     onChange={(e) => handleProductChange(index, e)}
                     placeholder="Validade (Opcional)"
-                    style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--border)" }}
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      border: "1px solid var(--border)",
+                    }}
                   />
+                  <button
+                    type="button"
+                    onClick={() => removeProductRow(index)}
+                    aria-label="Remover produto"
+                    title="Remover produto"
+                    disabled={formData.produtos.length === 1}
+                    style={{
+                      width: "34px",
+                      height: "34px",
+                      borderRadius: "6px",
+                      border: "1px solid var(--border)",
+                      background: "var(--background)",
+                      color: "var(--text)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor:
+                        formData.produtos.length === 1
+                          ? "not-allowed"
+                          : "pointer",
+                      fontSize: "18px",
+                      lineHeight: 1,
+                      padding: 0,
+                      justifySelf: "start",
+                      opacity: formData.produtos.length === 1 ? 0.5 : 1,
+                    }}
+                  >
+                    ×
+                  </button>
                 </div>
               </div>
             ))}
@@ -238,24 +387,25 @@ export default function InputModal({
             <button
               type="button"
               onClick={addProductRow}
-              style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", fontWeight: "600", padding: "0", marginTop: "5px" }}
+              style={{
+                color: "var(--accent)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontWeight: "600",
+                padding: "0",
+                marginTop: "5px",
+              }}
             >
               + Adicionar mais um produto
             </button>
           </div>
 
           <div style={{ display: "flex", gap: "16px", marginTop: "20px" }}>
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn btn-ghost"
-            >
+            <button type="button" onClick={onClose} className="btn btn-ghost">
               Cancelar
             </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-            >
+            <button type="submit" className="btn btn-primary">
               Registrar Entrada
             </button>
           </div>

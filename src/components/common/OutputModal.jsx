@@ -1,10 +1,6 @@
 ﻿import { useState, useEffect } from "react";
 import { AlertCircle, X } from "lucide-react";
-import {
-  getLocations,
-  getOutputAvailableLots,
-  getProducts,
-} from "../../services/api";
+import { getOutputAvailableLots, getProducts } from "../../services/api";
 
 const formatLotLabel = (lote) => {
   if (lote === null || lote === undefined || lote === "") return "Sem lote";
@@ -18,8 +14,10 @@ const formatDate = (dateValue) => {
   return parsed.toLocaleDateString("pt-BR");
 };
 
-const buildLotKey = (lote, validade) =>
-  `${lote ?? "sem-lote"}|${validade ?? "sem-validade"}`;
+const buildLotKey = (lote, validade, locId) =>
+  `${lote ?? "sem-lote"}|${validade ?? "sem-validade"}|${
+    locId ?? "sem-localizacao"
+  }`;
 
 const getValidDate = (value) => {
   if (!value) return null;
@@ -63,20 +61,23 @@ const getValidityStatus = (value) => {
 
 export default function OutputModal({ isOpen, onClose, onSave, token }) {
   const [products, setProducts] = useState([]);
-  const [locations, setLocations] = useState([]);
   const [errorMsg, setErrorMsg] = useState("");
   const [isLotsModalOpen, setIsLotsModalOpen] = useState(false);
+  const [currentLineIndex, setCurrentLineIndex] = useState(null);
   const [loadingLots, setLoadingLots] = useState(false);
   const [availableLots, setAvailableLots] = useState([]);
   const [lotSelections, setLotSelections] = useState({});
 
   const [formData, setFormData] = useState({
-    pdt_id: "",
-    loc_id: "",
-    lcl_qtde: "",
-    lcl_destino: "",
-    lcl_tipo: "", // vai ser usado como Motivo
-    lcl_justificativa: "",
+    lcl_tipo: "", // Motivo
+    lcl_destino: "", // Destino (opcional)
+    produtos: [
+      {
+        pdt_id: "",
+        quantidade: "",
+        lotes_selecionados: [],
+      },
+    ],
   });
 
   useEffect(() => {
@@ -84,21 +85,22 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
       getProducts(token)
         .then((data) => setProducts(data || []))
         .catch(() => {});
-      getLocations(token)
-        .then((data) => setLocations(Array.isArray(data) ? data : []))
-        .catch(() => setLocations([]));
 
       setFormData({
-        pdt_id: "",
-        loc_id: "",
-        lcl_qtde: "",
+        lcl_tipo: "",
         lcl_destino: "",
-        lcl_tipo: "", // Motivo
-        lcl_justificativa: "",
+        produtos: [
+          {
+            pdt_id: "",
+            quantidade: "",
+            lotes_selecionados: [],
+          },
+        ],
       });
       setAvailableLots([]);
       setLotSelections({});
       setIsLotsModalOpen(false);
+      setCurrentLineIndex(null);
       setLoadingLots(false);
       setErrorMsg("");
     }
@@ -106,126 +108,139 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
 
   if (!isOpen) return null;
 
-  const selectedProduct = products.find(
-    (p) => Number(p.pdt_id) === Number(formData.pdt_id),
-  );
+  const selectedProduct =
+    currentLineIndex !== null && formData.produtos[currentLineIndex]
+      ? products.find(
+          (p) =>
+            Number(p.pdt_id) ===
+            Number(formData.produtos[currentLineIndex].pdt_id),
+        )
+      : null;
 
   const selectedLotsTotal = Object.values(lotSelections).reduce(
     (sum, value) => sum + (Number(value) || 0),
     0,
   );
 
-  const isLotsTotalValid =
-    Math.abs(selectedLotsTotal - Number(formData.lcl_qtde || 0)) < 0.0001;
+  const currentLineQuantity =
+    currentLineIndex !== null
+      ? formData.produtos[currentLineIndex].quantidade
+      : 0;
 
-  const closeAll = () => {
+  const isLotsTotalValid =
+    Math.abs(selectedLotsTotal - Number(currentLineQuantity || 0)) < 0.0001;
+
+  const closeLotsModal = () => {
     setIsLotsModalOpen(false);
     setAvailableLots([]);
     setLotSelections({});
-    onClose();
+    setCurrentLineIndex(null);
   };
 
-  const handleChange = (e) => {
+  const handleMainChange = (e) => {
     const { name, value } = e.target;
-    const parsedValue =
-      name === "lcl_qtde" || name === "pdt_id" || name === "loc_id"
-        ? value === ""
-          ? ""
-          : Number(value)
-        : value;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
-    setFormData((prev) => {
-      const newData = {
-        ...prev,
-        [name]: parsedValue,
-      };
+  const handleProductChange = (index, e) => {
+    const { name, value } = e.target;
+    const newProdutos = [...formData.produtos];
+    newProdutos[index][name] =
+      name === "pdt_id" || name === "quantidade" ? Number(value) : value;
 
-      if (name === "pdt_id" || name === "lcl_qtde" || name === "loc_id") {
-        setAvailableLots([]);
-        setLotSelections({});
-      }
+    if (name === "pdt_id" || name === "quantidade") {
+      newProdutos[index].lotes_selecionados = [];
+    }
 
-      if (name === "lcl_qtde" && selectedProduct) {
-        if (Number(value) > selectedProduct.pdt_estoque_atual) {
-          setErrorMsg(
-            `Atenção: A quantidade excede o estoque atual (${selectedProduct.pdt_estoque_atual}).`,
-          );
-        } else {
-          setErrorMsg("");
-        }
-      }
+    setFormData({ ...formData, produtos: newProdutos });
+  };
 
-      if (name === "pdt_id" && newData.lcl_qtde) {
-        const newProd = products.find((p) => p.pdt_id === Number(value));
-        if (newProd && newData.lcl_qtde > newProd.pdt_estoque_atual) {
-          setErrorMsg(
-            `Atenção: A quantidade excede o estoque atual (${newProd.pdt_estoque_atual}).`,
-          );
-        } else {
-          setErrorMsg("");
-        }
-      }
-
-      return newData;
+  const addProductRow = () => {
+    setFormData({
+      ...formData,
+      produtos: [
+        ...formData.produtos,
+        {
+          pdt_id: "",
+          quantidade: "",
+          lotes_selecionados: [],
+        },
+      ],
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMsg("");
+  const removeProductRow = (index) => {
+    setFormData((prev) => {
+      if (prev.produtos.length === 1) return prev;
 
-    if (!formData.pdt_id) {
-      setErrorMsg("Selecione um produto.");
+      return {
+        ...prev,
+        produtos: prev.produtos.filter(
+          (_, currentIndex) => currentIndex !== index,
+        ),
+      };
+    });
+  };
+
+  const handleOpenLotsModal = async (index) => {
+    const line = formData.produtos[index];
+
+    if (!line.pdt_id) {
+      setErrorMsg("Selecione um produto antes.");
       return;
     }
 
-    if (!formData.loc_id) {
-      setErrorMsg("Selecione a localização.");
+    if (!line.quantidade || line.quantidade <= 0) {
+      setErrorMsg("Informe uma quantidade válida.");
       return;
     }
 
-    if (!formData.lcl_qtde || formData.lcl_qtde <= 0) {
-      setErrorMsg("A quantidade deve ser maior que zero.");
+    const prod = products.find((p) => p.pdt_id === Number(line.pdt_id));
+    if (!prod) {
+      setErrorMsg("Produto não encontrado.");
       return;
     }
 
-    if (!formData.lcl_tipo.trim()) {
-      setErrorMsg("Informe o motivo da saída.");
-      return;
-    }
-
-    if (
-      selectedProduct &&
-      formData.lcl_qtde > selectedProduct.pdt_estoque_atual
-    ) {
+    if (line.quantidade > prod.pdt_estoque_atual) {
       setErrorMsg(
-        `Erro: Não há estoque suficiente. O limite é ${selectedProduct.pdt_estoque_atual}.`,
+        `Quantidade excede o estoque disponível (${prod.pdt_estoque_atual}).`,
       );
       return;
     }
 
     try {
       setLoadingLots(true);
-      const data = await getOutputAvailableLots(token, formData.pdt_id);
+      setErrorMsg("");
+      const data = await getOutputAvailableLots(token, line.pdt_id);
       const lots = Array.isArray(data?.lotes) ? data.lotes : [];
 
       if (lots.length === 0) {
-        setErrorMsg("Não há lotes disponíveis para este produto no estoque.");
+        setErrorMsg("Não há lotes disponíveis para este produto.");
         return;
       }
 
+      setCurrentLineIndex(index);
       setAvailableLots(lots);
-      setLotSelections({});
+      setLotSelections(
+        line.lotes_selecionados.reduce((acc, lot) => {
+          const key = buildLotKey(lot.lote, lot.validade, lot.loc_id);
+          acc[key] = lot.quantidade;
+          return acc;
+        }, {}),
+      );
       setIsLotsModalOpen(true);
     } catch (error) {
-      setErrorMsg(error?.message || "Erro ao buscar lotes disponíveis.");
+      setErrorMsg(error?.message || "Erro ao buscar lotes.");
     } finally {
       setLoadingLots(false);
     }
   };
 
   const handleChangeLotQuantity = (lot, value) => {
-    const key = buildLotKey(lot.lote, lot.validade);
+    const key = buildLotKey(lot.lote, lot.validade, lot.loc_id);
     const available = Number(lot.quantidade_disponivel || 0);
     const parsed = value === "" ? "" : Number(value);
 
@@ -238,7 +253,7 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
     }));
   };
 
-  const handleConfirmLots = async () => {
+  const handleConfirmLots = () => {
     if (!isLotsTotalValid) {
       setErrorMsg(
         "A soma das quantidades por lote deve ser igual à quantidade da saída.",
@@ -248,12 +263,13 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
 
     const lotesSelecionados = availableLots
       .map((lot) => {
-        const key = buildLotKey(lot.lote, lot.validade);
+        const key = buildLotKey(lot.lote, lot.validade, lot.loc_id);
         const quantidade = Number(lotSelections[key] || 0);
 
         if (!quantidade) return null;
 
         return {
+          loc_id: lot.loc_id,
           lote: lot.lote,
           validade: lot.validade,
           quantidade,
@@ -262,16 +278,51 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
       .filter(Boolean);
 
     if (lotesSelecionados.length === 0) {
-      setErrorMsg("Selecione ao menos um lote para confirmar a saída.");
+      setErrorMsg("Selecione ao menos um lote.");
+      return;
+    }
+
+    const newProdutos = [...formData.produtos];
+    newProdutos[currentLineIndex].lotes_selecionados = lotesSelecionados;
+    setFormData({ ...formData, produtos: newProdutos });
+    setErrorMsg("");
+    closeLotsModal();
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg("");
+
+    if (!formData.lcl_tipo?.trim()) {
+      setErrorMsg("Informe o motivo da saída.");
+      return;
+    }
+
+    const productsWithoutLots = formData.produtos.filter(
+      (p) => p.pdt_id && p.lotes_selecionados.length === 0,
+    );
+
+    if (productsWithoutLots.length > 0) {
+      setErrorMsg(
+        "Selecione os lotes para todos os produtos com quantidade informada.",
+      );
       return;
     }
 
     try {
-      await onSave({
-        ...formData,
-        lotes_selecionados: lotesSelecionados,
+      await onSave(formData);
+      setFormData({
+        lcl_tipo: "",
+        lcl_destino: "",
+        produtos: [
+          {
+            pdt_id: "",
+            quantidade: "",
+            lotes_selecionados: [],
+          },
+        ],
       });
-      closeAll();
+      onClose();
     } catch (error) {
       setErrorMsg(error?.message || "Erro ao registrar saída.");
     }
@@ -279,13 +330,22 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
 
   return (
     <>
-      <div className="modal-overlay" onClick={closeAll}>
-        <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-overlay" onClick={onClose}>
+        <div
+          className="modal-content card"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: "min(94vw, 1180px)",
+            maxHeight: "none",
+            overflow: "visible",
+          }}
+        >
+          <button className="modal-close" onClick={onClose} aria-label="Fechar">
+            ×
+          </button>
+
           <div className="modal-header">
             <h3 style={{ margin: 0 }}>Registrar Nova Saída</h3>
-            <button className="modal-close" onClick={closeAll} aria-label="Fechar">
-              <X size={24} />
-            </button>
           </div>
 
           {errorMsg && (
@@ -307,207 +367,195 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="modal-body">
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                }}
-              >
-                Produto{" "}
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "#888",
-                    fontWeight: "normal",
-                  }}
-                >
-                  (Ex: Ração Magnus 15kg)
-                </span>
-              </label>
-              <select
-                name="pdt_id"
-                value={formData.pdt_id}
-                onChange={handleChange}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                }}
-              >
-                <option value="">Selecione o produto...</option>
-                {products.map((p) => (
-                  <option key={p.pdt_id} value={p.pdt_id}>
-                    {p.pdt_nome} (Estoque: {p.pdt_estoque_atual})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                }}
-              >
-                Localização{" "}
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "#888",
-                    fontWeight: "normal",
-                  }}
-                >
-                  (Ex: Almoxarifado Central)
-                </span>
-              </label>
-              <select
-                name="loc_id"
-                value={formData.loc_id}
-                onChange={handleChange}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                }}
-              >
-                <option value="">Selecione a localização...</option>
-                {locations.map((loc) => (
-                  <option key={loc.loc_id} value={loc.loc_id}>
-                    {loc.loc_nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                }}
-              >
-                Quantidade{" "}
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "#888",
-                    fontWeight: "normal",
-                  }}
-                >
-                  (Ex: 5, 10, 50)
-                </span>
-              </label>
-              <input
-                type="number"
-                name="lcl_qtde"
-                value={formData.lcl_qtde}
-                onChange={handleChange}
-                min="1"
-                max={
-                  selectedProduct
-                    ? selectedProduct.pdt_estoque_atual
-                    : undefined
-                }
-                placeholder="Digite a quantidade a ser retirada..."
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                  borderColor: errorMsg.includes("estoque")
-                    ? "#ef4444"
-                    : "#ccc",
-                }}
-              />
-            </div>
-
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                }}
-              >
-                Motivo{" "}
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "#888",
-                    fontWeight: "normal",
-                  }}
-                >
-                  (Ex: Venda, Descarte por vencimento, Doação)
-                </span>
-              </label>
+          <form className="modal-body" onSubmit={handleSubmit}>
+            <div className="input-field">
+              <label>Motivo da Saída</label>
               <input
                 type="text"
                 name="lcl_tipo"
                 value={formData.lcl_tipo}
-                onChange={handleChange}
-                placeholder="Digite o motivo da saída..."
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                }}
+                onChange={handleMainChange}
+                placeholder="Ex: Venda, Descarte por vencimento, Doação"
+                required
               />
             </div>
 
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                }}
-              >
-                Destino{" "}
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "#888",
-                    fontWeight: "normal",
-                  }}
-                >
-                  (Ex: Cliente João, Loja 2, Setor Financeiro)
-                </span>
-              </label>
+            <div className="input-field">
+              <label>Destino (Opcional)</label>
               <input
                 type="text"
                 name="lcl_destino"
                 value={formData.lcl_destino}
-                onChange={handleChange}
-                placeholder="Digite o destino... (Opcional)"
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                }}
+                onChange={handleMainChange}
+                placeholder="Ex: Cliente João, Loja 2, Setor Financeiro"
               />
             </div>
 
-            <div style={{ display: "flex", gap: "16px", marginTop: "10px" }} className="modal-footer">
-              <button type="button" onClick={closeAll} className="btn btn-ghost">
+            <div style={{ paddingTop: "15px" }}>
+              <h4
+                style={{ fontSize: "16px", marginBottom: "10px", marginTop: 0 }}
+              >
+                Itens da Saída
+              </h4>
+
+              {formData.produtos.map((prod, index) => (
+                <div key={index}>
+                  {index === 0 && (
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(140px, 1fr))",
+                        gap: "10px",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                        Produto
+                      </label>
+                      <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                        Quantidade
+                      </label>
+                      <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                        Ação
+                      </label>
+                      <div />
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(140px, 1fr))",
+                      gap: "10px",
+                      marginBottom: "10px",
+                      alignItems: "center",
+                    }}
+                  >
+                    <select
+                      name="pdt_id"
+                      value={prod.pdt_id}
+                      onChange={(e) => handleProductChange(index, e)}
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "6px",
+                        border: "1px solid var(--border)",
+                      }}
+                    >
+                      <option value="">Produto...</option>
+                      {products.map((p) => (
+                        <option key={p.pdt_id} value={p.pdt_id}>
+                          {p.pdt_nome} (Est: {p.pdt_estoque_atual})
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      name="quantidade"
+                      value={prod.quantidade}
+                      onChange={(e) => handleProductChange(index, e)}
+                      min="0"
+                      step="0.01"
+                      placeholder="Qtd"
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "6px",
+                        border: "1px solid var(--border)",
+                      }}
+                    />
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        justifySelf: "start",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleOpenLotsModal(index)}
+                        disabled={!prod.pdt_id || !prod.quantidade}
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: "6px",
+                          border: "1px solid var(--border)",
+                          background:
+                            prod.lotes_selecionados.length > 0
+                              ? "#dcfce7"
+                              : "var(--background)",
+                          color:
+                            prod.lotes_selecionados.length > 0
+                              ? "#166534"
+                              : "var(--text)",
+                          cursor:
+                            !prod.pdt_id || !prod.quantidade
+                              ? "not-allowed"
+                              : "pointer",
+                          fontSize: "12px",
+                          fontWeight: "500",
+                          opacity: !prod.pdt_id || !prod.quantidade ? 0.5 : 1,
+                        }}
+                      >
+                        {prod.lotes_selecionados.length > 0
+                          ? `✓ ${prod.lotes_selecionados.length} lote(s)`
+                          : "Selecionar Lote"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeProductRow(index)}
+                        disabled={formData.produtos.length === 1}
+                        title="Remover produto"
+                        style={{
+                          width: "34px",
+                          height: "34px",
+                          borderRadius: "6px",
+                          border: "1px solid var(--border)",
+                          background: "var(--background)",
+                          color: "var(--text)",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor:
+                            formData.produtos.length === 1
+                              ? "not-allowed"
+                              : "pointer",
+                          fontSize: "18px",
+                          lineHeight: 1,
+                          padding: 0,
+                          opacity: formData.produtos.length === 1 ? 0.5 : 1,
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={addProductRow}
+                style={{
+                  color: "var(--accent)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                  padding: "0",
+                  marginTop: "5px",
+                }}
+              >
+                + Adicionar mais um produto
+              </button>
+            </div>
+
+            <div style={{ display: "flex", gap: "16px", marginTop: "20px" }}>
+              <button type="button" onClick={onClose} className="btn btn-ghost">
                 Cancelar
               </button>
-              <button type="submit" disabled={loadingLots} className="btn btn-primary">
-                {loadingLots ? "Carregando lotes..." : "Confirmar Saída"}
+              <button type="submit" className="btn btn-primary">
+                Registrar Saída
               </button>
             </div>
           </form>
@@ -515,31 +563,56 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
       </div>
 
       {isLotsModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsLotsModalOpen(false)}>
-          <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={closeLotsModal}>
+          <div
+            className="modal-content card"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(94vw, 1180px)",
+              maxHeight: "none",
+              overflow: "visible",
+            }}
+          >
             <div className="modal-header">
               <h3 style={{ margin: 0 }}>Selecionar Lotes da Saída</h3>
-              <button className="modal-close" onClick={() => setIsLotsModalOpen(false)} aria-label="Fechar">
+              <button
+                className="modal-close"
+                onClick={closeLotsModal}
+                aria-label="Fechar"
+              >
                 <X size={24} />
               </button>
             </div>
 
             <p style={{ marginTop: 0, marginBottom: "12px", color: "#4b5563" }}>
               Informe quanto será retirado de cada lote. Quantidade da saída:{" "}
-              <strong>{formData.lcl_qtde}</strong>
+              <strong>{currentLineQuantity}</strong>
             </p>
 
             <div
               style={{
-                maxHeight: "320px",
-                overflow: "auto",
                 border: "1px solid #e5e7eb",
                 borderRadius: "8px",
               }}
             >
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  tableLayout: "fixed",
+                }}
+              >
                 <thead>
                   <tr style={{ background: "#f9fafb" }}>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: "10px",
+                        fontSize: "13px",
+                      }}
+                    >
+                      Localização
+                    </th>
                     <th
                       style={{
                         textAlign: "left",
@@ -590,13 +663,16 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
                 </thead>
                 <tbody>
                   {availableLots.map((lot, index) => {
-                    const key = buildLotKey(lot.lote, lot.validade);
+                    const key = buildLotKey(lot.lote, lot.validade, lot.loc_id);
                     const statusInfo = getValidityStatus(lot.validade);
                     return (
                       <tr
                         key={`${key}-${index}`}
                         style={{ borderTop: "1px solid #f3f4f6" }}
                       >
+                        <td style={{ padding: "10px" }}>
+                          {lot.loc_nome || "Sem localização"}
+                        </td>
                         <td style={{ padding: "10px" }}>
                           {formatLotLabel(lot.lote)}
                         </td>
@@ -661,11 +737,18 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
               }}
             >
               Selecionado: {selectedLotsTotal} de{" "}
-              {Number(formData.lcl_qtde || 0)}
+              {Number(currentLineQuantity || 0)}
             </div>
 
-            <div style={{ display: "flex", gap: "16px", marginTop: "16px" }} className="modal-footer">
-              <button type="button" onClick={() => setIsLotsModalOpen(false)} className="btn btn-ghost">
+            <div
+              style={{ display: "flex", gap: "16px", marginTop: "16px" }}
+              className="modal-footer"
+            >
+              <button
+                type="button"
+                onClick={closeLotsModal}
+                className="btn btn-ghost"
+              >
                 Voltar
               </button>
               <button
@@ -674,7 +757,7 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
                 disabled={!isLotsTotalValid}
                 className="btn btn-primary"
               >
-                Confirmar Lotes e Registrar
+                Confirmar Lotes
               </button>
             </div>
           </div>

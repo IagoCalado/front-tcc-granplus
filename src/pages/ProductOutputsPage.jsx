@@ -37,7 +37,25 @@ const ProductOutputsPage = () => {
   }, [loadData, token]);
 
   const handleSaveOutput = async (payload) => {
-    await createOutput(token, payload);
+    const produtos = Array.isArray(payload?.produtos)
+      ? payload.produtos.filter((item) => item?.pdt_id && item?.quantidade)
+      : [];
+
+    if (produtos.length > 0) {
+      for (const item of produtos) {
+        await createOutput(token, {
+          pdt_id: item.pdt_id,
+          lcl_qtde: item.quantidade,
+          lcl_destino: payload.lcl_destino,
+          lcl_tipo: payload.lcl_tipo,
+          lcl_justificativa: payload.lcl_justificativa,
+          lotes_selecionados: item.lotes_selecionados || [],
+        });
+      }
+    } else {
+      await createOutput(token, payload);
+    }
+
     notifyStockMovement();
     setIsModalOpen(false);
     loadData();
@@ -73,8 +91,6 @@ const ProductOutputsPage = () => {
   if (error && outputs.length === 0) {
     return <EmptyState title="Não foi possível carregar" description={error} />;
   }
-
-  
 
   const columns = [
     { key: "sai_id", label: "ID" },
