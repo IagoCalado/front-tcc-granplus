@@ -316,21 +316,22 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
                 fontWeight: "500",
               }}
             >
-              CPF/CNPJ
+              Logradouro (Rua)
             </label>
             <input
               type="text"
-              name="fncd_documento" /* <--- CORRIGIDO AQUI */
-              value={formData.fncd_documento || ""} /* <--- CORRIGIDO AQUI (O || "" mata o erro vermelho do React) */
+              name="fncd_logradouro"
+              value={formData.fncd_logradouro || ""}
               onChange={handleChange}
               required
-              placeholder="Ex: 12.345.678/0001-90"
-              inputMode="numeric"
+              placeholder="Ex: Avenida das Indústrias"
               style={{
                 width: "100%",
                 padding: "10px",
                 borderRadius: "6px",
-                border: "1px solid #ccc",
+                border: "1px solid var(--border)",
+                background: "transparent",
+                color: "inherit"
               }}
             />
           </div>
