@@ -387,12 +387,8 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: auto;
-<<<<<<< HEAD
-  max-height: min(80vh, 920px); /* AQUI */
-=======
   max-height: calc(100vh - 220px); 
   height: 100%; 
->>>>>>> feat-relatorios-dinamicos
 }
 
 .table {
