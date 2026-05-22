@@ -399,29 +399,7 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
               </h4>
 
               {formData.produtos.map((prod, index) => (
-                <div key={index}>
-                  {index === 0 && (
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "repeat(auto-fit, minmax(140px, 1fr))",
-                        gap: "10px",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      <label style={{ fontSize: "14px", fontWeight: "500" }}>
-                        Produto
-                      </label>
-                      <label style={{ fontSize: "14px", fontWeight: "500" }}>
-                        Quantidade
-                      </label>
-                      <label style={{ fontSize: "14px", fontWeight: "500" }}>
-                        Ação
-                      </label>
-                      <div />
-                    </div>
-                  )}
+                <div key={index} style={{ marginBottom: "6px" }}>
                   <div
                     style={{
                       display: "grid",
@@ -429,105 +407,143 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
                         "repeat(auto-fit, minmax(140px, 1fr))",
                       gap: "10px",
                       marginBottom: "10px",
-                      alignItems: "center",
+                      alignItems: "start",
                     }}
                   >
-                    <select
-                      name="pdt_id"
-                      value={prod.pdt_id}
-                      onChange={(e) => handleProductChange(index, e)}
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid var(--border)",
-                      }}
-                    >
-                      <option value="">Produto...</option>
-                      {products.map((p) => (
-                        <option key={p.pdt_id} value={p.pdt_id}>
-                          {p.pdt_nome} (Est: {p.pdt_estoque_atual})
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      name="quantidade"
-                      value={prod.quantidade}
-                      onChange={(e) => handleProductChange(index, e)}
-                      min="0"
-                      step="0.01"
-                      placeholder="Qtd"
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid var(--border)",
-                      }}
-                    />
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "8px",
-                        justifySelf: "start",
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleOpenLotsModal(index)}
-                        disabled={!prod.pdt_id || !prod.quantidade}
+                    <div>
+                      <label
                         style={{
-                          padding: "8px 12px",
-                          borderRadius: "6px",
-                          border: "1px solid var(--border)",
-                          background:
-                            prod.lotes_selecionados.length > 0
-                              ? "#dcfce7"
-                              : "var(--background)",
-                          color:
-                            prod.lotes_selecionados.length > 0
-                              ? "#166534"
-                              : "var(--text)",
-                          cursor:
-                            !prod.pdt_id || !prod.quantidade
-                              ? "not-allowed"
-                              : "pointer",
-                          fontSize: "12px",
+                          fontSize: "14px",
                           fontWeight: "500",
-                          opacity: !prod.pdt_id || !prod.quantidade ? 0.5 : 1,
+                          display: "block",
+                          marginBottom: "6px",
                         }}
                       >
-                        {prod.lotes_selecionados.length > 0
-                          ? `✓ ${prod.lotes_selecionados.length} lote(s)`
-                          : "Selecionar Lote"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeProductRow(index)}
-                        disabled={formData.produtos.length === 1}
-                        title="Remover produto"
+                        Produto
+                      </label>
+                      <select
+                        name="pdt_id"
+                        value={prod.pdt_id}
+                        onChange={(e) => handleProductChange(index, e)}
                         style={{
-                          width: "34px",
-                          height: "34px",
+                          width: "100%",
+                          padding: "8px",
                           borderRadius: "6px",
                           border: "1px solid var(--border)",
-                          background: "var(--background)",
-                          color: "var(--text)",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor:
-                            formData.produtos.length === 1
-                              ? "not-allowed"
-                              : "pointer",
-                          fontSize: "18px",
-                          lineHeight: 1,
-                          padding: 0,
-                          opacity: formData.produtos.length === 1 ? 0.5 : 1,
                         }}
                       >
-                        ×
-                      </button>
+                        <option value="">Produto...</option>
+                        {products.map((p) => (
+                          <option key={p.pdt_id} value={p.pdt_id}>
+                            {p.pdt_nome} (Est: {p.pdt_estoque_atual})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: "500",
+                          display: "block",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        Quantidade
+                      </label>
+                      <input
+                        type="number"
+                        name="quantidade"
+                        value={prod.quantidade}
+                        onChange={(e) => handleProductChange(index, e)}
+                        min="0"
+                        step="0.01"
+                        placeholder="Qtd"
+                        style={{
+                          width: "100%",
+                          padding: "8px",
+                          borderRadius: "6px",
+                          border: "1px solid var(--border)",
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: "500",
+                          display: "block",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        Ação
+                      </label>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          justifySelf: "start",
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleOpenLotsModal(index)}
+                          disabled={!prod.pdt_id || !prod.quantidade}
+                          style={{
+                            padding: "8px 12px",
+                            borderRadius: "6px",
+                            border: "1px solid var(--border)",
+                            background:
+                              prod.lotes_selecionados.length > 0
+                                ? "#dcfce7"
+                                : "var(--background)",
+                            color:
+                              prod.lotes_selecionados.length > 0
+                                ? "#166534"
+                                : "var(--text)",
+                            cursor:
+                              !prod.pdt_id || !prod.quantidade
+                                ? "not-allowed"
+                                : "pointer",
+                            fontSize: "12px",
+                            fontWeight: "500",
+                            opacity: !prod.pdt_id || !prod.quantidade ? 0.5 : 1,
+                          }}
+                        >
+                          {prod.lotes_selecionados.length > 0
+                            ? `✓ ${prod.lotes_selecionados.length} lote(s)`
+                            : "Selecionar Lote"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeProductRow(index)}
+                          disabled={formData.produtos.length === 1}
+                          title="Remover produto"
+                          style={{
+                            width: "34px",
+                            height: "34px",
+                            borderRadius: "6px",
+                            border: "1px solid var(--border)",
+                            background: "var(--background)",
+                            color: "var(--text)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor:
+                              formData.produtos.length === 1
+                                ? "not-allowed"
+                                : "pointer",
+                            fontSize: "18px",
+                            lineHeight: 1,
+                            padding: 0,
+                            opacity: formData.produtos.length === 1 ? 0.5 : 1,
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
