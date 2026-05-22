@@ -15,6 +15,7 @@ const initialFormData = {
   fncd_estado: "",
   fncd_tel: "",
   fncd_email: "",
+  fncd_ativo: 1,
 };
 
 const normalizeCep = (value) => String(value || "").replace(/\D/g, "");
@@ -96,6 +97,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
         fncd_estado: supplier.fncd_estado || "",
         fncd_tel: formatPhone(supplier.fncd_tel || ""),
         fncd_email: supplier.fncd_email || "",
+        fncd_ativo: supplier.fncd_ativo ?? 1,
       });
     } else {
       setFormData({
@@ -110,6 +112,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
         fncd_estado: "",
         fncd_tel: "",
         fncd_email: "",
+        fncd_ativo: 1,
       });
     }
     setCepError("");
@@ -172,7 +175,9 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "fncd_estado"
+        name === "fncd_ativo"
+          ? Number(value)
+          : name === "fncd_estado"
           ? value.toUpperCase()
           : name === "fncd_cep"
             ? formatCep(value)
@@ -194,6 +199,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
       fncd_tel: normalizeDigits(formData.fncd_tel),
       fncd_cep: formatCep(formData.fncd_cep),
       fncd_estado: String(formData.fncd_estado || "").toUpperCase(),
+      fncd_ativo: Number(formData.fncd_ativo),
     };
 
     onSave(payload, supplier?.fncd_id); // Passa fncd_id se for update
@@ -627,6 +633,34 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
               }}
             />
           </div>
+          {supplier ? (
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "6px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                }}
+              >
+                Status
+              </label>
+              <select
+                name="fncd_ativo"
+                value={formData.fncd_ativo}
+                onChange={handleChange}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ccc",
+                }}
+              >
+                <option value={1}>Ativo</option>
+                <option value={0}>Inativo</option>
+              </select>
+            </div>
+          ) : null}
           <div style={{ display: "flex", gap: "16px", marginTop: "10px" }}>
             <button
               type="button"

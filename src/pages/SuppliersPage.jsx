@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -7,6 +6,7 @@ import EmptyState from "../components/common/EmptyState";
 import SupplierModal from "../components/common/SupplierModal";
 import AlertDialog from "../components/common/AlertDialog";
 import ConfirmDialog from "../components/common/ConfirmDialog";
+import StatusPill from "../components/common/StatusPill";
 import { useAuth } from "../contexts/AuthContext";
 import {
   getSuppliers,
@@ -279,6 +279,7 @@ const SuppliersPage = () => {
           row?.fncd_documento,
           row?.fncd_email,
           row?.fncd_tel,
+          row?.fncd_ativo,
           row?.fncd_endereco,
           row?.fncd_logradouro,
           row?.fncd_cep,
@@ -374,6 +375,19 @@ const SuppliersPage = () => {
       render: (row) => formatPhone(row.fncd_tel),
     },
     { key: "fncd_email", label: "E-mail", sortable: true },
+    {
+      key: "fncd_ativo",
+      label: "Status",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) => (row.fncd_ativo ? 1 : 0),
+      render: (row) => (
+        <StatusPill
+          label={row.fncd_ativo ? "Ativo" : "Inativo"}
+          tone={row.fncd_ativo ? "success" : "neutral"}
+        />
+      ),
+    },
     {
       key: "actions",
       label: "Ações",

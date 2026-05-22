@@ -36,6 +36,8 @@ export default function InputModal({
     ],
   });
 
+  const activeSuppliers = suppliers.filter((supplier) => supplier?.fncd_ativo === 1);
+
   const getLocalISODate = (dateInput) => {
     const d = dateInput ? new Date(dateInput) : new Date();
     if (isNaN(d.getTime())) return "";
@@ -212,7 +214,7 @@ export default function InputModal({
               required
             >
               <option value="">Selecione...</option>
-              {suppliers.map((sup) => (
+              {activeSuppliers.map((sup) => (
                 <option key={sup.fncd_id} value={sup.fncd_id}>
                   {sup.fncd_nome}
                 </option>

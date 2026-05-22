@@ -18,6 +18,7 @@ import { useState } from "react";
 import UserProfileModal from "../common/UserProfileModal";
 import "./Sidebar.css";
 
+
 /**
  * Array com os items da navegação do sidebar
  * Cada item contém: path, label, ícone (componente react-icon), e adminOnly (opcional)

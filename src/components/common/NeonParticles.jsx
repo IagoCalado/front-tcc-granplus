@@ -29,7 +29,7 @@ const THEME_CONFIG = {
 	},
 };
 
-// Alternativa de lona leve para garantir a visibilidade das partículas caso a Vanta falhe.
+// Alternativa de lona leve para garantir a visibilidade das partículas caso a canva falhe.
 function createFallback(canvas, opts = {}) {
 	const ctx = canvas.getContext("2d");
 	let w = (canvas.width = canvas.clientWidth);
