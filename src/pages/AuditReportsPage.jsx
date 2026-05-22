@@ -95,13 +95,17 @@ const AuditReportsPage = () => {
       let linhasTabela = [];
 
       if (tipoRelatorio === "geral") {
-        colunasTabela = [['ID', 'Usuario', 'Acao', 'Data', 'Hora']];
+        // 👇 1. O cabeçalho TEM de ter 6 itens:
+        colunasTabela = [['ID', 'Usuario', 'Acao', 'ID Evento', 'Data', 'Hora']];
+
+        // 👇 2. Os dados também TÊM de ter 6 itens na mesma ordem:
         linhasTabela = dados.map(item => [
-          item.aud_id, 
-          item.user_nome, 
-          item.aud_acao, 
-          formatDataPDF(item.aud_data),
-          item.aud_time
+          item.aud_id,                  // 1. ID
+          item.user_nome,               // 2. Usuario
+          item.aud_acao,                // 3. Acao (já com o ID embutido pelo back-end)
+          item.aud_id_evento || '-',    // 4. ID Evento
+          formatDataPDF(item.aud_data), // 5. Data
+          item.aud_time                 // 6. Hora
         ]);
       
       } else if (tipoRelatorio === "entradas") {

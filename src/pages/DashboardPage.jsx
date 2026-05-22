@@ -23,6 +23,7 @@ import {
   getProducts,
   getStock,
   getUsers,
+  getDashboardResume // 👈 IMPORT NOVO AQUI
 } from "../services/api";
 import { formatNumber } from "../utils/format";
 
@@ -175,6 +176,7 @@ const DashboardPage = () => {
     moved: "idle",
     min: "idle",
     users: "idle",
+    resume: "idle", // 👈 ESTADO NOVO
   });
   const [errors, setErrors] = useState({
     products: "",
@@ -189,6 +191,7 @@ const DashboardPage = () => {
   const [users, setUsers] = useState([]);
   const [mostMoved, setMostMoved] = useState([]);
   const [minStock, setMinStock] = useState([]);
+  const [resumeData, setResumeData] = useState(null); // 👈 ESTADO DOS DADOS NOVOS
   const [topLimit, setTopLimit] = useState(8);
 
   useEffect(() => {
@@ -201,17 +204,19 @@ const DashboardPage = () => {
         stock: "loading",
         moved: "loading",
         min: "loading",
+        resume: "loading", // 👈 LOADING NOVO
         users: isAdmin ? "loading" : "ready",
       }));
       setErrors({ products: "", stock: "", moved: "", min: "", users: "" });
 
       try {
-        const [productsRes, stockRes, movedRes, minRes] =
+        const [productsRes, stockRes, movedRes, minRes, resumeRes] = // 👈 ADD NA FILA
           await Promise.allSettled([
             getProducts(token),
             getStock(token),
             getMostMovedProducts(token),
             getMinimumStock(token),
+            getDashboardResume(token) // 👈 CHAMADA NOVA
           ]);
 
         if (productsRes.status === "fulfilled") {
@@ -222,9 +227,7 @@ const DashboardPage = () => {
           setStatus((prev) => ({ ...prev, products: "error" }));
           setErrors((prev) => ({
             ...prev,
-            products:
-              productsRes.reason?.message ||
-              "Falha ao carregar produtos.",
+            products: productsRes.reason?.message || "Falha ao carregar produtos.",
           }));
         }
 
@@ -248,9 +251,7 @@ const DashboardPage = () => {
           setStatus((prev) => ({ ...prev, moved: "error" }));
           setErrors((prev) => ({
             ...prev,
-            moved:
-              movedRes.reason?.message ||
-              "Falha ao carregar movimentações.",
+            moved: movedRes.reason?.message || "Falha ao carregar movimentações.",
           }));
         }
 
@@ -262,10 +263,17 @@ const DashboardPage = () => {
           setStatus((prev) => ({ ...prev, min: "error" }));
           setErrors((prev) => ({
             ...prev,
-            min:
-              minRes.reason?.message ||
-              "Falha ao carregar alertas de mínimo.",
+            min: minRes.reason?.message || "Falha ao carregar alertas de mínimo.",
           }));
+        }
+
+        // 👇 TRATAMENTO DA ROTA NOVA 👇
+        if (resumeRes.status === "fulfilled") {
+          setResumeData(resumeRes.value || null);
+          setStatus((prev) => ({ ...prev, resume: "ready" }));
+        } else {
+          setResumeData(null);
+          setStatus((prev) => ({ ...prev, resume: "error" }));
         }
 
         if (isAdmin) {
@@ -289,6 +297,7 @@ const DashboardPage = () => {
           stock: "error",
           moved: "error",
           min: "error",
+          resume: "error",
           users: isAdmin ? "error" : prev.users,
         }));
         setErrors((prev) => ({
@@ -382,6 +391,7 @@ const DashboardPage = () => {
     status.stock === "error" ? "Estoque" : null,
     status.moved === "error" ? "Movimentações" : null,
     status.min === "error" ? "Mínimo" : null,
+    status.resume === "error" ? "Resumo Financeiro" : null,
     isAdmin && status.users === "error" ? "Usuários" : null,
   ].filter(Boolean);
 
@@ -426,6 +436,15 @@ const DashboardPage = () => {
           meta={`${formatNumber(productsWithStockCount)} produtos com saldo`}
           loading={anyLoading && status.stock === "loading"}
         />
+        
+        {/* 👇 O CARD NOVO DO VALOR DAS COMPRAS 👇 */}
+        <DashboardStatCard
+          title="Investimento do Mês"
+          value={resumeData?.valor_entradas_mes ? `R$ ${formatNumber(resumeData.valor_entradas_mes)}` : "R$ 0,00"}
+          meta="Valor total de entradas no mês atual"
+          loading={anyLoading && status.resume === "loading"}
+        />
+
         <DashboardStatCard
           title="Alertas de minimo"
           value={formatNumber(minStock.length)}

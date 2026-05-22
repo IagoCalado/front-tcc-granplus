@@ -91,6 +91,7 @@ export const deleteUser = (token, id) =>
   request(`/usuarios/${id}`, { token, method: "DELETE" });
 export const updatePassword = (token, id, payload) =>
   request(`/usuarios/${id}/senha`, { token, method: "PUT", body: payload });
+
 // Entradas e Saídas
 export const getInputs = (token) => request("/entradas", { token });
 export const createInput = (token, payload) =>
@@ -132,3 +133,6 @@ export const getAuditReportsByDate = (token, startDate, endDate) =>
 
 export const getRelatorioDinamico = (token, tipo, startDate, endDate) => 
   request(`/relatorios/dinamico?tipo=${tipo}&startDate=${startDate}&endDate=${endDate}`, { token });
+
+export const getDashboardResume = (token) => 
+  request("/dashboard/resumo", { token });
