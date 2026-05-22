@@ -345,10 +345,14 @@ const StockPage = () => {
     const direction = modalLotsSortDirection === "desc" ? -1 : 1;
 
     const compareText = (firstValue, secondValue) =>
-      String(firstValue ?? "").localeCompare(String(secondValue ?? ""), "pt-BR", {
-        numeric: true,
-        sensitivity: "base",
-      });
+      String(firstValue ?? "").localeCompare(
+        String(secondValue ?? ""),
+        "pt-BR",
+        {
+          numeric: true,
+          sensitivity: "base",
+        },
+      );
 
     lots.sort((first, second) => {
       let comparison = 0;
@@ -359,9 +363,13 @@ const StockPage = () => {
           second.loc_nome || "Sem localização",
         );
       } else if (modalLotsSortColumn === "quantidade") {
-        comparison = (Number(first.quantidade) || 0) - (Number(second.quantidade) || 0);
+        comparison =
+          (Number(first.quantidade) || 0) - (Number(second.quantidade) || 0);
       } else if (modalLotsSortColumn === "lote") {
-        comparison = compareText(formatLotName(first.lote), formatLotName(second.lote));
+        comparison = compareText(
+          formatLotName(first.lote),
+          formatLotName(second.lote),
+        );
       } else if (modalLotsSortColumn === "validade") {
         const firstDate = getValidDate(first.validade);
         const secondDate = getValidDate(second.validade);
@@ -376,11 +384,16 @@ const StockPage = () => {
           comparison = firstDate.getTime() - secondDate.getTime();
         }
       } else if (modalLotsSortColumn === "status") {
-        comparison = getStatusSortWeight(first.validade) - getStatusSortWeight(second.validade);
+        comparison =
+          getStatusSortWeight(first.validade) -
+          getStatusSortWeight(second.validade);
       }
 
       if (comparison === 0) {
-        comparison = compareText(formatLotName(first.lote), formatLotName(second.lote));
+        comparison = compareText(
+          formatLotName(first.lote),
+          formatLotName(second.lote),
+        );
       }
 
       if (comparison === 0) {
@@ -398,7 +411,9 @@ const StockPage = () => {
 
   const handleSortModalLots = (column) => {
     if (modalLotsSortColumn === column) {
-      setModalLotsSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+      setModalLotsSortDirection((current) =>
+        current === "asc" ? "desc" : "asc",
+      );
       return;
     }
 
@@ -408,7 +423,11 @@ const StockPage = () => {
 
   const renderSortLabel = (column, label) => {
     const isActive = modalLotsSortColumn === column;
-    const arrow = isActive ? (modalLotsSortDirection === "asc" ? "▲" : "▼") : "↕";
+    const arrow = isActive
+      ? modalLotsSortDirection === "asc"
+        ? "▲"
+        : "▼"
+      : "↕";
 
     return (
       <button
@@ -429,7 +448,9 @@ const StockPage = () => {
         }}
       >
         <span>{label}</span>
-        <span style={{ fontSize: "11px", opacity: isActive ? 1 : 0.55 }}>{arrow}</span>
+        <span style={{ fontSize: "11px", opacity: isActive ? 1 : 0.55 }}>
+          {arrow}
+        </span>
       </button>
     );
   };
@@ -648,13 +669,25 @@ const StockPage = () => {
                         <tr
                           key={`${item.lote ?? "sem-lote"}-${item.validade ?? "sem-validade"}-${index}`}
                         >
-                          <td style={{ textAlign: "center" }}>{item.loc_nome || "Sem localização"}</td>
+                          <td style={{ textAlign: "center" }}>
+                            {item.loc_nome || "Sem localização"}
+                          </td>
                           <td style={{ textAlign: "center" }}>
                             {formatNumber(item.quantidade)}
                           </td>
-                          <td style={{ textAlign: "center" }}>{formatLotName(item.lote)}</td>
-                          <td style={{ textAlign: "center" }}>{formatValidityDate(item.validade)}</td>
-                          <td style={{ textAlign: "center", color: status.color, fontWeight: 600 }}>
+                          <td style={{ textAlign: "center" }}>
+                            {formatLotName(item.lote)}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {formatValidityDate(item.validade)}
+                          </td>
+                          <td
+                            style={{
+                              textAlign: "center",
+                              color: status.color,
+                              fontWeight: 600,
+                            }}
+                          >
                             {status.label}
                           </td>
                         </tr>
