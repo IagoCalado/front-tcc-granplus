@@ -21,6 +21,8 @@ export default function InputModal({
     tone: "warning",
   });
 
+  const scrollRef = useRef(null);
+
   const [formData, setFormData] = useState({
     loc_id: 1,
     fncd_id: "",
@@ -36,11 +38,7 @@ export default function InputModal({
     ],
   });
 
-<<<<<<< HEAD
   const activeSuppliers = suppliers.filter((supplier) => supplier?.fncd_ativo === 1);
-=======
-  const scrollRef = useRef(null);
->>>>>>> b9dba25dc1f6fe9c75a251ab88304b758afc05ff
 
   const getLocalISODate = (dateInput) => {
     const d = dateInput ? new Date(dateInput) : new Date();
@@ -214,7 +212,7 @@ export default function InputModal({
           flexDirection: "column",
           overflow: "hidden",
         }}
-      >
+       >
         <button className="modal-close" onClick={onClose} aria-label="Fechar">
           ×
         </button>
@@ -223,7 +221,6 @@ export default function InputModal({
           <h3 style={{ margin: 0 }}>Nova Entrada de Produto</h3>
         </div>
 
-<<<<<<< HEAD
         <form className="modal-body" onSubmit={handleSubmit}>
           <div className="input-field">
             <label>Fornecedor</label>
@@ -241,40 +238,6 @@ export default function InputModal({
               ))}
             </select>
           </div>
-=======
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            flex: 1,
-            minHeight: 0,
-          }}
-        >
-          <div
-            ref={scrollRef}
-            style={{
-              overflowY: formData.produtos.length > 1 ? "auto" : "visible",
-              paddingRight: 8,
-            }}
-          >
-            <div className="input-field">
-              <label>Fornecedor</label>
-              <select
-                name="fncd_id"
-                value={formData.fncd_id}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Selecione...</option>
-                {suppliers.map((sup) => (
-                  <option key={sup.fncd_id} value={sup.fncd_id}>
-                    {sup.fncd_nome}
-                  </option>
-                ))}
-              </select>
-            </div>
->>>>>>> b9dba25dc1f6fe9c75a251ab88304b758afc05ff
 
             <div className="input-field">
               <label>Localização</label>
@@ -468,9 +431,7 @@ export default function InputModal({
               >
                 + Adicionar mais um produto
               </button>
-            </div>
-          </div>
-
+            </div>  
           <div
             style={{
               display: "flex",
@@ -480,7 +441,7 @@ export default function InputModal({
               borderTop: "1px solid var(--border)",
             }}
             className="modal-footer"
-          >
+           >
             <button type="button" onClick={onClose} className="btn btn-ghost">
               Cancelar
             </button>
