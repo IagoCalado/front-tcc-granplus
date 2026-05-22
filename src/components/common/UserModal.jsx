@@ -46,7 +46,7 @@ export default function UserModal({ isOpen, onClose, onSave, user }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Fechar">×</button>
 

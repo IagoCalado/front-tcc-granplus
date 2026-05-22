@@ -330,7 +330,7 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
 
   return (
     <>
-      <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-overlay">
         <div
           className="modal-content card"
           onClick={(e) => e.stopPropagation()}
@@ -563,7 +563,7 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
       </div>
 
       {isLotsModalOpen && (
-        <div className="modal-overlay" onClick={closeLotsModal}>
+        <div className="modal-overlay">
           <div
             className="modal-content card"
             onClick={(e) => e.stopPropagation()}

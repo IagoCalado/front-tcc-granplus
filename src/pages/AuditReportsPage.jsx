@@ -5,6 +5,7 @@ import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
+import AlertDialog from "../components/common/AlertDialog";
 import { useAuth } from "../contexts/AuthContext";
 import { matchesSearch } from "../utils/search";
 
@@ -54,6 +55,12 @@ const AuditReportsPage = () => {
   const [dataFim, setDataFim] = useState("");
   const [tipoRelatorio, setTipoRelatorio] = useState("geral");
   const [toastAviso, setToastAviso] = useState("");
+  const [alertState, setAlertState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "error",
+  });
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -157,7 +164,12 @@ const AuditReportsPage = () => {
 
     } catch (erro) {
       console.error("Erro ao gerar PDF:", erro);
-      alert("Erro ao buscar dados. Verifique o F12.");
+      setAlertState({
+        open: true,
+        title: "Erro ao gerar relatorio",
+        message: "Erro ao buscar dados. Verifique o F12.",
+        tone: "error",
+      });
     }
   };
 
@@ -368,6 +380,16 @@ const AuditReportsPage = () => {
           {toastAviso}
         </div>
       )}
+
+      <AlertDialog
+        isOpen={alertState.open}
+        title={alertState.title}
+        message={alertState.message}
+        tone={alertState.tone}
+        onClose={() =>
+          setAlertState({ open: false, title: "", message: "", tone: "error" })
+        }
+      />
 
     </div> 
   );

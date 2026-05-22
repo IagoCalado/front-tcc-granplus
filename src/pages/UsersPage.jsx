@@ -5,6 +5,8 @@ import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import StatusPill from "../components/common/StatusPill";
 import UserModal from "../components/common/UserModal";
+import AlertDialog from "../components/common/AlertDialog";
+import ConfirmDialog from "../components/common/ConfirmDialog";
 import { useAuth } from "../contexts/AuthContext";
 import {
   getUserById,
@@ -30,6 +32,26 @@ const UsersPage = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [alertState, setAlertState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "info",
+  });
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    targetUser: null,
+  });
+  const [saveConfirmState, setSaveConfirmState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    payload: null,
+    targetId: null,
+  });
+  const [passwordConfirmOpen, setPasswordConfirmOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -54,8 +76,13 @@ const UsersPage = () => {
     loadData();
   }, [loadData, token]);
 
-  const handleChangePassword = async () => {
+  const handleChangePassword = () => {
+    setPasswordConfirmOpen(true);
+  };
+
+  const handleConfirmChangePassword = async () => {
     try {
+      setPasswordConfirmOpen(false);
       setPasswordStatus("Atualizando...");
       await updatePassword(token, user.user_id, {
         senhaAtual: passwords.current,
@@ -63,6 +90,12 @@ const UsersPage = () => {
       });
       setPasswordStatus("Senha atualizada com sucesso!");
       setPasswords({ current: "", new: "" });
+      setAlertState({
+        open: true,
+        title: "Senha atualizada",
+        message: "Senha atualizada com sucesso!",
+        tone: "success",
+      });
     } catch (err) {
       setPasswordStatus("Erro: " + err.message);
     }
@@ -74,34 +107,114 @@ const UsersPage = () => {
   };
 
   const handleDeleteUser = async (userToDelete) => {
-    if (
-      window.confirm(
-        `Tem certeza que deseja excluir o usuário ${userToDelete.user_nome}?`,
-      )
-    ) {
-      try {
-        await deleteUser(token, userToDelete.user_id);
-        alert("Usuário excluído com sucesso!");
-        loadData();
-      } catch (err) {
-        alert("Erro ao excluir usuário: " + err.message);
-      }
+    setConfirmState({
+      open: true,
+      title: "Excluir usuario",
+      message: `Tem certeza que deseja excluir o usuario ${userToDelete.user_nome}?`,
+      targetUser: userToDelete,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    const userToDelete = confirmState.targetUser;
+    if (!userToDelete) {
+      setConfirmState({
+        open: false,
+        title: "",
+        message: "",
+        targetUser: null,
+      });
+      return;
+    }
+
+    setConfirmState((prev) => ({ ...prev, open: false }));
+    try {
+      await deleteUser(token, userToDelete.user_id);
+      setAlertState({
+        open: true,
+        title: "Usuario excluido",
+        message: "Usuario excluido com sucesso!",
+        tone: "success",
+      });
+      loadData();
+    } catch (err) {
+      setAlertState({
+        open: true,
+        title: "Erro ao excluir usuario",
+        message: "Erro ao excluir usuario: " + err.message,
+        tone: "error",
+      });
+    } finally {
+      setConfirmState({
+        open: false,
+        title: "",
+        message: "",
+        targetUser: null,
+      });
     }
   };
 
-  const handleSaveUser = async (formData, id) => {
+  const handleSaveUser = (formData, id) => {
+    setSaveConfirmState({
+      open: true,
+      title: id ? "Atualizar usuario" : "Criar usuario",
+      message: id
+        ? "Deseja salvar as alteracoes deste usuario?"
+        : "Deseja criar este novo usuario?",
+      payload: formData,
+      targetId: id || null,
+    });
+  };
+
+  const handleConfirmSaveUser = async () => {
+    const payload = saveConfirmState.payload;
+    if (!payload) {
+      setSaveConfirmState({
+        open: false,
+        title: "",
+        message: "",
+        payload: null,
+        targetId: null,
+      });
+      return;
+    }
+
     try {
-      if (id) {
-        await updateUser(token, id, formData);
-        alert("Usuário atualizado com sucesso!");
+      const targetId = saveConfirmState.targetId;
+      if (targetId) {
+        await updateUser(token, targetId, payload);
+        setAlertState({
+          open: true,
+          title: "Usuario atualizado",
+          message: "Usuario atualizado com sucesso!",
+          tone: "success",
+        });
       } else {
-        await createUser(token, formData);
-        alert("Usuário criado com sucesso!");
+        await createUser(token, payload);
+        setAlertState({
+          open: true,
+          title: "Usuario criado",
+          message: "Usuario criado com sucesso!",
+          tone: "success",
+        });
       }
       setIsModalOpen(false);
       loadData();
     } catch (err) {
-      alert("Erro ao salvar usuário: " + err.message);
+      setAlertState({
+        open: true,
+        title: "Erro ao salvar usuario",
+        message: "Erro ao salvar usuario: " + err.message,
+        tone: "error",
+      });
+    } finally {
+      setSaveConfirmState({
+        open: false,
+        title: "",
+        message: "",
+        payload: null,
+        targetId: null,
+      });
     }
   };
 
@@ -130,6 +243,9 @@ const UsersPage = () => {
   if (error && !users.length && !profile) {
     return <EmptyState title="Nao foi possivel carregar" description={error} />;
   }
+
+  const resetAlert = () =>
+    setAlertState({ open: false, title: "", message: "", tone: "info" });
 
   
 
@@ -221,6 +337,49 @@ const UsersPage = () => {
           onClose={() => setIsModalOpen(false)}
           onSave={handleSaveUser}
         />
+
+        <AlertDialog
+          isOpen={alertState.open}
+          title={alertState.title}
+          message={alertState.message}
+          tone={alertState.tone}
+          onClose={resetAlert}
+        />
+
+        <ConfirmDialog
+          isOpen={confirmState.open}
+          title={confirmState.title}
+          message={confirmState.message}
+          tone="danger"
+          confirmLabel="Excluir"
+          onConfirm={handleConfirmDelete}
+          onCancel={() =>
+            setConfirmState({
+              open: false,
+              title: "",
+              message: "",
+              targetUser: null,
+            })
+          }
+        />
+
+        <ConfirmDialog
+          isOpen={saveConfirmState.open}
+          title={saveConfirmState.title}
+          message={saveConfirmState.message}
+          tone="warning"
+          confirmLabel={saveConfirmState.targetId ? "Atualizar" : "Criar"}
+          onConfirm={handleConfirmSaveUser}
+          onCancel={() =>
+            setSaveConfirmState({
+              open: false,
+              title: "",
+              message: "",
+              payload: null,
+              targetId: null,
+            })
+          }
+        />
       </div>
     );
   }
@@ -303,6 +462,16 @@ const UsersPage = () => {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={passwordConfirmOpen}
+        title="Atualizar senha"
+        message="Deseja atualizar sua senha agora?"
+        tone="warning"
+        confirmLabel="Atualizar"
+        onConfirm={handleConfirmChangePassword}
+        onCancel={() => setPasswordConfirmOpen(false)}
+      />
     </div>
   );
 };

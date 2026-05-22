@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import AlertDialog from "./AlertDialog";
 
 const normalizeDigits = (value) => String(value || "").replace(/\D/g, "");
 
@@ -73,6 +74,12 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
   const [formData, setFormData] = useState(initialFormData);
   const [cepLoading, setCepLoading] = useState(false);
   const [cepError, setCepError] = useState("");
+  const [alertState, setAlertState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "warning",
+  });
 
   useEffect(() => {
     if (supplier) {
@@ -113,7 +120,12 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
   const handleConsultarCep = async () => {
     const cepDigits = normalizeCep(formData.fncd_cep);
     if (cepDigits.length !== 8) {
-      alert("Informe um CEP válido com 8 dígitos.");
+      setAlertState({
+        open: true,
+        title: "CEP invalido",
+        message: "Informe um CEP valido com 8 digitos.",
+        tone: "warning",
+      });
       return;
     }
 
@@ -123,7 +135,12 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
       const data = await response.json();
 
       if (!response.ok || data?.erro) {
-        alert("CEP não encontrado.");
+        setAlertState({
+          open: true,
+          title: "CEP nao encontrado",
+          message: "CEP nao encontrado.",
+          tone: "error",
+        });
         return;
       }
 
@@ -137,7 +154,13 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
         fncd_complemento: data.complemento || prev.fncd_complemento,
       }));
     } catch (err) {
-      alert("Não foi possível consultar o CEP. Verifique sua conexão e tente novamente.");
+      setAlertState({
+        open: true,
+        title: "Falha ao consultar CEP",
+        message:
+          "Nao foi possivel consultar o CEP. Verifique sua conexao e tente novamente.",
+        tone: "error",
+      });
       console.error(err);
     } finally {
       setCepLoading(false);
@@ -177,7 +200,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Fechar">×</button>
 
@@ -189,6 +212,16 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
 
         <form className="modal-body" onSubmit={handleSubmit}>
           <div>
+
+          <AlertDialog
+            isOpen={alertState.open}
+            title={alertState.title}
+            message={alertState.message}
+            tone={alertState.tone}
+            onClose={() =>
+              setAlertState({ open: false, title: "", message: "", tone: "warning" })
+            }
+          />
             <label
               style={{
                 display: "block",

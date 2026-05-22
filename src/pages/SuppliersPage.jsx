@@ -5,6 +5,8 @@ import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import SupplierModal from "../components/common/SupplierModal";
+import AlertDialog from "../components/common/AlertDialog";
+import ConfirmDialog from "../components/common/ConfirmDialog";
 import { useAuth } from "../contexts/AuthContext";
 import {
   getSuppliers,
@@ -21,6 +23,25 @@ const SuppliersPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState("");
   const [selectedAddressSupplier, setSelectedAddressSupplier] = useState(null);
+  const [alertState, setAlertState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "info",
+  });
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    targetId: null,
+  });
+  const [saveConfirmState, setSaveConfirmState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    payload: null,
+    targetId: null,
+  });
 
   const normalizeDigits = (value) => String(value || "").replace(/\D/g, "");
 
@@ -161,28 +182,92 @@ const SuppliersPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveSupplier = async (formData, id) => {
+  const handleSaveSupplier = (formData, id) => {
+    setSaveConfirmState({
+      open: true,
+      title: id ? "Atualizar fornecedor" : "Criar fornecedor",
+      message: id
+        ? "Deseja salvar as alteracoes deste fornecedor?"
+        : "Deseja criar este novo fornecedor?",
+      payload: formData,
+      targetId: id || null,
+    });
+  };
+
+  const handleConfirmSaveSupplier = async () => {
+    const payload = saveConfirmState.payload;
+    if (!payload) {
+      setSaveConfirmState({
+        open: false,
+        title: "",
+        message: "",
+        payload: null,
+        targetId: null,
+      });
+      return;
+    }
+
     try {
-      if (id) {
-        await updateSupplier(token, id, formData);
+      if (saveConfirmState.targetId) {
+        await updateSupplier(token, saveConfirmState.targetId, payload);
       } else {
-        await createSupplier(token, formData);
+        await createSupplier(token, payload);
       }
       setIsModalOpen(false);
       loadData();
     } catch (error) {
-      alert("Erro ao salvar fornecedor: " + error.message);
+      setAlertState({
+        open: true,
+        title: "Erro ao salvar fornecedor",
+        message: "Erro ao salvar fornecedor: " + error.message,
+        tone: "error",
+      });
+    } finally {
+      setSaveConfirmState({
+        open: false,
+        title: "",
+        message: "",
+        payload: null,
+        targetId: null,
+      });
     }
   };
 
   const handleDeleteSupplier = async (id) => {
-    if (window.confirm("Certeza que deseja excluir este fornecedor?")) {
-      try {
-        await deleteSupplier(token, id);
-        loadData();
-      } catch (error) {
-        alert("Erro ao excluir fornecedor: " + error.message);
-      }
+    setConfirmState({
+      open: true,
+      title: "Excluir fornecedor",
+      message: "Certeza que deseja excluir este fornecedor?",
+      targetId: id,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    const targetId = confirmState.targetId;
+    if (!targetId) {
+      setConfirmState({ open: false, title: "", message: "", targetId: null });
+      return;
+    }
+
+    setConfirmState((prev) => ({ ...prev, open: false }));
+    try {
+      await deleteSupplier(token, targetId);
+      loadData();
+      setAlertState({
+        open: true,
+        title: "Fornecedor excluido",
+        message: "Fornecedor excluido com sucesso.",
+        tone: "success",
+      });
+    } catch (error) {
+      setAlertState({
+        open: true,
+        title: "Erro ao excluir fornecedor",
+        message: "Erro ao excluir fornecedor: " + error.message,
+        tone: "error",
+      });
+    } finally {
+      setConfirmState({ open: false, title: "", message: "", targetId: null });
     }
   };
 
@@ -221,6 +306,9 @@ const SuppliersPage = () => {
   // Se a requisição apresentar falha, reflete na interface via EmptyState com a descrição do Erro
   if (error)
     return <EmptyState title="Não foi possível carregar" description={error} />;
+
+  const resetAlert = () =>
+    setAlertState({ open: false, title: "", message: "", tone: "info" });
 
   
 
@@ -343,10 +431,47 @@ const SuppliersPage = () => {
         supplier={currentSupplier}
       />
 
+      <AlertDialog
+        isOpen={alertState.open}
+        title={alertState.title}
+        message={alertState.message}
+        tone={alertState.tone}
+        onClose={resetAlert}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        tone="danger"
+        confirmLabel="Excluir"
+        onConfirm={handleConfirmDelete}
+        onCancel={() =>
+          setConfirmState({ open: false, title: "", message: "", targetId: null })
+        }
+      />
+
+      <ConfirmDialog
+        isOpen={saveConfirmState.open}
+        title={saveConfirmState.title}
+        message={saveConfirmState.message}
+        tone="warning"
+        confirmLabel={saveConfirmState.targetId ? "Atualizar" : "Criar"}
+        onConfirm={handleConfirmSaveSupplier}
+        onCancel={() =>
+          setSaveConfirmState({
+            open: false,
+            title: "",
+            message: "",
+            payload: null,
+            targetId: null,
+          })
+        }
+      />
+
       {selectedAddressSupplier && (
         <div
           className="modal-overlay"
-          onClick={() => setSelectedAddressSupplier(null)}
           style={{
             position: "fixed",
             top: 0,
@@ -496,11 +621,20 @@ const SuppliersPage = () => {
                                   : lines.join("\n");
 
                               await navigator.clipboard.writeText(textToCopy);
-                              alert("Endereço copiado!");
+                              setAlertState({
+                                open: true,
+                                title: "Endereco copiado",
+                                message: "Endereco copiado!",
+                                tone: "success",
+                              });
                             } catch {
-                              alert(
-                                "Não foi possível copiar automaticamente. Selecione o texto e copie manualmente.",
-                              );
+                              setAlertState({
+                                open: true,
+                                title: "Falha ao copiar",
+                                message:
+                                  "Nao foi possivel copiar automaticamente. Selecione o texto e copie manualmente.",
+                                tone: "error",
+                              });
                             }
                           }}
                         >

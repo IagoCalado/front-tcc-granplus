@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { getLocations, getSuppliers, getProducts } from "../../services/api";
+import AlertDialog from "./AlertDialog";
 
 export default function InputModal({
   isOpen,
@@ -13,6 +14,12 @@ export default function InputModal({
   const [suppliers, setSuppliers] = useState([]);
   const [products, setProducts] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [alertState, setAlertState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "warning",
+  });
 
   const [formData, setFormData] = useState({
     loc_id: 1,
@@ -152,7 +159,12 @@ export default function InputModal({
       !formData.fncd_id ||
       formData.produtos.some((p) => !p.pdt_id || !p.quantidade)
     ) {
-      alert("Preencha todos os campos do fornecedor, produto e quantidade.");
+      setAlertState({
+        open: true,
+        title: "Campos obrigatorios",
+        message: "Preencha todos os campos do fornecedor, produto e quantidade.",
+        tone: "warning",
+      });
       return;
     }
 
@@ -172,7 +184,7 @@ export default function InputModal({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div
         className="modal-content card"
         onClick={(e) => e.stopPropagation()}
@@ -411,6 +423,16 @@ export default function InputModal({
           </div>
         </form>
       </div>
+
+      <AlertDialog
+        isOpen={alertState.open}
+        title={alertState.title}
+        message={alertState.message}
+        tone={alertState.tone}
+        onClose={() =>
+          setAlertState({ open: false, title: "", message: "", tone: "warning" })
+        }
+      />
     </div>
   );
 }
