@@ -123,6 +123,9 @@ export const getMostMovedProducts = (token) =>
 export const getMinimumStock = (token) =>
   request("/relatorios/estoque-minimo", { token });
 
+export const getTopSuppliersBySpend = (token) =>
+  request("/relatorios/fornecedores-top", { token });
+
 export const getAuditReports = (token, period) =>
   request(`/relatorios/auditoria?period=${period}`, { token });
 

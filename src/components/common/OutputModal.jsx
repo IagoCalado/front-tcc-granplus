@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { AlertCircle, X } from "lucide-react";
 import { getOutputAvailableLots, getProducts } from "../../services/api";
 
@@ -80,6 +80,8 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
     ],
   });
 
+  const scrollRef = useRef(null);
+
   useEffect(() => {
     if (isOpen && token) {
       getProducts(token)
@@ -159,16 +161,26 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
   };
 
   const addProductRow = () => {
-    setFormData({
-      ...formData,
-      produtos: [
-        ...formData.produtos,
-        {
-          pdt_id: "",
-          quantidade: "",
-          lotes_selecionados: [],
-        },
-      ],
+    setFormData((prev) => {
+      const next = {
+        ...prev,
+        produtos: [
+          ...prev.produtos,
+          {
+            pdt_id: "",
+            quantidade: "",
+            lotes_selecionados: [],
+          },
+        ],
+      };
+
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 50);
+
+      return next;
     });
   };
 
@@ -330,14 +342,21 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
 
   return (
     <>
-      <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-overlay"
+        onClick={() => {
+          onClose();
+        }}
+      >
         <div
           className="modal-content card"
           onClick={(e) => e.stopPropagation()}
           style={{
             width: "min(94vw, 1180px)",
-            maxHeight: "none",
-            overflow: "visible",
+            maxHeight: "80vh",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
           }}
         >
           <button className="modal-close" onClick={onClose} aria-label="Fechar">
@@ -367,190 +386,236 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
             </div>
           )}
 
-          <form className="modal-body" onSubmit={handleSubmit}>
-            <div className="input-field">
-              <label>Motivo da Saída</label>
-              <input
-                type="text"
-                name="lcl_tipo"
-                value={formData.lcl_tipo}
-                onChange={handleMainChange}
-                placeholder="Ex: Venda, Descarte por vencimento, Doação"
-                required
-              />
-            </div>
+          <form
+            onSubmit={handleSubmit}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              flex: 1,
+              minHeight: 0,
+            }}
+          >
+            <div
+              ref={scrollRef}
+              style={{
+                overflowY: formData.produtos.length > 1 ? "auto" : "visible",
+                paddingRight: 8,
+              }}
+            >
+              <div className="input-field">
+                <label>Motivo da Saída</label>
+                <input
+                  type="text"
+                  name="lcl_tipo"
+                  value={formData.lcl_tipo}
+                  onChange={handleMainChange}
+                  placeholder="Ex: Venda, Descarte por vencimento, Doação"
+                  required
+                />
+              </div>
 
-            <div className="input-field">
-              <label>Destino (Opcional)</label>
-              <input
-                type="text"
-                name="lcl_destino"
-                value={formData.lcl_destino}
-                onChange={handleMainChange}
-                placeholder="Ex: Cliente João, Loja 2, Setor Financeiro"
-              />
-            </div>
+              <div className="input-field">
+                <label>Destino (Opcional)</label>
+                <input
+                  type="text"
+                  name="lcl_destino"
+                  value={formData.lcl_destino}
+                  onChange={handleMainChange}
+                  placeholder="Ex: Cliente João, Loja 2, Setor Financeiro"
+                />
+              </div>
 
-            <div style={{ paddingTop: "15px" }}>
-              <h4
-                style={{ fontSize: "16px", marginBottom: "10px", marginTop: 0 }}
-              >
-                Itens da Saída
-              </h4>
+              <div style={{ paddingTop: "15px" }}>
+                <h4
+                  style={{
+                    fontSize: "16px",
+                    marginBottom: "10px",
+                    marginTop: 0,
+                  }}
+                >
+                  Itens da Saída
+                </h4>
 
-              {formData.produtos.map((prod, index) => (
-                <div key={index}>
-                  {index === 0 && (
+                {formData.produtos.map((prod, index) => (
+                  <div key={index} style={{ marginBottom: "6px" }}>
                     <div
                       style={{
                         display: "grid",
                         gridTemplateColumns:
                           "repeat(auto-fit, minmax(140px, 1fr))",
                         gap: "10px",
-                        marginBottom: "4px",
+                        marginBottom: "10px",
+                        alignItems: "start",
                       }}
                     >
-                      <label style={{ fontSize: "14px", fontWeight: "500" }}>
-                        Produto
-                      </label>
-                      <label style={{ fontSize: "14px", fontWeight: "500" }}>
-                        Quantidade
-                      </label>
-                      <label style={{ fontSize: "14px", fontWeight: "500" }}>
-                        Ação
-                      </label>
-                      <div />
-                    </div>
-                  )}
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fit, minmax(140px, 1fr))",
-                      gap: "10px",
-                      marginBottom: "10px",
-                      alignItems: "center",
-                    }}
-                  >
-                    <select
-                      name="pdt_id"
-                      value={prod.pdt_id}
-                      onChange={(e) => handleProductChange(index, e)}
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid var(--border)",
-                      }}
-                    >
-                      <option value="">Produto...</option>
-                      {products.map((p) => (
-                        <option key={p.pdt_id} value={p.pdt_id}>
-                          {p.pdt_nome} (Est: {p.pdt_estoque_atual})
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      name="quantidade"
-                      value={prod.quantidade}
-                      onChange={(e) => handleProductChange(index, e)}
-                      min="0"
-                      step="0.01"
-                      placeholder="Qtd"
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid var(--border)",
-                      }}
-                    />
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "8px",
-                        justifySelf: "start",
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleOpenLotsModal(index)}
-                        disabled={!prod.pdt_id || !prod.quantidade}
-                        style={{
-                          padding: "8px 12px",
-                          borderRadius: "6px",
-                          border: "1px solid var(--border)",
-                          background:
-                            prod.lotes_selecionados.length > 0
-                              ? "#dcfce7"
-                              : "var(--background)",
-                          color:
-                            prod.lotes_selecionados.length > 0
-                              ? "#166534"
-                              : "var(--text)",
-                          cursor:
-                            !prod.pdt_id || !prod.quantidade
-                              ? "not-allowed"
-                              : "pointer",
-                          fontSize: "12px",
-                          fontWeight: "500",
-                          opacity: !prod.pdt_id || !prod.quantidade ? 0.5 : 1,
-                        }}
-                      >
-                        {prod.lotes_selecionados.length > 0
-                          ? `✓ ${prod.lotes_selecionados.length} lote(s)`
-                          : "Selecionar Lote"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeProductRow(index)}
-                        disabled={formData.produtos.length === 1}
-                        title="Remover produto"
-                        style={{
-                          width: "34px",
-                          height: "34px",
-                          borderRadius: "6px",
-                          border: "1px solid var(--border)",
-                          background: "var(--background)",
-                          color: "var(--text)",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor:
-                            formData.produtos.length === 1
-                              ? "not-allowed"
-                              : "pointer",
-                          fontSize: "18px",
-                          lineHeight: 1,
-                          padding: 0,
-                          opacity: formData.produtos.length === 1 ? 0.5 : 1,
-                        }}
-                      >
-                        ×
-                      </button>
+                      <div>
+                        <label
+                          style={{
+                            fontSize: "14px",
+                            fontWeight: "500",
+                            display: "block",
+                            marginBottom: "6px",
+                          }}
+                        >
+                          Produto
+                        </label>
+                        <select
+                          name="pdt_id"
+                          value={prod.pdt_id}
+                          onChange={(e) => handleProductChange(index, e)}
+                          style={{
+                            width: "100%",
+                            padding: "8px",
+                            borderRadius: "6px",
+                            border: "1px solid var(--border)",
+                          }}
+                        >
+                          <option value="">Produto...</option>
+                          {products.map((p) => (
+                            <option key={p.pdt_id} value={p.pdt_id}>
+                              {p.pdt_nome} (Est: {p.pdt_estoque_atual})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label
+                          style={{
+                            fontSize: "14px",
+                            fontWeight: "500",
+                            display: "block",
+                            marginBottom: "6px",
+                          }}
+                        >
+                          Quantidade
+                        </label>
+                        <input
+                          type="number"
+                          name="quantidade"
+                          value={prod.quantidade}
+                          onChange={(e) => handleProductChange(index, e)}
+                          min="0"
+                          step="0.01"
+                          placeholder="Qtd"
+                          style={{
+                            width: "100%",
+                            padding: "8px",
+                            borderRadius: "6px",
+                            border: "1px solid var(--border)",
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          style={{
+                            fontSize: "14px",
+                            fontWeight: "500",
+                            display: "block",
+                            marginBottom: "6px",
+                          }}
+                        >
+                          Ação
+                        </label>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "8px",
+                            justifySelf: "start",
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleOpenLotsModal(index)}
+                            disabled={!prod.pdt_id || !prod.quantidade}
+                            style={{
+                              padding: "8px 12px",
+                              borderRadius: "6px",
+                              border: "1px solid var(--border)",
+                              background:
+                                prod.lotes_selecionados.length > 0
+                                  ? "#dcfce7"
+                                  : "var(--background)",
+                              color:
+                                prod.lotes_selecionados.length > 0
+                                  ? "#166534"
+                                  : "var(--text)",
+                              cursor:
+                                !prod.pdt_id || !prod.quantidade
+                                  ? "not-allowed"
+                                  : "pointer",
+                              fontSize: "12px",
+                              fontWeight: "500",
+                              opacity:
+                                !prod.pdt_id || !prod.quantidade ? 0.5 : 1,
+                            }}
+                          >
+                            {prod.lotes_selecionados.length > 0
+                              ? `✓ ${prod.lotes_selecionados.length} lote(s)`
+                              : "Selecionar Lote"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeProductRow(index)}
+                            disabled={formData.produtos.length === 1}
+                            title="Remover produto"
+                            style={{
+                              width: "34px",
+                              height: "34px",
+                              borderRadius: "6px",
+                              border: "1px solid var(--border)",
+                              background: "var(--background)",
+                              color: "var(--text)",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor:
+                                formData.produtos.length === 1
+                                  ? "not-allowed"
+                                  : "pointer",
+                              fontSize: "18px",
+                              lineHeight: 1,
+                              padding: 0,
+                              opacity: formData.produtos.length === 1 ? 0.5 : 1,
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              <button
-                type="button"
-                onClick={addProductRow}
-                style={{
-                  color: "var(--accent)",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  padding: "0",
-                  marginTop: "5px",
-                }}
-              >
-                + Adicionar mais um produto
-              </button>
+                <button
+                  type="button"
+                  onClick={addProductRow}
+                  style={{
+                    color: "var(--accent)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    padding: "0",
+                    marginTop: "5px",
+                  }}
+                >
+                  + Adicionar mais um produto
+                </button>
+              </div>
             </div>
 
-            <div style={{ display: "flex", gap: "16px", marginTop: "20px" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "16px",
+                marginTop: "12px",
+                paddingTop: "12px",
+                borderTop: "1px solid var(--border)",
+              }}
+              className="modal-footer"
+            >
               <button type="button" onClick={onClose} className="btn btn-ghost">
                 Cancelar
               </button>
@@ -563,14 +628,16 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
       </div>
 
       {isLotsModalOpen && (
-        <div className="modal-overlay" onClick={closeLotsModal}>
+        <div className="modal-overlay">
           <div
             className="modal-content card"
             onClick={(e) => e.stopPropagation()}
             style={{
               width: "min(94vw, 1180px)",
-              maxHeight: "none",
-              overflow: "visible",
+              maxHeight: "80vh",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
             }}
           >
             <div className="modal-header">
@@ -584,164 +651,173 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
               </button>
             </div>
 
-            <p style={{ marginTop: 0, marginBottom: "12px", color: "#4b5563" }}>
-              Informe quanto será retirado de cada lote. Quantidade da saída:{" "}
-              <strong>{currentLineQuantity}</strong>
-            </p>
-
-            <div
-              style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-              }}
-            >
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  tableLayout: "fixed",
-                }}
+            <div style={{ overflowY: "auto", paddingRight: 8 }}>
+              <p
+                style={{ marginTop: 0, marginBottom: "12px", color: "#4b5563" }}
               >
-                <thead>
-                  <tr style={{ background: "#f9fafb" }}>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px",
-                        fontSize: "13px",
-                      }}
-                    >
-                      Localização
-                    </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px",
-                        fontSize: "13px",
-                      }}
-                    >
-                      Lote
-                    </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        padding: "10px",
-                        fontSize: "13px",
-                      }}
-                    >
-                      Validade
-                    </th>
-                    <th
-                      style={{
-                        textAlign: "center",
-                        padding: "10px",
-                        fontSize: "13px",
-                      }}
-                    >
-                      Status
-                    </th>
-                    <th
-                      style={{
-                        textAlign: "right",
-                        padding: "10px",
-                        fontSize: "13px",
-                      }}
-                    >
-                      Disponível
-                    </th>
-                    <th
-                      style={{
-                        textAlign: "right",
-                        padding: "10px",
-                        fontSize: "13px",
-                        width: "180px",
-                      }}
-                    >
-                      Retirar
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {availableLots.map((lot, index) => {
-                    const key = buildLotKey(lot.lote, lot.validade, lot.loc_id);
-                    const statusInfo = getValidityStatus(lot.validade);
-                    return (
-                      <tr
-                        key={`${key}-${index}`}
-                        style={{ borderTop: "1px solid #f3f4f6" }}
+                Informe quanto será retirado de cada lote. Quantidade da saída:{" "}
+                <strong>{currentLineQuantity}</strong>
+              </p>
+
+              <div style={{ border: "1px solid #e5e7eb", borderRadius: "8px" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    tableLayout: "fixed",
+                  }}
+                >
+                  <thead>
+                    <tr style={{ background: "#f9fafb" }}>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          padding: "10px",
+                          fontSize: "13px",
+                        }}
                       >
-                        <td style={{ padding: "10px" }}>
-                          {lot.loc_nome || "Sem localização"}
-                        </td>
-                        <td style={{ padding: "10px" }}>
-                          {formatLotLabel(lot.lote)}
-                        </td>
-                        <td style={{ padding: "10px" }}>
-                          {formatDate(lot.validade)}
-                        </td>
-                        <td
-                          style={{
-                            padding: "10px",
-                            textAlign: "center",
-                            fontSize: "12px",
-                            fontWeight: "500",
-                          }}
+                        Localização
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          padding: "10px",
+                          fontSize: "13px",
+                        }}
+                      >
+                        Lote
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          padding: "10px",
+                          fontSize: "13px",
+                        }}
+                      >
+                        Validade
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "center",
+                          padding: "10px",
+                          fontSize: "13px",
+                        }}
+                      >
+                        Status
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "right",
+                          padding: "10px",
+                          fontSize: "13px",
+                        }}
+                      >
+                        Disponível
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "right",
+                          padding: "10px",
+                          fontSize: "13px",
+                          width: "180px",
+                        }}
+                      >
+                        Retirar
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {availableLots.map((lot, index) => {
+                      const key = buildLotKey(
+                        lot.lote,
+                        lot.validade,
+                        lot.loc_id,
+                      );
+                      const statusInfo = getValidityStatus(lot.validade);
+                      return (
+                        <tr
+                          key={`${key}-${index}`}
+                          style={{ borderTop: "1px solid #f3f4f6" }}
                         >
-                          <span
+                          <td style={{ padding: "10px" }}>
+                            {lot.loc_nome || "Sem localização"}
+                          </td>
+                          <td style={{ padding: "10px" }}>
+                            {formatLotLabel(lot.lote)}
+                          </td>
+                          <td style={{ padding: "10px" }}>
+                            {formatDate(lot.validade)}
+                          </td>
+                          <td
                             style={{
-                              display: "inline-block",
-                              backgroundColor: statusInfo.color,
-                              color: "#fff",
-                              padding: "4px 8px",
-                              borderRadius: "4px",
-                              whiteSpace: "nowrap",
+                              padding: "10px",
+                              textAlign: "center",
+                              fontSize: "12px",
+                              fontWeight: "500",
                             }}
                           >
-                            {statusInfo.label}
-                          </span>
-                        </td>
-                        <td style={{ padding: "10px", textAlign: "right" }}>
-                          {Number(lot.quantidade_disponivel || 0)}
-                        </td>
-                        <td style={{ padding: "10px", textAlign: "right" }}>
-                          <input
-                            type="number"
-                            min="0"
-                            max={Number(lot.quantidade_disponivel || 0)}
-                            step="0.01"
-                            value={lotSelections[key] ?? ""}
-                            onChange={(event) =>
-                              handleChangeLotQuantity(lot, event.target.value)
-                            }
-                            style={{
-                              width: "120px",
-                              padding: "8px",
-                              borderRadius: "6px",
-                              border: "1px solid #d1d5db",
-                              textAlign: "right",
-                            }}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                            <span
+                              style={{
+                                display: "inline-block",
+                                backgroundColor: statusInfo.color,
+                                color: "#fff",
+                                padding: "4px 8px",
+                                borderRadius: "4px",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {statusInfo.label}
+                            </span>
+                          </td>
+                          <td style={{ padding: "10px", textAlign: "right" }}>
+                            {Number(lot.quantidade_disponivel || 0)}
+                          </td>
+                          <td style={{ padding: "10px", textAlign: "right" }}>
+                            <input
+                              type="number"
+                              min="0"
+                              max={Number(lot.quantidade_disponivel || 0)}
+                              step="0.01"
+                              value={lotSelections[key] ?? ""}
+                              onChange={(event) =>
+                                handleChangeLotQuantity(lot, event.target.value)
+                              }
+                              style={{
+                                width: "120px",
+                                padding: "8px",
+                                borderRadius: "6px",
+                                border: "1px solid #d1d5db",
+                                textAlign: "right",
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div
+                style={{
+                  marginTop: "14px",
+                  fontSize: "14px",
+                  color: isLotsTotalValid ? "#065f46" : "#b91c1c",
+                }}
+              >
+                Selecionado: {selectedLotsTotal} de{" "}
+                {Number(currentLineQuantity || 0)}
+              </div>
             </div>
 
             <div
               style={{
-                marginTop: "14px",
-                fontSize: "14px",
-                color: isLotsTotalValid ? "#065f46" : "#b91c1c",
+                display: "flex",
+                gap: "16px",
+                marginTop: "12px",
+                paddingTop: "12px",
+                borderTop: "1px solid var(--border)",
               }}
-            >
-              Selecionado: {selectedLotsTotal} de{" "}
-              {Number(currentLineQuantity || 0)}
-            </div>
-
-            <div
-              style={{ display: "flex", gap: "16px", marginTop: "16px" }}
               className="modal-footer"
             >
               <button

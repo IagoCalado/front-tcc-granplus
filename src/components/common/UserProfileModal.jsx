@@ -42,7 +42,7 @@ const UserProfileModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose} aria-modal>
+    <div className="modal-overlay" aria-modal>
       <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Fechar">×</button>
 

@@ -1638,6 +1638,25 @@
 .input-field label { font-size: 13px; color: var(--muted); margin-bottom: 6px; display: block; }
 .input-field input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-soft); color: var(--ink); }
 
+.alert-dialog {
+  width: min(520px, 92vw);
+}
+
+.alert-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--bg-soft);
+  color: var(--ink);
+}
+
+.alert-message {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
 /* Make form controls inside modals match the modal background */
 .modal-content .input-field input,
 .modal-content input,

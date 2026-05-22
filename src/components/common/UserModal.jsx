@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 export default function UserModal({ isOpen, onClose, onSave, user }) {
   const [formData, setFormData] = useState({
     user_nome: "",
+    user_email: "",
     user_senha: "",
     user_nivel_acesso: "user",
     user_ativo: 1,
@@ -13,6 +14,7 @@ export default function UserModal({ isOpen, onClose, onSave, user }) {
     if (user) {
       setFormData({
         user_nome: user.user_nome || "",
+        user_email: user.user_email || "",
         user_senha: "", // Não preenche a senha na edição
         user_nivel_acesso: user.user_nivel_acesso || "user",
         user_ativo: user.user_ativo ?? 1,
@@ -20,6 +22,7 @@ export default function UserModal({ isOpen, onClose, onSave, user }) {
     } else {
       setFormData({
         user_nome: "",
+        user_email: "",
         user_senha: "",
         user_nivel_acesso: "user",
         user_ativo: 1,
@@ -43,7 +46,7 @@ export default function UserModal({ isOpen, onClose, onSave, user }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal-content card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Fechar">×</button>
 
@@ -63,6 +66,18 @@ export default function UserModal({ isOpen, onClose, onSave, user }) {
               onChange={handleChange}
               required
               placeholder="Ex: João Silva"
+            />
+          </div>
+
+          <div className="input-field">
+            <label>Email</label>
+            <input
+              type="email"
+              name="user_email"
+              value={formData.user_email}
+              onChange={handleChange}
+              required
+              placeholder="Ex: joao@empresa.com"
             />
           </div>
 

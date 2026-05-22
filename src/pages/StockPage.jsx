@@ -40,6 +40,16 @@ const formatLotName = (value) => {
   return String(value);
 };
 
+const getStatusSortWeight = (value) => {
+  const label = getValidityStatus(value).label;
+
+  if (label === "Vencido") return 0;
+  if (label === "Vence hoje") return 1;
+  if (label === "Proximo do vencimento") return 2;
+  if (label === "OK") return 3;
+  return 4;
+};
+
 const getValidityStatus = (value) => {
   const validade = getValidDate(value);
   if (!validade) {
@@ -76,6 +86,9 @@ const StockPage = () => {
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [selectedProductName, setSelectedProductName] = useState("");
   const [modalLots, setModalLots] = useState([]);
+  const [modalLotsFilter, setModalLotsFilter] = useState("");
+  const [modalLotsSortColumn, setModalLotsSortColumn] = useState("validade");
+  const [modalLotsSortDirection, setModalLotsSortDirection] = useState("asc");
   const [loadingModalLots, setLoadingModalLots] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [availableLotsCountByProduct, setAvailableLotsCountByProduct] =
@@ -123,12 +136,18 @@ const StockPage = () => {
           .filter((lote) => lote.quantidade > 0);
 
         setModalLots(normalizedLots);
+        setModalLotsFilter("");
+        setModalLotsSortColumn("validade");
+        setModalLotsSortDirection("asc");
         setAvailableLotsCountByProduct((prev) => ({
           ...prev,
           [productId]: normalizedLots.length,
         }));
       } catch {
         setModalLots([]);
+        setModalLotsFilter("");
+        setModalLotsSortColumn("validade");
+        setModalLotsSortDirection("asc");
         setAvailableLotsCountByProduct((prev) => ({
           ...prev,
           [productId]: 0,
@@ -208,6 +227,9 @@ const StockPage = () => {
   useEffect(() => {
     if (!selectedProductId) {
       setModalLots([]);
+      setModalLotsFilter("");
+      setModalLotsSortColumn("validade");
+      setModalLotsSortDirection("asc");
       return;
     }
 
@@ -297,6 +319,142 @@ const StockPage = () => {
     );
   }, [stockByProduct, searchTerm]);
 
+  const filteredModalLots = useMemo(() => {
+    const normalizedFilter = modalLotsFilter.trim().toLowerCase();
+    if (!normalizedFilter) return modalLots;
+
+    return modalLots.filter((item) => {
+      const status = getValidityStatus(item.validade).label;
+      const searchableText = [
+        item.loc_nome,
+        item.lote,
+        item.validade ? formatValidityDate(item.validade) : null,
+        item.quantidade,
+        status,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(normalizedFilter);
+    });
+  }, [modalLots, modalLotsFilter]);
+
+  const sortedModalLots = useMemo(() => {
+    const lots = [...filteredModalLots];
+    const direction = modalLotsSortDirection === "desc" ? -1 : 1;
+
+    const compareText = (firstValue, secondValue) =>
+      String(firstValue ?? "").localeCompare(
+        String(secondValue ?? ""),
+        "pt-BR",
+        {
+          numeric: true,
+          sensitivity: "base",
+        },
+      );
+
+    lots.sort((first, second) => {
+      let comparison = 0;
+
+      if (modalLotsSortColumn === "loc_nome") {
+        comparison = compareText(
+          first.loc_nome || "Sem localização",
+          second.loc_nome || "Sem localização",
+        );
+      } else if (modalLotsSortColumn === "quantidade") {
+        comparison =
+          (Number(first.quantidade) || 0) - (Number(second.quantidade) || 0);
+      } else if (modalLotsSortColumn === "lote") {
+        comparison = compareText(
+          formatLotName(first.lote),
+          formatLotName(second.lote),
+        );
+      } else if (modalLotsSortColumn === "validade") {
+        const firstDate = getValidDate(first.validade);
+        const secondDate = getValidDate(second.validade);
+
+        if (!firstDate && !secondDate) {
+          comparison = 0;
+        } else if (!firstDate) {
+          comparison = 1;
+        } else if (!secondDate) {
+          comparison = -1;
+        } else {
+          comparison = firstDate.getTime() - secondDate.getTime();
+        }
+      } else if (modalLotsSortColumn === "status") {
+        comparison =
+          getStatusSortWeight(first.validade) -
+          getStatusSortWeight(second.validade);
+      }
+
+      if (comparison === 0) {
+        comparison = compareText(
+          formatLotName(first.lote),
+          formatLotName(second.lote),
+        );
+      }
+
+      if (comparison === 0) {
+        comparison = compareText(
+          first.loc_nome || "Sem localização",
+          second.loc_nome || "Sem localização",
+        );
+      }
+
+      return comparison * direction;
+    });
+
+    return lots;
+  }, [filteredModalLots, modalLotsSortColumn, modalLotsSortDirection]);
+
+  const handleSortModalLots = (column) => {
+    if (modalLotsSortColumn === column) {
+      setModalLotsSortDirection((current) =>
+        current === "asc" ? "desc" : "asc",
+      );
+      return;
+    }
+
+    setModalLotsSortColumn(column);
+    setModalLotsSortDirection("asc");
+  };
+
+  const renderSortLabel = (column, label) => {
+    const isActive = modalLotsSortColumn === column;
+    const arrow = isActive
+      ? modalLotsSortDirection === "asc"
+        ? "▲"
+        : "▼"
+      : "↕";
+
+    return (
+      <button
+        type="button"
+        onClick={() => handleSortModalLots(column)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "6px",
+          width: "100%",
+          background: "transparent",
+          border: "none",
+          color: "inherit",
+          font: "inherit",
+          cursor: "pointer",
+          padding: 0,
+        }}
+      >
+        <span>{label}</span>
+        <span style={{ fontSize: "11px", opacity: isActive ? 1 : 0.55 }}>
+          {arrow}
+        </span>
+      </button>
+    );
+  };
+
   useEffect(() => {
     if (!token) return;
     loadAvailableLotsCount(stockByProduct);
@@ -311,25 +469,33 @@ const StockPage = () => {
     );
   }
   const columns = [
-    { key: "pdt_nome", label: "Produto" },
+    { key: "pdt_nome", label: "Produto", sortable: true },
     {
       key: "pdt_codigo",
       label: "Codigo",
+      sortable: true,
       render: (row) => row.pdt_codigo || "-",
     },
     {
       key: "pdt_estoque_minimo",
       label: "Estoque minimo",
+      sortable: true,
+      sortType: "number",
       render: (row) => formatNumber(row.pdt_estoque_minimo),
     },
     {
       key: "pdt_descricao",
       label: "Descrição",
+      sortable: true,
       render: (row) => row.pdt_descricao || "-",
     },
     {
       key: "lotes",
       label: "Lotes / Validade",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) =>
+        availableLotsCountByProduct[row.pdt_id] ?? row.lotes?.length ?? 0,
       render: (row) => {
         const lotsCount =
           availableLotsCountByProduct[row.pdt_id] ?? row.lotes?.length ?? 0;
@@ -343,6 +509,7 @@ const StockPage = () => {
               onClick={() => {
                 setSelectedProductId(row.pdt_id);
                 setSelectedProductName(row.pdt_nome || "");
+                setModalLotsFilter("");
                 loadData({ silent: true });
               }}
               style={{ padding: "6px 10px", fontSize: "12px" }}
@@ -356,11 +523,16 @@ const StockPage = () => {
     {
       key: "estoque_atual",
       label: "Estoque atual",
+      sortable: true,
+      sortType: "number",
       render: (row) => formatNumber(row.estoque_atual),
     },
     {
       key: "status",
       label: "Status",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) => (row.estoque_atual > 0 ? 1 : 0),
       render: (row) => (
         <StatusPill
           label={row.estoque_atual > 0 ? "Disponivel" : "Zerado"}
@@ -429,8 +601,8 @@ const StockPage = () => {
               background: "var(--bg-elevated)",
               padding: "24px",
               borderRadius: "12px",
-              width: "90%",
-              maxWidth: "560px",
+              width: "min(96vw, 1100px)",
+              maxWidth: "1100px",
               color: "var(--ink)",
               border: "1px solid var(--border)",
               boxShadow: "var(--shadow-lg)",
@@ -453,44 +625,69 @@ const StockPage = () => {
                 onClick={() => {
                   setSelectedProductId(null);
                   setSelectedProductName("");
+                  setModalLotsFilter("");
                 }}
               >
                 Fechar
               </button>
             </div>
 
+            <div className="input-field" style={{ marginBottom: "14px" }}>
+              <label>Filtrar lotes</label>
+              <input
+                type="text"
+                value={modalLotsFilter}
+                onChange={(event) => setModalLotsFilter(event.target.value)}
+                placeholder="Filtre por localização, lote, validade, quantidade ou status"
+              />
+            </div>
+
             {loadingModalLots ? (
               <LoadingSpinner />
-            ) : modalLots.length ? (
+            ) : sortedModalLots.length ? (
               <div
                 className="table-shell"
                 style={{ maxHeight: "320px", overflowY: "auto" }}
               >
-                <table className="table">
+                <table className="table" style={{ minWidth: 720 }}>
                   <thead>
                     <tr>
-                      <th>Localização</th>
-                      <th style={{ textAlign: "center" }}>Quantidade</th>
-                      <th>Lote</th>
-                      <th>Validade</th>
-                      <th>Status</th>
+                      <th>{renderSortLabel("loc_nome", "Localização")}</th>
+                      <th style={{ textAlign: "center" }}>
+                        {renderSortLabel("quantidade", "Quantidade")}
+                      </th>
+                      <th>{renderSortLabel("lote", "Lote")}</th>
+                      <th>{renderSortLabel("validade", "Validade")}</th>
+                      <th>{renderSortLabel("status", "Status")}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {modalLots.map((item, index) => {
+                    {sortedModalLots.map((item, index) => {
                       const status = getValidityStatus(item.validade);
 
                       return (
                         <tr
                           key={`${item.lote ?? "sem-lote"}-${item.validade ?? "sem-validade"}-${index}`}
                         >
-                          <td>{item.loc_nome || "Sem localização"}</td>
+                          <td style={{ textAlign: "center" }}>
+                            {item.loc_nome || "Sem localização"}
+                          </td>
                           <td style={{ textAlign: "center" }}>
                             {formatNumber(item.quantidade)}
                           </td>
-                          <td>{formatLotName(item.lote)}</td>
-                          <td>{formatValidityDate(item.validade)}</td>
-                          <td style={{ color: status.color, fontWeight: 600 }}>
+                          <td style={{ textAlign: "center" }}>
+                            {formatLotName(item.lote)}
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            {formatValidityDate(item.validade)}
+                          </td>
+                          <td
+                            style={{
+                              textAlign: "center",
+                              color: status.color,
+                              fontWeight: 600,
+                            }}
+                          >
                             {status.label}
                           </td>
                         </tr>
@@ -499,6 +696,11 @@ const StockPage = () => {
                   </tbody>
                 </table>
               </div>
+            ) : modalLots.length ? (
+              <EmptyState
+                title="Nenhum lote encontrado"
+                description="Nenhum lote corresponde ao filtro informado."
+              />
             ) : (
               <EmptyState
                 title="Sem lotes disponiveis"

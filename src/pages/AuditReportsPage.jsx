@@ -5,6 +5,7 @@ import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
+import AlertDialog from "../components/common/AlertDialog";
 import { useAuth } from "../contexts/AuthContext";
 import { matchesSearch } from "../utils/search";
 
@@ -54,6 +55,12 @@ const AuditReportsPage = () => {
   const [dataFim, setDataFim] = useState("");
   const [tipoRelatorio, setTipoRelatorio] = useState("geral");
   const [toastAviso, setToastAviso] = useState("");
+  const [alertState, setAlertState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "error",
+  });
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -161,7 +168,12 @@ const AuditReportsPage = () => {
 
     } catch (erro) {
       console.error("Erro ao gerar PDF:", erro);
-      alert("Erro ao buscar dados. Verifique o F12.");
+      setAlertState({
+        open: true,
+        title: "Erro ao gerar relatorio",
+        message: "Erro ao buscar dados. Verifique o F12.",
+        tone: "error",
+      });
     }
   };
 
@@ -197,20 +209,32 @@ const AuditReportsPage = () => {
   if (error) return <EmptyState title="Não foi possível carregar" description={error} />;
 
   const columns = [
-    { key: "aud_id", label: "ID" },
-    { key: "user_id", label: "Usuário", render: (row) => row.user_nome || row.user_id || "administrador" },
-    { key: "aud_acao", label: "Ação realizada" },
-    { key: "aud_data",
+    { key: "aud_id", label: "ID", sortable: true, sortType: "number" },
+    {
+      key: "user_id",
+      label: "Usuário",
+      sortable: true,
+      sortAccessor: (row) => row.user_nome || row.user_id || "administrador",
+      render: (row) => row.user_nome || row.user_id || "administrador",
+    },
+    { key: "aud_acao", label: "Ação realizada", sortable: true },
+    {
+      key: "aud_data",
       label: "Data",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) => (row.aud_data ? new Date(row.aud_data).getTime() : 0),
       render: (row) => (row.aud_data ? new Date(row.aud_data).toLocaleDateString("pt-BR") : "-"),
     },
-    { key: "aud_time", label: "Hora" },
+    { key: "aud_time", label: "Hora", sortable: true },
     {
       key: "aud_tabela_afetada",
       label: "Tabela Afetada",
+      sortable: true,
+      sortAccessor: (row) => formatTableName(row.aud_tabela_afetada),
       render: (row) => formatTableName(row.aud_tabela_afetada),
     },
-    { key: "aud_id_evento", label: "ID do Evento" },
+    { key: "aud_id_evento", label: "ID do Evento", sortable: true, sortType: "number" },
   ];
 
   return (
@@ -360,6 +384,16 @@ const AuditReportsPage = () => {
           {toastAviso}
         </div>
       )}
+
+      <AlertDialog
+        isOpen={alertState.open}
+        title={alertState.title}
+        message={alertState.message}
+        tone={alertState.tone}
+        onClose={() =>
+          setAlertState({ open: false, title: "", message: "", tone: "error" })
+        }
+      />
 
     </div> 
   );

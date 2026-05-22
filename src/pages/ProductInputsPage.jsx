@@ -4,6 +4,8 @@ import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import InputModal from "../components/common/InputModal";
+import AlertDialog from "../components/common/AlertDialog";
+import ConfirmDialog from "../components/common/ConfirmDialog";
 import { useAuth } from "../contexts/AuthContext";
 import { formatNumber } from "../utils/format";
 import { notifyStockMovement } from "../utils/stockEvents";
@@ -24,6 +26,25 @@ const ProductInputsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Adicionado para suportar modo de edição (mesmo que o backend ainda precise ser implementado para edição/deleção de entradas)
   const [currentInput, setCurrentInput] = useState(null);
+  const [alertState, setAlertState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "info",
+  });
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    targetId: null,
+  });
+  const [saveConfirmState, setSaveConfirmState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    payload: null,
+    targetId: null,
+  });
 
   // Função para buscar as entradas de produtos já cadastradas com seus detalhes em junção à tabela de fornecedores
   const loadData = useCallback(async () => {
@@ -50,40 +71,106 @@ const ProductInputsPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleSaveInput = async (payload) => {
+  const handleSaveInput = (payload) => {
+    const targetId = currentInput?.ent_id || null;
+    setSaveConfirmState({
+      open: true,
+      title: targetId ? "Atualizar entrada" : "Criar entrada",
+      message: targetId
+        ? "Deseja salvar as alteracoes desta entrada?"
+        : "Deseja criar esta nova entrada?",
+      payload,
+      targetId,
+    });
+  };
+
+  const handleConfirmSaveInput = async () => {
+    const payload = saveConfirmState.payload;
+    if (!payload) {
+      setSaveConfirmState({
+        open: false,
+        title: "",
+        message: "",
+        payload: null,
+        targetId: null,
+      });
+      return;
+    }
+
     try {
-      if (currentInput) {
-        await updateInput(token, currentInput.ent_id, payload);
+      if (saveConfirmState.targetId) {
+        await updateInput(token, saveConfirmState.targetId, payload);
       } else {
         await createInput(token, payload);
       }
       notifyStockMovement();
       setIsModalOpen(false);
-      loadData(); // Recarrega os dados da tabela
+      loadData();
+      setAlertState({
+        open: true,
+        title: saveConfirmState.targetId ? "Entrada atualizada" : "Entrada criada",
+        message: saveConfirmState.targetId
+          ? "Entrada atualizada com sucesso."
+          : "Entrada criada com sucesso.",
+        tone: "success",
+      });
     } catch (err) {
-      alert(
-        "Erro ao salvar entrada de produtos",
-      );
+      setAlertState({
+        open: true,
+        title: "Erro ao salvar entrada",
+        message: "Erro ao salvar entrada de produtos.",
+        tone: "error",
+      });
       console.error(err);
+    } finally {
+      setSaveConfirmState({
+        open: false,
+        title: "",
+        message: "",
+        payload: null,
+        targetId: null,
+      });
     }
   };
 
-  const handleDelete = async (id) => {
-    if (
-      window.confirm(
+  const handleDeleteRequest = (id) => {
+    setConfirmState({
+      open: true,
+      title: "Excluir entrada",
+      message:
         "Você tem certeza que deseja excluir esta entrada? AVISO: Certifique-se de que a API possui a regra de reversão de estoque implementada para deleções.",
-      )
-    ) {
-      try {
-        await deleteInput(token, id);
-        alert("Entrada apagada com sucesso.");
-        loadData();
-      } catch (err) {
-        alert(
+      targetId: id,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    const targetId = confirmState.targetId;
+    if (!targetId) {
+      setConfirmState({ open: false, title: "", message: "", targetId: null });
+      return;
+    }
+
+    setConfirmState((prev) => ({ ...prev, open: false }));
+    try {
+      await deleteInput(token, targetId);
+      setAlertState({
+        open: true,
+        title: "Entrada excluida",
+        message: "Entrada apagada com sucesso.",
+        tone: "success",
+      });
+      loadData();
+    } catch (err) {
+      setAlertState({
+        open: true,
+        title: "Erro ao apagar entrada",
+        message:
           "Erro ao apagar a entrada. Verifique se as rotas DELETE de Entrada e estorno de estoque existem no Back-End. Mensagem: " +
-            err.message,
-        );
-      }
+          err.message,
+        tone: "error",
+      });
+    } finally {
+      setConfirmState({ open: false, title: "", message: "", targetId: null });
     }
   };
 
@@ -123,10 +210,16 @@ const ProductInputsPage = () => {
 
   // Colunas contendo o map das chaves do endpoint de Entradas com renderizadores personalizados para valores/moedas/data
   const columns = [
-    { key: "ent_id", label: "ID" },
+    { key: "ent_id", label: "ID", sortable: true, sortType: "number" },
     {
       key: "ent_data",
       label: "Data",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) => {
+        const dataCompleta = row.ent_data_compra || row.ent_data;
+        return dataCompleta ? new Date(dataCompleta).getTime() : 0;
+      },
       render: (row) => {
         const dataCompleta = row.ent_data_compra || row.ent_data;
         if (!dataCompleta) return "-";
@@ -136,6 +229,12 @@ const ProductInputsPage = () => {
     {
       key: "ent_hora",
       label: "Horário",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) => {
+        const dataCompleta = row.ent_data_compra || row.ent_data;
+        return dataCompleta ? new Date(dataCompleta).getTime() : 0;
+      },
       render: (row) => {
         const dataCompleta = row.ent_data_compra || row.ent_data;
         if (!dataCompleta) return "-";
@@ -147,20 +246,27 @@ const ProductInputsPage = () => {
         });
       },
     },
-    { key: "pdt_nome", label: "Produto" },
+    { key: "pdt_nome", label: "Produto", sortable: true },
     {
       key: "forn_nome",
       label: "Fornecedor",
+      sortable: true,
+      sortAccessor: (row) => row.forn_nome || "N/D",
       render: (row) => row.forn_nome || "N/D",
     },
     {
       key: "ent_quantidade",
       label: "Quantidade",
+      sortable: true,
+      sortType: "number",
+      sortAccessor: (row) => Number(row.ent_quantidade || row.ep_quantidade || 0),
       render: (row) => formatNumber(row.ent_quantidade || row.ep_quantidade),
     },
     {
       key: "ent_valor_compra",
       label: "Valor",
+      sortable: true,
+      sortType: "number",
       render: (row) => `R$ ${formatNumber(row.ent_valor_compra || 0)}`,
     },
     {
@@ -178,7 +284,7 @@ const ProductInputsPage = () => {
           <button
             className="btn btn-ghost btn-danger"
             type="button"
-            onClick={() => handleDelete(row.ent_id)}
+            onClick={() => handleDeleteRequest(row.ent_id)}
           >
             Excluir
           </button>
@@ -186,6 +292,9 @@ const ProductInputsPage = () => {
       ),
     },
   ];
+
+  const resetAlert = () =>
+    setAlertState({ open: false, title: "", message: "", tone: "info" });
   return (
     <div className="app-content">
       <div
@@ -218,6 +327,44 @@ const ProductInputsPage = () => {
         onSave={handleSaveInput}
         token={token}
         inputData={currentInput} // Passamos o modal atual
+      />
+
+      <AlertDialog
+        isOpen={alertState.open}
+        title={alertState.title}
+        message={alertState.message}
+        tone={alertState.tone}
+        onClose={resetAlert}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        tone="danger"
+        confirmLabel="Excluir"
+        onConfirm={handleConfirmDelete}
+        onCancel={() =>
+          setConfirmState({ open: false, title: "", message: "", targetId: null })
+        }
+      />
+
+      <ConfirmDialog
+        isOpen={saveConfirmState.open}
+        title={saveConfirmState.title}
+        message={saveConfirmState.message}
+        tone="warning"
+        confirmLabel={saveConfirmState.targetId ? "Atualizar" : "Criar"}
+        onConfirm={handleConfirmSaveInput}
+        onCancel={() =>
+          setSaveConfirmState({
+            open: false,
+            title: "",
+            message: "",
+            payload: null,
+            targetId: null,
+          })
+        }
       />
     </div>
   );
