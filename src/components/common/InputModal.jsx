@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { getLocations, getSuppliers, getProducts } from "../../services/api";
 import AlertDialog from "./AlertDialog";
@@ -36,7 +36,11 @@ export default function InputModal({
     ],
   });
 
+<<<<<<< HEAD
   const activeSuppliers = suppliers.filter((supplier) => supplier?.fncd_ativo === 1);
+=======
+  const scrollRef = useRef(null);
+>>>>>>> b9dba25dc1f6fe9c75a251ab88304b758afc05ff
 
   const getLocalISODate = (dateInput) => {
     const d = dateInput ? new Date(dateInput) : new Date();
@@ -127,17 +131,28 @@ export default function InputModal({
   };
 
   const addProductRow = () => {
-    setFormData({
-      ...formData,
-      produtos: [
-        ...formData.produtos,
-        {
-          pdt_id: "",
-          quantidade: "",
-          lote: "",
-          pdt_validade: "",
-        },
-      ],
+    setFormData((prev) => {
+      const next = {
+        ...prev,
+        produtos: [
+          ...prev.produtos,
+          {
+            pdt_id: "",
+            quantidade: "",
+            lote: "",
+            pdt_validade: "",
+          },
+        ],
+      };
+
+      // scroll to bottom after render
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 50);
+
+      return next;
     });
   };
 
@@ -164,7 +179,8 @@ export default function InputModal({
       setAlertState({
         open: true,
         title: "Campos obrigatorios",
-        message: "Preencha todos os campos do fornecedor, produto e quantidade.",
+        message:
+          "Preencha todos os campos do fornecedor, produto e quantidade.",
         tone: "warning",
       });
       return;
@@ -192,8 +208,11 @@ export default function InputModal({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "min(94vw, 1180px)",
-          maxHeight: "none",
-          overflow: "visible",
+          maxHeight:
+            formData.produtos.length > 1 ? "80vh" : "calc(100vh - 40px)",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
         }}
       >
         <button className="modal-close" onClick={onClose} aria-label="Fechar">
@@ -204,6 +223,7 @@ export default function InputModal({
           <h3 style={{ margin: 0 }}>Nova Entrada de Produto</h3>
         </div>
 
+<<<<<<< HEAD
         <form className="modal-body" onSubmit={handleSubmit}>
           <div className="input-field">
             <label>Fornecedor</label>
@@ -221,201 +241,246 @@ export default function InputModal({
               ))}
             </select>
           </div>
+=======
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            flex: 1,
+            minHeight: 0,
+          }}
+        >
+          <div
+            ref={scrollRef}
+            style={{
+              overflowY: formData.produtos.length > 1 ? "auto" : "visible",
+              paddingRight: 8,
+            }}
+          >
+            <div className="input-field">
+              <label>Fornecedor</label>
+              <select
+                name="fncd_id"
+                value={formData.fncd_id}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Selecione...</option>
+                {suppliers.map((sup) => (
+                  <option key={sup.fncd_id} value={sup.fncd_id}>
+                    {sup.fncd_nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+>>>>>>> b9dba25dc1f6fe9c75a251ab88304b758afc05ff
 
-          <div className="input-field">
-            <label>Localização</label>
-            <select
-              name="loc_id"
-              value={formData.loc_id}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Selecione...</option>
-              {locations.map((loc) => (
-                <option key={loc.loc_id} value={loc.loc_id}>
-                  {loc.loc_nome}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="input-field">
+              <label>Localização</label>
+              <select
+                name="loc_id"
+                value={formData.loc_id}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Selecione...</option>
+                {locations.map((loc) => (
+                  <option key={loc.loc_id} value={loc.loc_id}>
+                    {loc.loc_nome}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="input-field">
-            <label>Data / Hora da Compra</label>
-            <input
-              type="datetime-local"
-              name="ent_data_compra"
-              value={formData.ent_data_compra}
-              onChange={handleChange}
-              required
-            />
-          </div>
+            <div className="input-field">
+              <label>Data / Hora da Compra</label>
+              <input
+                type="datetime-local"
+                name="ent_data_compra"
+                value={formData.ent_data_compra}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-          <div className="input-field">
-            <label>Valor Total da Compra (R$)</label>
-            <input
-              type="number"
-              step="0.01"
-              name="ent_valor_compra"
-              value={formData.ent_valor_compra}
-              onChange={handleChange}
-              required
-              placeholder="Ex: 1500.50"
-            />
-          </div>
+            <div className="input-field">
+              <label>Valor Total da Compra (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                name="ent_valor_compra"
+                value={formData.ent_valor_compra}
+                onChange={handleChange}
+                required
+                placeholder="Ex: 1500.50"
+              />
+            </div>
 
-          <div style={{ paddingTop: "15px" }}>
-            <h4
-              style={{ fontSize: "16px", marginBottom: "10px", marginTop: 0 }}
-            >
-              Itens da Entrada
-            </h4>
+            <div style={{ paddingTop: "15px" }}>
+              <h4
+                style={{ fontSize: "16px", marginBottom: "10px", marginTop: 0 }}
+              >
+                Itens da Entrada
+              </h4>
 
-            {formData.produtos.map((prod, index) => (
-              <div key={index}>
-                {index === 0 && (
+              {formData.produtos.map((prod, index) => (
+                <div key={index}>
+                  {index === 0 && (
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(140px, 1fr))",
+                        gap: "10px",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                        Produto
+                      </label>
+                      <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                        Quantidade
+                      </label>
+                      <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                        Lote
+                      </label>
+                      <label style={{ fontSize: "14px", fontWeight: "500" }}>
+                        Validade
+                      </label>
+                      <div />
+                    </div>
+                  )}
                   <div
                     style={{
                       display: "grid",
                       gridTemplateColumns:
                         "repeat(auto-fit, minmax(140px, 1fr))",
                       gap: "10px",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    <label style={{ fontSize: "14px", fontWeight: "500" }}>
-                      Produto
-                    </label>
-                    <label style={{ fontSize: "14px", fontWeight: "500" }}>
-                      Quantidade
-                    </label>
-                    <label style={{ fontSize: "14px", fontWeight: "500" }}>
-                      Lote
-                    </label>
-                    <label style={{ fontSize: "14px", fontWeight: "500" }}>
-                      Validade
-                    </label>
-                    <div />
-                  </div>
-                )}
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                    gap: "10px",
-                    marginBottom: "10px",
-                    alignItems: "center",
-                  }}
-                >
-                  <select
-                    name="pdt_id"
-                    value={prod.pdt_id}
-                    onChange={(e) => handleProductChange(index, e)}
-                    required
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border)",
-                    }}
-                  >
-                    <option value="">Produto...</option>
-                    {products.map((p) => (
-                      <option key={p.pdt_id} value={p.pdt_id}>
-                        {p.pdt_nome}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    name="quantidade"
-                    value={prod.quantidade}
-                    onChange={(e) => handleProductChange(index, e)}
-                    required
-                    placeholder="Qtd"
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border)",
-                    }}
-                  />
-                  <input
-                    type="text"
-                    name="lote"
-                    value={prod.lote}
-                    onChange={(e) => handleProductChange(index, e)}
-                    placeholder="Lote (Opcional)"
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border)",
-                    }}
-                  />
-                  <input
-                    type="date"
-                    name="pdt_validade"
-                    value={prod.pdt_validade || ""}
-                    onChange={(e) => handleProductChange(index, e)}
-                    placeholder="Validade (Opcional)"
-                    style={{
-                      width: "100%",
-                      padding: "8px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border)",
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeProductRow(index)}
-                    aria-label="Remover produto"
-                    title="Remover produto"
-                    disabled={formData.produtos.length === 1}
-                    style={{
-                      width: "34px",
-                      height: "34px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border)",
-                      background: "var(--background)",
-                      color: "var(--text)",
-                      display: "inline-flex",
+                      marginBottom: "10px",
                       alignItems: "center",
-                      justifyContent: "center",
-                      cursor:
-                        formData.produtos.length === 1
-                          ? "not-allowed"
-                          : "pointer",
-                      fontSize: "18px",
-                      lineHeight: 1,
-                      padding: 0,
-                      justifySelf: "start",
-                      opacity: formData.produtos.length === 1 ? 0.5 : 1,
                     }}
                   >
-                    ×
-                  </button>
+                    <select
+                      name="pdt_id"
+                      value={prod.pdt_id}
+                      onChange={(e) => handleProductChange(index, e)}
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "6px",
+                        border: "1px solid var(--border)",
+                      }}
+                    >
+                      <option value="">Produto...</option>
+                      {products.map((p) => (
+                        <option key={p.pdt_id} value={p.pdt_id}>
+                          {p.pdt_nome}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      name="quantidade"
+                      value={prod.quantidade}
+                      onChange={(e) => handleProductChange(index, e)}
+                      required
+                      placeholder="Qtd"
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "6px",
+                        border: "1px solid var(--border)",
+                      }}
+                    />
+                    <input
+                      type="text"
+                      name="lote"
+                      value={prod.lote}
+                      onChange={(e) => handleProductChange(index, e)}
+                      placeholder="Lote (Opcional)"
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "6px",
+                        border: "1px solid var(--border)",
+                      }}
+                    />
+                    <input
+                      type="date"
+                      name="pdt_validade"
+                      value={prod.pdt_validade || ""}
+                      onChange={(e) => handleProductChange(index, e)}
+                      placeholder="Validade (Opcional)"
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "6px",
+                        border: "1px solid var(--border)",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeProductRow(index)}
+                      aria-label="Remover produto"
+                      title="Remover produto"
+                      disabled={formData.produtos.length === 1}
+                      style={{
+                        width: "34px",
+                        height: "34px",
+                        borderRadius: "6px",
+                        border: "1px solid var(--border)",
+                        background: "var(--background)",
+                        color: "var(--text)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor:
+                          formData.produtos.length === 1
+                            ? "not-allowed"
+                            : "pointer",
+                        fontSize: "18px",
+                        lineHeight: 1,
+                        padding: 0,
+                        justifySelf: "start",
+                        opacity: formData.produtos.length === 1 ? 0.5 : 1,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            <button
-              type="button"
-              onClick={addProductRow}
-              style={{
-                color: "var(--accent)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                fontWeight: "600",
-                padding: "0",
-                marginTop: "5px",
-              }}
-            >
-              + Adicionar mais um produto
-            </button>
+              <button
+                type="button"
+                onClick={addProductRow}
+                style={{
+                  color: "var(--accent)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                  padding: "0",
+                  marginTop: "5px",
+                }}
+              >
+                + Adicionar mais um produto
+              </button>
+            </div>
           </div>
 
-          <div style={{ display: "flex", gap: "16px", marginTop: "20px" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "16px",
+              marginTop: "12px",
+              paddingTop: "12px",
+              borderTop: "1px solid var(--border)",
+            }}
+            className="modal-footer"
+          >
             <button type="button" onClick={onClose} className="btn btn-ghost">
               Cancelar
             </button>
@@ -432,7 +497,12 @@ export default function InputModal({
         message={alertState.message}
         tone={alertState.tone}
         onClose={() =>
-          setAlertState({ open: false, title: "", message: "", tone: "warning" })
+          setAlertState({
+            open: false,
+            title: "",
+            message: "",
+            tone: "warning",
+          })
         }
       />
     </div>
