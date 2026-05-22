@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { getLocations, getSuppliers, getProducts } from "../../services/api";
 import AlertDialog from "./AlertDialog";
@@ -35,6 +35,8 @@ export default function InputModal({
       },
     ],
   });
+
+  const scrollRef = useRef(null);
 
   const getLocalISODate = (dateInput) => {
     const d = dateInput ? new Date(dateInput) : new Date();
@@ -125,17 +127,28 @@ export default function InputModal({
   };
 
   const addProductRow = () => {
-    setFormData({
-      ...formData,
-      produtos: [
-        ...formData.produtos,
-        {
-          pdt_id: "",
-          quantidade: "",
-          lote: "",
-          pdt_validade: "",
-        },
-      ],
+    setFormData((prev) => {
+      const next = {
+        ...prev,
+        produtos: [
+          ...prev.produtos,
+          {
+            pdt_id: "",
+            quantidade: "",
+            lote: "",
+            pdt_validade: "",
+          },
+        ],
+      };
+
+      // scroll to bottom after render
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 50);
+
+      return next;
     });
   };
 
@@ -190,8 +203,10 @@ export default function InputModal({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "min(94vw, 1180px)",
-          maxHeight: "none",
-          overflow: "visible",
+          maxHeight: formData.produtos.length > 1 ? "80vh" : "calc(100vh - 40px)",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
         }}
       >
         <button className="modal-close" onClick={onClose} aria-label="Fechar">
@@ -202,8 +217,12 @@ export default function InputModal({
           <h3 style={{ margin: 0 }}>Nova Entrada de Produto</h3>
         </div>
 
-        <form className="modal-body" onSubmit={handleSubmit}>
-          <div className="input-field">
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+          <div
+            ref={scrollRef}
+            style={{ overflowY: formData.produtos.length > 1 ? "auto" : "visible", paddingRight: 8 }}
+          >
+            <div className="input-field">
             <label>Fornecedor</label>
             <select
               name="fncd_id"
@@ -413,7 +432,9 @@ export default function InputModal({
             </button>
           </div>
 
-          <div style={{ display: "flex", gap: "16px", marginTop: "20px" }}>
+          </div>
+
+          <div style={{ display: "flex", gap: "16px", marginTop: "12px", paddingTop: "12px", borderTop: "1px solid var(--border)" }} className="modal-footer">
             <button type="button" onClick={onClose} className="btn btn-ghost">
               Cancelar
             </button>
