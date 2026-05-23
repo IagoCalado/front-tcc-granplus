@@ -2,7 +2,7 @@ import { AlertTriangle } from "lucide-react";
 
 export default function ConfirmDialog({
   isOpen,
-  title = "Confirmar acao",
+  title = "Confirmar ação",
   message,
   tone = "warning",
   confirmLabel = "Confirmar",
