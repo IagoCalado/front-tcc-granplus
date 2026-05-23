@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { useAuth } from "../contexts/AuthContext";
 import useLoginForm from "../hooks/useLoginForm";
 import NeonParticles from "../components/common/NeonParticles";
@@ -13,6 +14,7 @@ const LoginPage = () => {
   const [phase, setPhase] = useState("splash");
   const [cardVisible, setCardVisible] = useState(false);
   const { form, fieldErrors, isValid, handleChange, validate } = useLoginForm();
+  const [showPassword, setShowPassword] = useState(false);
 
   const redirectTarget = useMemo(
     () => location.state?.from?.pathname || "/dashboard",
@@ -91,9 +93,9 @@ const LoginPage = () => {
             <div className="login-card">
               <div className="login-card-header">
                 <span className="login-kicker">Acesso restrito</span>
-                <h1>Entre no GranPlus</h1>
-                <p>Use suas credenciais para acessar o painel de estoque.</p>
-              </div>
+                <h1>Gestão de Estoque GranPlus</h1>
+                <p>Acesse sua conta para continuar.</p>
+              </div>  
 
               <form id="login-form" className="login-form" onSubmit={handleSubmit} noValidate>
                 <div className="login-field">
@@ -115,16 +117,29 @@ const LoginPage = () => {
 
                 <div className="login-field">
                   <label htmlFor="password">Senha</label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    value={form.password}
-                    onChange={handleChange}
-                    placeholder="Digite sua senha"
-                    autoComplete="current-password"
-                    aria-invalid={fieldErrors.password ? "true" : "false"}
-                  />
+                  <div className="input-with-toggle">
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      value={form.password}
+                      onChange={handleChange}
+                      placeholder="Digite sua senha"
+                      autoComplete="current-password"
+                      aria-invalid={fieldErrors.password ? "true" : "false"}
+                    />
+
+                    <button
+                      type="button"
+                      className="password-toggle btn-ghost"
+                      onClick={() => setShowPassword((s) => !s)}
+                      aria-pressed={showPassword}
+                      aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
+                    >
+                      {showPassword ? <AiOutlineEyeInvisible size={18} aria-hidden="true" /> : <AiOutlineEye size={18} aria-hidden="true" />}
+                    </button>
+                  </div>
+
                   {fieldErrors.password ? (
                     <p className="login-field-error">{fieldErrors.password}</p>
                   ) : null}

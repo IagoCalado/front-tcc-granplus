@@ -24,7 +24,7 @@
   --font-title: "Space Grotesk", "Segoe UI", sans-serif;
   --font-mono: "Cascadia Mono", "Fira Code", monospace;
 
-  /* Theme specific raw RGB for rgba usage */
+  /* RGB bruto específico do tema para uso em RGBA. */
   --accent-rgb: 99, 102, 241;
   --accent2-rgb: 45, 212, 191;
   --success-rgb: 45, 212, 191;
@@ -191,4 +191,65 @@ img {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Entrada de autenticação + auxiliar de alternância (mantém o design do botão existente usando .btn-ghost) */
+.input-with-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-with-toggle input {
+  flex: 1 1 auto;
+}
+
+.password-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+/* trace uma linha contínua ao longo de todo o controle. */
+.input-with-toggle {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+.input-with-toggle input {
+  flex: 1 1 auto;
+  border: none !important;
+  background: transparent !important;
+  padding: 6px 0;
+  border-radius: 0 !important;
+  color: inherit;
+}
+
+.password-toggle {
+  background: transparent !important;
+  border: none !important;
+  padding: 6px;
+  min-width: 36px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.password-toggle svg { display: block; }
+
+.password-toggle:focus {
+  outline: none;
+}
+
+.password-toggle:hover {
+  color: var(--ink);
 }

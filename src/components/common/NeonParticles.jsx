@@ -10,8 +10,8 @@ const NET_COMMON_OPTIONS = {
 	minWidth: 200.0,
 	scale: 1.0,
 	scaleMobile: 1.0,
-	points: 12.0,
-	maxDistance: 24.0,
+	points: 120.0,
+	maxDistance: 140.0,
 	spacing: 18.0,
 	showDots: true,
 };
@@ -28,6 +28,43 @@ const THEME_CONFIG = {
 		fallbackColor: "#111111",
 	},
 };
+
+const COMPACT_VIEWPORT_WIDTH = 1280;
+
+function getViewportParticleOptions(baseOptions) {
+    if (typeof window === "undefined") {
+        return baseOptions;
+    }
+
+    const width = window.innerWidth;
+    
+    // Define pelo padrão de mercado focado apenas na LARGURA da tela:
+    const isMobile = width < 768; 
+    const isCompact = width < COMPACT_VIEWPORT_WIDTH;
+
+    if (isMobile) {
+        return {
+            ...baseOptions,
+            points: 64, 
+            maxDistance: 72,
+        };
+    }
+
+    if (isCompact) {
+        return {
+            ...baseOptions,
+            points: 160,
+            maxDistance: 130,
+        };
+    }
+
+    // Monitores grandes
+    return {
+        ...baseOptions,
+        points: 360,
+        maxDistance: 152,
+    };
+}
 
 // Alternativa de lona leve para garantir a visibilidade das partículas caso a canva falhe.
 function createFallback(canvas, opts = {}) {
@@ -131,17 +168,51 @@ const NeonParticles = () => {
 
 		const themeName = theme === "light" ? "light" : "dark";
 		const activeTheme = THEME_CONFIG[themeName];
-		const netOptions = {
+		const baseNetOptions = {
 			...NET_COMMON_OPTIONS,
 			color: activeTheme.color,
 			backgroundColor: activeTheme.backgroundColor,
 		};
+		const netOptions = getViewportParticleOptions(baseNetOptions);
+		const compactOptions = {
+			points: 120,
+			maxDistance: 110,
+		};
 
+		// Em telas pequenas: reduzir partículas; em telas grandes: aumentar para maior densidade
 		let vantaEffect;
 		let fallbackHandle;
 		let isCancelled = false;
 		const previousThree = window.THREE;
 		window.THREE = THREE;
+		
+		const syncEffectSize = () => {
+			const resizedOptions = getViewportParticleOptions(baseNetOptions);
+			const shouldRecreateFallback = !vantaEffect && fallbackHandle;
+
+			if (vantaEffect && typeof vantaEffect.resize === "function") {
+				vantaEffect.resize();
+			}
+
+			if (shouldRecreateFallback && typeof fallbackHandle.stop === "function") {
+				fallbackHandle.stop();
+				fallbackHandle = createFallback(canvasRef.current, {
+					color: activeTheme.fallbackColor,
+					points: resizedOptions.points || compactOptions.points,
+					maxDistance: resizedOptions.maxDistance || compactOptions.maxDistance,
+				});
+			}
+		};
+
+		const handleResize = window.requestAnimationFrame
+			? () => window.requestAnimationFrame(syncEffectSize)
+			: syncEffectSize;
+
+		const handleVisibilityChange = () => {
+			if (!document.hidden) {
+				handleResize();
+			}
+		};
 
 		// Tente o Vanta, mas se ele não inicializar em 700 ms, use o fallback
 		const vantaPromise = import("vanta/dist/vanta.net.min").then((module) => {
@@ -163,17 +234,23 @@ const NeonParticles = () => {
 				// start fallback
 				fallbackHandle = createFallback(canvasRef.current, {
 					color: activeTheme.fallbackColor,
-					points: 360, /* Quantidade de particula */
-					maxDistance: 140,
+					points: netOptions.points || compactOptions.points, /* Quantidade de particula */
+					maxDistance: netOptions.maxDistance || compactOptions.maxDistance,
 				});
 			}
 		}, 700);
 
 		vantaPromise.catch(() => {});
+		window.addEventListener("resize", handleResize);
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		window.addEventListener("pageshow", handleResize);
 
 		return () => {
 			isCancelled = true;
 			clearTimeout(fallbackTimer);
+			window.removeEventListener("resize", handleResize);
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			window.removeEventListener("pageshow", handleResize);
 			if (vantaEffect && typeof vantaEffect.destroy === "function") {
 				vantaEffect.destroy();
 			}
