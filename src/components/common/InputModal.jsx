@@ -38,7 +38,7 @@ export default function InputModal({
     ],
   });
 
-  const activeSuppliers = suppliers.filter((supplier) => supplier?.fncd_ativo === 1);
+  const activeSuppliers = suppliers.filter((supplier) => Number(supplier?.fncd_ativo) === 1 || supplier?.fncd_ativo === true);
 
   const getLocalISODate = (dateInput) => {
     const d = dateInput ? new Date(dateInput) : new Date();
@@ -51,13 +51,22 @@ export default function InputModal({
   useEffect(() => {
     if (isOpen && token) {
       getSuppliers(token)
-        .then((data) => setSuppliers(data || []))
+        .then((data) => {
+          const listaSegura = Array.isArray(data) ? data : (data?.fornecedores || []);
+          setSuppliers(listaSegura);
+        })
         .catch(() => {});
       getProducts(token)
-        .then((data) => setProducts(data || []))
+        .then((data) => {
+          const listaSegura = Array.isArray(data) ? data : (data?.produtos || []);
+          setProducts(listaSegura);
+        })
         .catch(() => {});
       getLocations(token)
-        .then((data) => setLocations(Array.isArray(data) ? data : []))
+        .then((data) => {
+          const listaSegura = Array.isArray(data) ? data : (data?.locais || []);
+          setLocations(listaSegura);
+        })
         .catch(() => setLocations([]));
 
       if (inputData) {

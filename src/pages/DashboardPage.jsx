@@ -9,6 +9,9 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  PieChart,
+  Pie,  
+  Cell,
 } from "recharts";
 import SectionHeader from "../components/common/SectionHeader";
 import StatCard from "../components/common/StatCard";
@@ -59,6 +62,30 @@ const TruncatedAxisTick = ({
       </text>
     </g>
   );
+};
+
+const COLORS = ["#00d4ff", "#8b5cf6", "#f43f5e", "#10b981", "#f59e0b"];
+const DonutTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{
+        background: "var(--bg-elevated)",
+        border: "1px solid var(--border)",
+        borderRadius: "12px",
+        padding: "10px 12px",
+        boxShadow: "var(--shadow-sm)",
+        color: "var(--ink)"
+      }}>
+        <div style={{ fontSize: "12px", fontWeight: 800, marginBottom: "6px" }}>
+          {payload[0].name}
+        </div>
+        <div style={{ fontSize: "14px", fontWeight: 800, color: payload[0].payload.fill }}>
+          R$ {formatNumber(payload[0].value)}
+        </div>
+      </div>
+    );
+  }
+  return null;
 };
 
 const ChartCardHeader = ({ title, subtitle, actions }) => {
@@ -478,7 +505,159 @@ const DashboardPage = () => {
         />
       </section>
 
-      <div className="stats-grid" style={{ alignItems: "stretch" }}>
+      <div className="stats-grid" style={{ alignItems: "stretch", marginTop: 16 }}>
+        <div className="card">
+          <ChartCardHeader
+            title="Alertas de estoque mínimo"
+            subtitle="Comparativo do estoque atual"
+            actions={
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => navigate("/estoque")}
+                style={{ padding: "6px 10px", fontSize: 12 }}
+              >
+                Abrir estoque
+              </button>
+            }
+          />
+
+          {status.min === "loading" ? (
+            <div style={{ height: 320, display: "grid", gap: 10, alignContent: "center" }}>
+              <div className="skeleton" style={{ height: 16, width: "55%" }} />
+              <div className="skeleton" style={{ height: 12, width: "75%" }} />
+              <div className="skeleton" style={{ height: 240, width: "100%", borderRadius: 16 }} />
+            </div>
+          ) : status.min === "error" ? (
+            <div className="dashboard-error">
+              <strong>Falha ao carregar alertas de mínimo</strong>
+              <div style={{ marginTop: 6, color: "var(--ink-soft)", fontSize: 13 }}>
+                {errors.min || "Tente recarregar a página."}
+              </div>
+            </div>
+          ) : minStockChartData.length ? (
+            <div style={{ height: 320, minWidth: 0, minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={minStockChartData} margin={{ left: 10, right: 10 }}>
+                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="name"
+                    tick={
+                      <TruncatedAxisTick
+                        angle={-12}
+                        textAnchor="end"
+                        dy={22}
+                        maxLength={16}
+                      />
+                    }
+                    axisLine={{ stroke: "var(--border)" }}
+                    tickLine={{ stroke: "var(--border)" }}
+                    interval={0}
+                    height={70}
+                  />
+                  <YAxis
+                    tick={{ fill: "var(--muted)", fontSize: 12 }}
+                    axisLine={{ stroke: "var(--border)" }}
+                    tickLine={{ stroke: "var(--border)" }}
+                  />
+                  <Tooltip content={<DashboardTooltip />} cursor={dashboardTooltipCursor} />
+                  <Legend
+                    wrapperStyle={{ color: "var(--muted)", fontSize: 12 }}
+                  />
+                  <Bar
+                    dataKey="atual"
+                    name="Estoque atual"
+                    fill="var(--accent-2)"
+                    radius={[10, 10, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="minimo"
+                    name="Mínimo"
+                    fill="var(--accent)"
+                    radius={[10, 10, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState
+              title="Sem alertas"
+              description="Nenhum produto abaixo do mínimo no momento."
+            />
+          )}
+        </div>
+
+        <div className="card">
+          <ChartCardHeader
+            title="Estoque atual (Top)"
+            subtitle="Produtos com maior saldo disponível"
+            actions={
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => navigate("/produtos")}
+                style={{ padding: "6px 10px", fontSize: 12 }}
+              >
+                Ver produtos
+              </button>
+            }
+          />
+
+          {status.products === "loading" ? (
+            <div style={{ height: 300, display: "grid", gap: 10, alignContent: "center" }}>
+              <div className="skeleton" style={{ height: 16, width: "45%" }} />
+              <div className="skeleton" style={{ height: 12, width: "65%" }} />
+              <div className="skeleton" style={{ height: 220, width: "100%", borderRadius: 16 }} />
+            </div>
+          ) : status.products === "error" ? (
+            <div className="dashboard-error">
+              <strong>Falha ao carregar produtos</strong>
+              <div style={{ marginTop: 6, color: "var(--ink-soft)", fontSize: 13 }}>
+                {errors.products || "Tente recarregar a página."}
+              </div>
+            </div>
+          ) : topStockChartData.length ? (
+            <div style={{ height: 300, minWidth: 0, minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={topStockChartData} layout="vertical" margin={{ left: 30, right: 10 }}>
+                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
+                  <XAxis
+                    type="number"
+                    tick={{ fill: "var(--muted)", fontSize: 12 }}
+                    axisLine={{ stroke: "var(--border)" }}
+                    tickLine={{ stroke: "var(--border)" }}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={140}
+                    tick={<TruncatedAxisTick dy={4} textAnchor="end" maxLength={18} />}
+                    axisLine={{ stroke: "var(--border)" }}
+                    tickLine={{ stroke: "var(--border)" }}
+                  />
+                  <Tooltip content={<DashboardTooltip />} cursor={dashboardTooltipCursor} />
+                  <Bar
+                    dataKey="estoque"
+                    name="Estoque"
+                    radius={[0, 10, 10, 0]}
+                  >
+                    {topStockChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState
+              title="Sem dados"
+              description="Nenhum produto carregado para montar o gráfico de estoque."
+            />
+          )}
+        </div>
+      </div>
+
+      <div className="stats-grid" style={{ alignItems: "stretch", marginTop: 16 }}>
         <div className="card">
           <ChartCardHeader
             title="Movimentações (Top)"
@@ -579,155 +758,6 @@ const DashboardPage = () => {
 
         <div className="card">
           <ChartCardHeader
-            title="Estoque atual (Top)"
-            subtitle="Produtos com maior saldo disponível"
-            actions={
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => navigate("/produtos")}
-                style={{ padding: "6px 10px", fontSize: 12 }}
-              >
-                Ver produtos
-              </button>
-            }
-          />
-
-          {status.products === "loading" ? (
-            <div style={{ height: 300, display: "grid", gap: 10, alignContent: "center" }}>
-              <div className="skeleton" style={{ height: 16, width: "45%" }} />
-              <div className="skeleton" style={{ height: 12, width: "65%" }} />
-              <div className="skeleton" style={{ height: 220, width: "100%", borderRadius: 16 }} />
-            </div>
-          ) : status.products === "error" ? (
-            <div className="dashboard-error">
-              <strong>Falha ao carregar produtos</strong>
-              <div style={{ marginTop: 6, color: "var(--ink-soft)", fontSize: 13 }}>
-                {errors.products || "Tente recarregar a página."}
-              </div>
-            </div>
-          ) : topStockChartData.length ? (
-            <div style={{ height: 300, minWidth: 0, minHeight: 0 }}>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={topStockChartData} layout="vertical" margin={{ left: 30, right: 10 }}>
-                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
-                  <XAxis
-                    type="number"
-                    tick={{ fill: "var(--muted)", fontSize: 12 }}
-                    axisLine={{ stroke: "var(--border)" }}
-                    tickLine={{ stroke: "var(--border)" }}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={140}
-                    tick={<TruncatedAxisTick dy={4} textAnchor="end" maxLength={18} />}
-                    axisLine={{ stroke: "var(--border)" }}
-                    tickLine={{ stroke: "var(--border)" }}
-                  />
-                  <Tooltip content={<DashboardTooltip />} cursor={dashboardTooltipCursor} />
-                  <Bar
-                    dataKey="estoque"
-                    name="Estoque"
-                    fill="var(--cor-grafico)"
-                    radius={[0, 10, 10, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyState
-              title="Sem dados"
-              description="Nenhum produto carregado para montar o gráfico de estoque."
-            />
-          )}
-        </div>
-      </div>
-
-      <div className="stats-grid" style={{ alignItems: "stretch", marginTop: 16 }}>
-        <div className="card">
-          <ChartCardHeader
-            title="Alertas de estoque mínimo"
-            subtitle="Comparativo do estoque atual"
-            actions={
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => navigate("/estoque")}
-                style={{ padding: "6px 10px", fontSize: 12 }}
-              >
-                Abrir estoque
-              </button>
-            }
-          />
-
-          {status.min === "loading" ? (
-            <div style={{ height: 320, display: "grid", gap: 10, alignContent: "center" }}>
-              <div className="skeleton" style={{ height: 16, width: "55%" }} />
-              <div className="skeleton" style={{ height: 12, width: "75%" }} />
-              <div className="skeleton" style={{ height: 240, width: "100%", borderRadius: 16 }} />
-            </div>
-          ) : status.min === "error" ? (
-            <div className="dashboard-error">
-              <strong>Falha ao carregar alertas de mínimo</strong>
-              <div style={{ marginTop: 6, color: "var(--ink-soft)", fontSize: 13 }}>
-                {errors.min || "Tente recarregar a página."}
-              </div>
-            </div>
-          ) : minStockChartData.length ? (
-            <div style={{ height: 320, minWidth: 0, minHeight: 0 }}>
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={minStockChartData} margin={{ left: 10, right: 10 }}>
-                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="name"
-                    tick={
-                      <TruncatedAxisTick
-                        angle={-12}
-                        textAnchor="end"
-                        dy={22}
-                        maxLength={16}
-                      />
-                    }
-                    axisLine={{ stroke: "var(--border)" }}
-                    tickLine={{ stroke: "var(--border)" }}
-                    interval={0}
-                    height={70}
-                  />
-                  <YAxis
-                    tick={{ fill: "var(--muted)", fontSize: 12 }}
-                    axisLine={{ stroke: "var(--border)" }}
-                    tickLine={{ stroke: "var(--border)" }}
-                  />
-                  <Tooltip content={<DashboardTooltip />} cursor={dashboardTooltipCursor} />
-                  <Legend
-                    wrapperStyle={{ color: "var(--muted)", fontSize: 12 }}
-                  />
-                  <Bar
-                    dataKey="atual"
-                    name="Estoque atual"
-                    fill="var(--accent-2)"
-                    radius={[10, 10, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="minimo"
-                    name="Mínimo"
-                    fill="var(--accent)"
-                    radius={[10, 10, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyState
-              title="Sem alertas"
-              description="Nenhum produto abaixo do mínimo no momento."
-            />
-          )}
-        </div>
-
-        <div className="card">
-          <ChartCardHeader
             title="Top fornecedores"
             subtitle="Quem mais recebeu em compras"
             actions={
@@ -756,34 +786,33 @@ const DashboardPage = () => {
               </div>
             </div>
           ) : topSuppliersList.length ? (
-            <div style={{ display: "grid", gap: 10 }}>
-              {topSuppliersList.map((item, index) => (
-                <div
-                  key={`${item.name}-${index}`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 12px",
-                    borderRadius: 12,
-                    background: "var(--bg-soft)",
-                    border: "1px solid var(--border)",
-                  }}
-                >
-                  <div style={{ display: "grid", gap: 2 }}>
-                    <span style={{ fontSize: 13, color: "var(--muted)" }}>#{index + 1}</span>
-                    <strong style={{ fontSize: 14, color: "var(--ink)" }}>
-                      {item.name}
-                    </strong>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>Total gasto</div>
-                    <strong style={{ fontSize: 14, color: "var(--ink)" }}>
-                      R$ {formatNumber(item.total)}
-                    </strong>
-                  </div>
-                </div>
-              ))}
+            <div style={{ height: 320, minWidth: 0, minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <Pie
+                    data={topSuppliersList}
+                    dataKey="total"
+                    nameKey="name"
+                    cx="50%"
+                    cy="45%"
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={4}
+                    stroke="none"
+                  >
+                    {topSuppliersList.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<DonutTooltip />} />
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={36} 
+                    iconType="circle"
+                    wrapperStyle={{ color: "var(--muted)", fontSize: 12, paddingTop: "20px" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
           ) : (
             <EmptyState
