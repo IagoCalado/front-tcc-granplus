@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import {
   resetPasswordWithPin,
   sendResetPin,
@@ -14,6 +15,8 @@ const ForgotPasswordPage = () => {
   const [error, setError] = useState("");
   const [phase, setPhase] = useState("splash");
   const [cardVisible, setCardVisible] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   // const [message, setMessage] = useState("");
   const [maskedEmail, setMaskedEmail] = useState("");
   const [form, setForm] = useState({
@@ -191,8 +194,8 @@ const ForgotPasswordPage = () => {
             <div className="login-card">
               <div className="login-card-header">
                 <span className="login-kicker">Seguranca de acesso</span>
-                <h1>Recuperar senha</h1>
-                <p>Confirme o codigo e defina uma nova senha</p>
+                <h1>Recuperar Senha</h1>
+                {/* <p>Confirme o codigo e defina uma nova senha</p> */}
               </div>
 
               {/* {message ? (
@@ -256,28 +259,52 @@ const ForgotPasswordPage = () => {
 
                     <div className="login-field">
                       <label htmlFor="novaSenha">Nova senha</label>
-                      <input
-                        id="novaSenha"
-                        name="novaSenha"
-                        type="password"
-                        value={form.novaSenha}
-                        onChange={handleChange}
-                        placeholder="Digite a nova senha"
-                        autoComplete="new-password"
-                      />
+                      <div className="input-with-toggle">
+                        <input
+                          id="novaSenha"
+                          name="novaSenha"
+                          type={showNewPassword ? "text" : "password"}
+                          value={form.novaSenha}
+                          onChange={handleChange}
+                          placeholder="Digite a nova senha"
+                          autoComplete="new-password"
+                        />
+
+                        <button
+                          type="button"
+                          className="password-toggle btn-ghost"
+                          onClick={() => setShowNewPassword((s) => !s)}
+                          aria-pressed={showNewPassword}
+                          aria-label={showNewPassword ? "Esconder senha" : "Mostrar senha"}
+                        >
+                          {showNewPassword ? <AiOutlineEyeInvisible size={18} aria-hidden="true" /> : <AiOutlineEye size={18} aria-hidden="true" />}
+                        </button>
+                      </div>
                     </div>
 
                     <div className="login-field">
                       <label htmlFor="confirmarSenha">Confirmar nova senha</label>
-                      <input
-                        id="confirmarSenha"
-                        name="confirmarSenha"
-                        type="password"
-                        value={form.confirmarSenha}
-                        onChange={handleChange}
-                        placeholder="Repita a nova senha"
-                        autoComplete="new-password"
-                      />
+                      <div className="input-with-toggle">
+                        <input
+                          id="confirmarSenha"
+                          name="confirmarSenha"
+                          type={showConfirmPassword ? "text" : "password"}
+                          value={form.confirmarSenha}
+                          onChange={handleChange}
+                          placeholder="Repita a nova senha"
+                          autoComplete="new-password"
+                        />
+
+                        <button
+                          type="button"
+                          className="password-toggle btn-ghost"
+                          onClick={() => setShowConfirmPassword((s) => !s)}
+                          aria-pressed={showConfirmPassword}
+                          aria-label={showConfirmPassword ? "Esconder senha" : "Mostrar senha"}
+                        >
+                          {showConfirmPassword ? <AiOutlineEyeInvisible size={18} aria-hidden="true" /> : <AiOutlineEye size={18} aria-hidden="true" />}
+                        </button>
+                      </div>
                     </div>
                   </>
                 ) : null}
