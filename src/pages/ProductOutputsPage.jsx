@@ -73,14 +73,48 @@ const ProductOutputsPage = () => {
 
       if (produtos.length > 0) {
         for (const item of produtos) {
-          await createOutput(token, {
-            pdt_id: item.pdt_id,
-            lcl_qtde: item.quantidade,
-            lcl_destino: payload.lcl_destino,
-            lcl_tipo: payload.lcl_tipo,
-            lcl_justificativa: payload.lcl_justificativa,
-            lotes_selecionados: item.lotes_selecionados || [],
-          });
+          const lotes = Array.isArray(item.lotes_selecionados)
+            ? item.lotes_selecionados
+            : [];
+
+          // Agrupa lotes por loc_id e envia uma requisição por localização
+          const grupos = new Map();
+          for (const lote of lotes) {
+            const loc = lote.loc_id || null;
+            if (!grupos.has(loc)) grupos.set(loc, []);
+            grupos.get(loc).push(lote);
+          }
+
+          if (grupos.size === 0) {
+            // sem lotes detalhados: envia como antes (o backend pode validar)
+            await createOutput(token, {
+              pdt_id: item.pdt_id,
+              lcl_qtde: item.quantidade,
+              lcl_destino: payload.lcl_destino,
+              lcl_tipo: payload.lcl_tipo,
+              lcl_justificativa: payload.lcl_justificativa,
+              lotes_selecionados: [],
+            });
+            continue;
+          }
+
+          for (const [locId, grupoLotes] of grupos.entries()) {
+            const quantidadeTotal = grupoLotes.reduce(
+              (s, l) => s + Number(l.quantidade || 0),
+              0,
+            );
+
+            await createOutput(token, {
+              pdt_id: item.pdt_id,
+              lcl_qtde: quantidadeTotal,
+              lcl_destino: payload.lcl_destino,
+              lcl_tipo: payload.lcl_tipo,
+              lcl_justificativa: payload.lcl_justificativa,
+              lotes_selecionados: grupoLotes,
+              // opcionalmente enviar loc_id raiz se necessário pelo backend
+              loc_id: locId,
+            });
+          }
         }
       } else {
         await createOutput(token, payload);

@@ -38,7 +38,10 @@ export default function InputModal({
     ],
   });
 
-  const activeSuppliers = suppliers.filter((supplier) => Number(supplier?.fncd_ativo) === 1 || supplier?.fncd_ativo === true);
+  const activeSuppliers = suppliers.filter(
+    (supplier) =>
+      Number(supplier?.fncd_ativo) === 1 || supplier?.fncd_ativo === true,
+  );
 
   const getLocalISODate = (dateInput) => {
     const d = dateInput ? new Date(dateInput) : new Date();
@@ -52,19 +55,21 @@ export default function InputModal({
     if (isOpen && token) {
       getSuppliers(token)
         .then((data) => {
-          const listaSegura = Array.isArray(data) ? data : (data?.fornecedores || []);
+          const listaSegura = Array.isArray(data)
+            ? data
+            : data?.fornecedores || [];
           setSuppliers(listaSegura);
         })
         .catch(() => {});
       getProducts(token)
         .then((data) => {
-          const listaSegura = Array.isArray(data) ? data : (data?.produtos || []);
+          const listaSegura = Array.isArray(data) ? data : data?.produtos || [];
           setProducts(listaSegura);
         })
         .catch(() => {});
       getLocations(token)
         .then((data) => {
-          const listaSegura = Array.isArray(data) ? data : (data?.locais || []);
+          const listaSegura = Array.isArray(data) ? data : data?.locais || [];
           setLocations(listaSegura);
         })
         .catch(() => setLocations([]));
@@ -221,7 +226,7 @@ export default function InputModal({
           flexDirection: "column",
           overflow: "hidden",
         }}
-       >
+      >
         <button className="modal-close" onClick={onClose} aria-label="Fechar">
           ×
         </button>
@@ -230,23 +235,43 @@ export default function InputModal({
           <h3 style={{ margin: 0 }}>Nova Entrada de Produto</h3>
         </div>
 
-        <form className="modal-body" onSubmit={handleSubmit}>
-          <div className="input-field">
-            <label>Fornecedor</label>
-            <select
-              name="fncd_id"
-              value={formData.fncd_id}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Selecione...</option>
-              {activeSuppliers.map((sup) => (
-                <option key={sup.fncd_id} value={sup.fncd_id}>
-                  {sup.fncd_nome}
-                </option>
-              ))}
-            </select>
-          </div>
+        <form
+          className="modal-body"
+          onSubmit={handleSubmit}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            flex: 1,
+            minHeight: 0,
+          }}
+        >
+          <div
+            ref={scrollRef}
+            style={{
+              flex: 1,
+              minHeight: 0,
+              overflowY: formData.produtos.length > 1 ? "auto" : "visible",
+              paddingRight: 8,
+              paddingBottom: 16,
+              width: "100%",
+            }}
+          >
+            <div className="input-field">
+              <label>Fornecedor</label>
+              <select
+                name="fncd_id"
+                value={formData.fncd_id}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Selecione...</option>
+                {activeSuppliers.map((sup) => (
+                  <option key={sup.fncd_id} value={sup.fncd_id}>
+                    {sup.fncd_nome}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="input-field">
               <label>Localização</label>
@@ -424,23 +449,38 @@ export default function InputModal({
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
 
-              <button
-                type="button"
-                onClick={addProductRow}
-                style={{
-                  color: "var(--accent)",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  padding: "0",
-                  marginTop: "5px",
-                }}
-              >
-                + Adicionar mais um produto
-              </button>
-            </div>  
+          <div
+            style={{
+              marginTop: "12px",
+              marginBottom: "8px",
+              paddingTop: "12px",
+              borderTop: "1px solid var(--border)",
+              flexShrink: 0,
+              display: "flex",
+              justifyContent: "flex-start",
+            }}
+          >
+            <button
+              type="button"
+              onClick={addProductRow}
+              style={{
+                color: "var(--accent)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontWeight: "600",
+                padding: "0",
+                margin: 0,
+                display: "block",
+              }}
+            >
+              + Adicionar mais um produto
+            </button>
+          </div>
+
           <div
             style={{
               display: "flex",
@@ -448,9 +488,10 @@ export default function InputModal({
               marginTop: "12px",
               paddingTop: "12px",
               borderTop: "1px solid var(--border)",
+              flexShrink: 0,
             }}
             className="modal-footer"
-           >
+          >
             <button type="button" onClick={onClose} className="btn btn-ghost">
               Cancelar
             </button>

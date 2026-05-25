@@ -516,7 +516,7 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
                             marginBottom: "6px",
                           }}
                         >
-                          Ação
+                          Lotes
                         </label>
                         <div
                           style={{
