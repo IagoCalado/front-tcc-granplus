@@ -1,4 +1,5 @@
 import { AlertCircle, CheckCircle2, Info, XCircle } from "lucide-react";
+import { createPortal } from "react-dom";
 
 const toneConfig = {
   info: {
@@ -37,15 +38,28 @@ export default function AlertDialog({
   const Icon = config.icon;
   const fallbackTitle = title || config.title;
 
-  return (
-    <div className="modal-overlay">
-      <div
-        className="modal-content card alert-dialog"
-        onClick={(e) => e.stopPropagation()}
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="alert-dialog-title"
-      >
+  const overlayStyle = {
+    position: "fixed",
+    inset: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 9999,
+    padding: "20px",
+    pointerEvents: "auto",
+  };
+
+  const contentProps = {
+    className: "modal-content card alert-dialog",
+    onClick: (e) => e.stopPropagation(),
+    role: "alertdialog",
+    "aria-modal": "true",
+    "aria-labelledby": "alert-dialog-title",
+  };
+
+  const node = (
+    <div style={overlayStyle}>
+      <div {...contentProps}>
         <button className="modal-close" onClick={onClose} aria-label="Fechar">
           ×
         </button>
@@ -68,4 +82,10 @@ export default function AlertDialog({
       </div>
     </div>
   );
+
+  if (typeof document !== "undefined" && document.body) {
+    return createPortal(node, document.body);
+  }
+
+  return node;
 }

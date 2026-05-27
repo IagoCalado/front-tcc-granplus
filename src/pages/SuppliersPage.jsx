@@ -185,14 +185,15 @@ const SuppliersPage = () => {
   const handleSaveSupplier = (formData, id) => {
     setSaveConfirmState({
       open: true,
-      title: id ? "Atualizar fornecedor" : "Criar fornecedor",
-      message: id
-        ? "Deseja salvar as alteracoes deste fornecedor?"
-        : "Deseja criar este novo fornecedor?",
+      title: id ? "Deseja salvar as alterações deste fornecedor ?" : "Deseja criar este novo fornecedor ?",
+      // message: id
+      //   ? "Deseja salvar as alteracoes deste fornecedor ?"
+      //   : "Deseja criar este novo fornecedor ?",
       payload: formData,
       targetId: id || null,
     });
   };
+  
 
   const handleConfirmSaveSupplier = async () => {
     const payload = saveConfirmState.payload;
@@ -210,8 +211,18 @@ const SuppliersPage = () => {
     try {
       if (saveConfirmState.targetId) {
         await updateSupplier(token, saveConfirmState.targetId, payload);
+        setAlertState({
+          open: true,
+          title: "Atualização salva com sucesso !",
+          tone: "success",
+        });
       } else {
         await createSupplier(token, payload);
+        setAlertState({
+          open: true,
+          title: "Fornecedor criado com sucesso !",
+          tone: "success",
+        });
       }
       setIsModalOpen(false);
       loadData();
@@ -236,8 +247,8 @@ const SuppliersPage = () => {
   const handleDeleteSupplier = async (id) => {
     setConfirmState({
       open: true,
-      title: "Excluir fornecedor",
-      message: "Certeza que deseja excluir este fornecedor?",
+      title: "Certeza que deseja excluir este fornecedor ?",
+      // message: "Certeza que deseja excluir este fornecedor ?",
       targetId: id,
     });
   };
@@ -255,15 +266,15 @@ const SuppliersPage = () => {
       loadData();
       setAlertState({
         open: true,
-        title: "Fornecedor excluido",
-        message: "Fornecedor excluido com sucesso.",
+        title: "Fornecedor excluido com sucesso.",
+        // message: "Fornecedor excluido com sucesso.",
         tone: "success",
       });
     } catch (error) {
       setAlertState({
         open: true,
-        title: "Erro ao excluir fornecedor",
-        message: "Erro ao excluir fornecedor: " + error.message,
+        title: "Erro ao excluir : " + error.message,
+        // message: "Erro ao excluir : " + error.message,
         tone: "error",
       });
     } finally {
@@ -470,7 +481,7 @@ const SuppliersPage = () => {
         title={saveConfirmState.title}
         message={saveConfirmState.message}
         tone="warning"
-        confirmLabel={saveConfirmState.targetId ? "Atualizar" : "Criar"}
+        confirmLabel={saveConfirmState.targetId ? "Salvar" : "Criar"}
         onConfirm={handleConfirmSaveSupplier}
         onCancel={() =>
           setSaveConfirmState({
@@ -637,8 +648,8 @@ const SuppliersPage = () => {
                               await navigator.clipboard.writeText(textToCopy);
                               setAlertState({
                                 open: true,
-                                title: "Endereco copiado",
-                                message: "Endereco copiado!",
+                                title: "Endereco copiado !",
+                                // message: "Endereco copiado!",
                                 tone: "success",
                               });
                             } catch {
@@ -646,7 +657,7 @@ const SuppliersPage = () => {
                                 open: true,
                                 title: "Falha ao copiar",
                                 message:
-                                  "Nao foi possivel copiar automaticamente. Selecione o texto e copie manualmente.",
+                                  "Não foi possivel copiar automaticamente. Selecione o texto e copie manualmente.",
                                 tone: "error",
                               });
                             }
@@ -663,7 +674,7 @@ const SuppliersPage = () => {
                             rel="noreferrer"
                             style={{ padding: "6px 10px", fontSize: "12px" }}
                           >
-                            Abrir no Maps
+                            Abrir no Google Maps
                           </a>
                         ) : null}
                       </div>

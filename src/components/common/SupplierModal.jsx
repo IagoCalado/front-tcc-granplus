@@ -140,8 +140,7 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
       if (!response.ok || data?.erro) {
         setAlertState({
           open: true,
-          title: "CEP nao encontrado",
-          message: "CEP nao encontrado.",
+          title: "CEP não encontrado",
           tone: "error",
         });
         return;
@@ -662,34 +661,11 @@ export default function SupplierModal({ isOpen, onClose, onSave, supplier }) {
             </div>
           ) : null}
           <div style={{ display: "flex", gap: "16px", marginTop: "10px" }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                flex: 1,
-                padding: "12px",
-                borderRadius: "8px",
-                border: "1px solid #ccc",
-                background: "transparent",
-                cursor: "pointer",
-              }}
-            >
+            <button type="button" onClick={onClose} className="btn btn-ghost" style={{ flex: 1 }}>
               Cancelar
             </button>
-            <button
-              type="submit"
-              style={{
-                flex: 1,
-                padding: "12px",
-                borderRadius: "8px",
-                border: "none",
-                background: "#0284c7",
-                color: "#fff",
-                cursor: "pointer",
-                fontWeight: "600",
-              }}
-            >
-              Salvar
+            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+              {supplier ? "Salvar" : "Criar"}
             </button>
           </div>
         </form>

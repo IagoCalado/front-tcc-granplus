@@ -475,15 +475,12 @@ const DashboardPage = () => {
           meta={`${formatNumber(productsWithStockCount)} produtos com saldo`}
           loading={anyLoading && status.stock === "loading"}
         />
-        
-        {/* 👇 O CARD NOVO DO VALOR DAS COMPRAS 👇 */}
         <DashboardStatCard
           title="Investimento do Mês"
           value={resumeData?.valor_entradas_mes ? `R$ ${formatNumber(resumeData.valor_entradas_mes)}` : "R$ 0,00"}
           meta="Valor total de entradas no mês atual"
           loading={anyLoading && status.resume === "loading"}
         />
-
         <DashboardStatCard
           title="Alertas de minimo"
           value={formatNumber(minStock.length)}
@@ -497,12 +494,12 @@ const DashboardPage = () => {
           loading={isAdmin ? anyLoading && status.users === "loading" : false}
         />
 
-        <DashboardStatCard
+        {/* <DashboardStatCard
           title="Produtos sem saldo"
           value={formatNumber(productsWithoutStockCount)}
           meta="Ajuda a identificar rupturas"
           loading={anyLoading && status.products === "loading"}
-        />
+        /> */}
       </section>
 
       <div className="stats-grid" style={{ alignItems: "stretch", marginTop: 16 }}>

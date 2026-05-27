@@ -109,8 +109,8 @@ const UsersPage = () => {
   const handleDeleteUser = async (userToDelete) => {
     setConfirmState({
       open: true,
-      title: "Excluir usuario",
-      message: `Tem certeza que deseja excluir o usuario ${userToDelete.user_nome}?`,
+      title: `Tem certeza que deseja excluir o usuário ${userToDelete.user_nome} ?`,
+      // message: `Tem certeza que deseja excluir o usuário ${userToDelete.user_nome}?`,
       targetUser: userToDelete,
     });
   };
@@ -132,16 +132,16 @@ const UsersPage = () => {
       await deleteUser(token, userToDelete.user_id);
       setAlertState({
         open: true,
-        title: "Usuario excluido",
-        message: "Usuario excluido com sucesso!",
+        title: "Usuário excluído com sucesso !",
+        // message: "Usuário excluído com sucesso !",
         tone: "success",
       });
       loadData();
     } catch (err) {
       setAlertState({
         open: true,
-        title: "Erro ao excluir usuario",
-        message: "Erro ao excluir usuario: " + err.message,
+        title: "Erro ao excluir : " + err.message,
+        // message: "Erro ao excluir usuário: " + err.message,
         tone: "error",
       });
     } finally {
@@ -157,10 +157,10 @@ const UsersPage = () => {
   const handleSaveUser = (formData, id) => {
     setSaveConfirmState({
       open: true,
-      title: id ? "Atualizar usuario" : "Criar usuario",
-      message: id
-        ? "Deseja salvar as alteracoes deste usuario?"
-        : "Deseja criar este novo usuario?",
+      title: id ? "Deseja salvar as alterações deste usuário ?" : "Deseja criar este novo usuário ?",
+      // message: id
+      //   ? "Deseja salvar as alterações deste usuário ?"
+      //   : "Deseja criar este novo usuário ?",
       payload: formData,
       targetId: id || null,
     });
@@ -185,16 +185,16 @@ const UsersPage = () => {
         await updateUser(token, targetId, payload);
         setAlertState({
           open: true,
-          title: "Usuario atualizado",
-          message: "Usuario atualizado com sucesso!",
+          title: "Usuário atualizado com sucesso !",
+          // message: "Usuario atualizado com sucesso!",
           tone: "success",
         });
       } else {
         await createUser(token, payload);
         setAlertState({
           open: true,
-          title: "Usuario criado",
-          message: "Usuario criado com sucesso!",
+          title: "Usuário criado com sucesso !",
+          // message: "Usuário criado com sucesso!",
           tone: "success",
         });
       }
@@ -203,8 +203,8 @@ const UsersPage = () => {
     } catch (err) {
       setAlertState({
         open: true,
-        title: "Erro ao salvar usuario",
-        message: "Erro ao salvar usuario: " + err.message,
+        title: "Erro ao salvar usuário",
+        message: "Erro ao salvar usuário: " + err.message,
         tone: "error",
       });
     } finally {
@@ -465,8 +465,8 @@ const UsersPage = () => {
 
       <ConfirmDialog
         isOpen={passwordConfirmOpen}
-        title="Atualizar senha"
-        message="Deseja atualizar sua senha agora?"
+        title="Deseja atualizar sua senha agora ?"
+        // message="Deseja atualizar sua senha agora ?"
         tone="warning"
         confirmLabel="Atualizar"
         onConfirm={handleConfirmChangePassword}

@@ -77,10 +77,10 @@ const ProductsPage = () => {
   const handleSaveProduct = (formData, id) => {
     setSaveConfirmState({
       open: true,
-      title: id ? "Atualizar produto" : "Criar produto",
-      message: id
-        ? "Deseja salvar as alteracoes deste produto?"
-        : "Deseja criar este novo produto?",
+      title: id ? "Deseja atualizar as alterações deste produto ?" : "Deseja criar este novo produto ?",
+      // message: id
+      //   ? "Deseja salvar as alterações deste produto?"
+      //   : "Deseja criar este novo produto?",
       payload: formData,
       targetId: id || null,
     });
@@ -107,11 +107,11 @@ const ProductsPage = () => {
       }
       setIsModalOpen(false);
       loadData();
-    } catch (error) {
+    } catch{
       setAlertState({
         open: true,
         title: "Erro ao salvar produto",
-        message: "Erro ao salvar: " + error.message,
+        message: "Produto já foi criado com esse código: " + payload.pdt_codigo || payload.pdt_nome,
         tone: "error",
       });
     } finally {
@@ -128,8 +128,8 @@ const ProductsPage = () => {
   const handleDeleteProduct = async (product) => {
     setConfirmState({
       open: true,
-      title: "Excluir produto",
-      message: `Tem certeza que deseja excluir o produto ${product.pdt_nome}?`,
+      title: `Tem certeza que deseja excluir o produto ${product.pdt_nome} ?`,
+      // message: `Tem certeza que deseja excluir o produto ${product.pdt_nome}?`,
       targetProduct: product,
     });
   };
@@ -152,8 +152,8 @@ const ProductsPage = () => {
       await loadData();
       setAlertState({
         open: true,
-        title: "Produto excluido",
-        message: "Produto excluido com sucesso.",
+        title: "Produto excluido com sucesso.",
+        // message: "Produto excluido com sucesso.",
         tone: "success",
       });
     } catch (deleteError) {

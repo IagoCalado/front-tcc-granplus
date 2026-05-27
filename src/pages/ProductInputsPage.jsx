@@ -75,10 +75,10 @@ const ProductInputsPage = () => {
     const targetId = currentInput?.ent_id || null;
     setSaveConfirmState({
       open: true,
-      title: targetId ? "Atualizar entrada" : "Criar entrada",
-      message: targetId
-        ? "Deseja salvar as alteracoes desta entrada?"
-        : "Deseja criar esta nova entrada?",
+      title: targetId ? "Deseja salvar as alterações desta entrada ?" : "Deseja registrar esta nova entrada ?",
+      // message: targetId
+      //   ? "Deseja salvar as alterações desta entrada?"
+      //   : "Deseja criar esta nova entrada ?",
       payload,
       targetId,
     });
@@ -108,17 +108,13 @@ const ProductInputsPage = () => {
       loadData();
       setAlertState({
         open: true,
-        title: saveConfirmState.targetId ? "Entrada atualizada" : "Entrada criada",
-        message: saveConfirmState.targetId
-          ? "Entrada atualizada com sucesso."
-          : "Entrada criada com sucesso.",
+        title: saveConfirmState.targetId ? "Entrada atualizada com sucesso." : "Entrada registrada com sucesso.",
         tone: "success",
       });
     } catch (err) {
       setAlertState({
         open: true,
-        title: "Erro ao salvar entrada",
-        message: "Erro ao salvar entrada de produtos.",
+        title: "Erro ao salvar entrada de produtos.",
         tone: "error",
       });
       console.error(err);
@@ -136,12 +132,11 @@ const ProductInputsPage = () => {
   const handleDeleteRequest = (id) => {
     setConfirmState({
       open: true,
-      title: "Excluir entrada",
-      message:
-        "Você tem certeza que deseja excluir esta entrada? AVISO: Certifique-se de que a API possui a regra de reversão de estoque implementada para deleções.",
+      title: "Você tem certeza que deseja excluir ?",
+      message: "AVISO: Não será possível reverter esta ação.",
       targetId: id,
     });
-  };
+  };  
 
   const handleConfirmDelete = async () => {
     const targetId = confirmState.targetId;
@@ -155,18 +150,14 @@ const ProductInputsPage = () => {
       await deleteInput(token, targetId);
       setAlertState({
         open: true,
-        title: "Entrada excluida",
-        message: "Entrada apagada com sucesso.",
+        title: "Entrada excluida com sucesso.",
         tone: "success",
       });
       loadData();
     } catch (err) {
       setAlertState({
         open: true,
-        title: "Erro ao apagar entrada",
-        message:
-          "Erro ao apagar a entrada. Verifique se as rotas DELETE de Entrada e estorno de estoque existem no Back-End. Mensagem: " +
-          err.message,
+        title: "Erro ao apagar" + err.message,
         tone: "error",
       });
     } finally {
@@ -354,7 +345,7 @@ const ProductInputsPage = () => {
         title={saveConfirmState.title}
         message={saveConfirmState.message}
         tone="warning"
-        confirmLabel={saveConfirmState.targetId ? "Atualizar" : "Criar"}
+        confirmLabel={saveConfirmState.targetId ? "Atualizar" : "Registrar"}
         onConfirm={handleConfirmSaveInput}
         onCancel={() =>
           setSaveConfirmState({
