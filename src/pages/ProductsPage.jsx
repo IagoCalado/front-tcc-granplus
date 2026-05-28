@@ -107,11 +107,11 @@ const ProductsPage = () => {
       }
       setIsModalOpen(false);
       loadData();
-    } catch{
+    } catch (saveError) {
       setAlertState({
         open: true,
         title: "Erro ao salvar produto",
-        message: "Produto já foi criado com esse código: " + payload.pdt_codigo || payload.pdt_nome,
+        message: saveError.message || "Não foi possível salvar o produto",
         tone: "error",
       });
     } finally {

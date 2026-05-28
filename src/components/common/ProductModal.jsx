@@ -1,6 +1,20 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react';
 
+const categoryOptions = [
+  { value: 1, label: 'Limpeza' },
+  { value: 2, label: 'Escritório' },
+  { value: 3, label: 'Informática' },
+  { value: 4, label: 'Alimentos' },
+];
+
+const unitOptions = [
+  { value: 1, label: 'Unidade' },
+  { value: 2, label: 'Caixa' },
+  { value: 3, label: 'Quilo' },
+  { value: 4, label: 'Litro' },
+];
+
 export default function ProductModal({ isOpen, onClose, onSave, product }) {
   const [formData, setFormData] = useState({
     pdt_nome: '',
@@ -85,6 +99,26 @@ export default function ProductModal({ isOpen, onClose, onSave, product }) {
           <div className="input-field">
             <label>Estoque Mínimo</label>
             <input type="number" name="pdt_estoque_minimo" value={formData.pdt_estoque_minimo} onChange={handleChange} required placeholder="Ex: 5" />
+          </div>
+          <div className="input-field">
+            <label>Categoria</label>
+            <select name="cat_id" value={formData.cat_id} onChange={handleChange} required>
+              {categoryOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="input-field">
+            <label>Unidade de Medida</label>
+            <select name="unid_med_id" value={formData.unid_med_id} onChange={handleChange} required>
+              {unitOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
           <div style={{ display: "flex", gap: "16px", marginTop: "20px" }}>
             <button type="button" onClick={onClose} className="btn btn-ghost">Cancelar</button>

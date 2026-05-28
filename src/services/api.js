@@ -23,7 +23,11 @@ const request = async (path, { token, method = "GET", body } = {}) => {
 
   if (!response.ok) {
     const message =
-      data?.detalhe || data?.erro || data?.message || "Erro ao buscar dados";
+      data?.detalhe ||
+      data?.erro ||
+      data?.error ||
+      data?.message ||
+      "Erro ao buscar dados";
     throw new Error(message);
   }
 
