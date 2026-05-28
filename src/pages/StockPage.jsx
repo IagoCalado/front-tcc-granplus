@@ -4,8 +4,9 @@ import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import StatusPill from "../components/common/StatusPill";
+import AlertDialog from "../components/common/AlertDialog";
 import { useAuth } from "../contexts/AuthContext";
-import { getOutputAvailableLots, getStock } from "../services/api";
+import { createLocation, getOutputAvailableLots, getStock } from "../services/api";
 import { formatNumber } from "../utils/format";
 import {
   STOCK_MOVEMENT_EVENT,
@@ -93,6 +94,18 @@ const StockPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [availableLotsCountByProduct, setAvailableLotsCountByProduct] =
     useState({});
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [locationForm, setLocationForm] = useState({
+    loc_nome: "",
+    loc_desc: "",
+  });
+  const [savingLocation, setSavingLocation] = useState(false);
+  const [locationAlert, setLocationAlert] = useState({
+    open: false,
+    title: "",
+    message: "",
+    tone: "info",
+  });
 
   const loadData = useCallback(
     async (options = {}) => {
@@ -421,6 +434,69 @@ const StockPage = () => {
     setModalLotsSortDirection("asc");
   };
 
+  const handleOpenLocationModal = () => {
+    setLocationForm({ loc_nome: "", loc_desc: "" });
+    setIsLocationModalOpen(true);
+  };
+
+  const handleCloseLocationModal = () => {
+    if (savingLocation) return;
+    setIsLocationModalOpen(false);
+    setLocationForm({ loc_nome: "", loc_desc: "" });
+  };
+
+  const handleLocationChange = (event) => {
+    const { name, value } = event.target;
+    setLocationForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  };
+
+  const handleSaveLocation = async (event) => {
+    event.preventDefault();
+
+    const nome = locationForm.loc_nome.trim();
+    const desc = locationForm.loc_desc.trim();
+
+    if (!nome) {
+      setLocationAlert({
+        open: true,
+        title: "Informe o nome da localização",
+        message: "O nome é obrigatório para gravar na tabela localizacao.",
+        tone: "warning",
+      });
+      return;
+    }
+
+    setSavingLocation(true);
+    try {
+      await createLocation(token, {
+        loc_nome: nome,
+        loc_desc: desc,
+      });
+
+      setIsLocationModalOpen(false);
+      setLocationForm({ loc_nome: "", loc_desc: "" });
+      setLocationAlert({
+        open: true,
+        title: "Localização criada com sucesso",
+        message: "Os dados foram enviados para a tabela localizacao.",
+        tone: "success",
+      });
+    } catch (error) {
+      setLocationAlert({
+        open: true,
+        title: "Erro ao criar localização",
+        message:
+          error.message || "Não foi possível salvar a localização no banco.",
+        tone: "error",
+      });
+    } finally {
+      setSavingLocation(false);
+    }
+  };
+
   const renderSortLabel = (column, label) => {
     const isActive = modalLotsSortColumn === column;
     const arrow = isActive
@@ -558,11 +634,11 @@ const StockPage = () => {
           title="Estoque"
           subtitle="Visualize o estoque atual dos produtos."
           onSearch={setSearchTerm}
-          // actions={
-          //   <button className="btn btn-primary" onClick={() => setIsInputModalOpen(true)}>
-          //     Adicionar Produto
-          //   </button>
-          // }
+          actions={
+            <button className="btn btn-primary" onClick={handleOpenLocationModal}>
+              Criar nova localização
+            </button>
+          }
         />
       </div>
 
@@ -572,6 +648,81 @@ const StockPage = () => {
         <EmptyState title="Não foi possivel carregar" description={error} />
       ) : (
         <DataTable columns={columns} rows={filteredStock} rowKey="pdt_id" />
+      )}
+
+      <AlertDialog
+        isOpen={locationAlert.open}
+        title={locationAlert.title}
+        message={locationAlert.message}
+        tone={locationAlert.tone}
+        onClose={() =>
+          setLocationAlert({ open: false, title: "", message: "", tone: "info" })
+        }
+      />
+
+      {isLocationModalOpen && (
+        <div className="modal-overlay" onClick={handleCloseLocationModal}>
+          <div
+            className="modal-content card"
+            onClick={(event) => event.stopPropagation()}
+            style={{ width: "min(92vw, 560px)" }}
+          >
+            <button
+              className="modal-close"
+              onClick={handleCloseLocationModal}
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+
+            <div className="modal-header">
+              <h3 style={{ margin: 0 }}>Criar nova localização</h3>
+            </div>
+
+            <form className="modal-body" onSubmit={handleSaveLocation}>
+              <div className="input-field">
+                <label>Nome da localização</label>
+                <input
+                  type="text"
+                  name="loc_nome"
+                  value={locationForm.loc_nome}
+                  onChange={handleLocationChange}
+                  placeholder="Ex: Prateleira A1"
+                  required
+                />
+              </div>
+
+              <div className="input-field">
+                <label>Descrição</label>
+                <textarea
+                  name="loc_desc"
+                  value={locationForm.loc_desc}
+                  onChange={handleLocationChange}
+                  placeholder="Opcional"
+                  rows={4}
+                />
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={handleCloseLocationModal}
+                  disabled={savingLocation}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={savingLocation}
+                >
+                  {savingLocation ? "Salvando..." : "Salvar localização"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {selectedProductId && (

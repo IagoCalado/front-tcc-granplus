@@ -79,6 +79,8 @@ export const getLocations = async (token) => {
     return request("/localizacoes/localizacoes", { token });
   }
 };
+export const createLocation = (token, payload) =>
+  request("/localizacoes", { token, method: "POST", body: payload });
 
 // Usuários
 export const getUsers = (token) => request("/usuarios", { token });
