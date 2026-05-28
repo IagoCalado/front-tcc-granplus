@@ -234,8 +234,8 @@ const DashboardPage = () => {
         stock: "loading",
         moved: "loading",
         min: "loading",
-        resume: "loading", // LOADING NOVO
-        suppliersTop: "loading",
+        resume: isAdmin ? "loading" : "ready",
+        suppliersTop: isAdmin ? "loading" : "ready",
         users: isAdmin ? "loading" : "ready",
       }));
       setErrors({ products: "", stock: "", moved: "", min: "", suppliersTop: "", users: "" });
@@ -247,8 +247,8 @@ const DashboardPage = () => {
             getStock(token),
             getMostMovedProducts(token),
             getMinimumStock(token),
-            getDashboardResume(token), // CHAMADA NOVA
-            getTopSuppliersBySpend(token)
+            isAdmin ? getDashboardResume(token) : Promise.resolve(null),
+            isAdmin ? getTopSuppliersBySpend(token) : Promise.resolve([])
           ]);
 
         if (productsRes.status === "fulfilled") {
@@ -299,18 +299,21 @@ const DashboardPage = () => {
           }));
         }
 
-        if (resumeRes.status === "fulfilled") {
+        if (isAdmin && resumeRes.status === "fulfilled") {
           setResumeData(resumeRes.value || null);
           setStatus((prev) => ({ ...prev, resume: "ready" }));
-        } else {
+        } else if (isAdmin) {
           setResumeData(null);
           setStatus((prev) => ({ ...prev, resume: "error" }));
+        } else {
+          setResumeData(null);
+          setStatus((prev) => ({ ...prev, resume: "ready" }));
         }
 
-        if (suppliersTopRes.status === "fulfilled") {
+        if (isAdmin && suppliersTopRes.status === "fulfilled") {
           setTopSuppliers(suppliersTopRes.value || []);
           setStatus((prev) => ({ ...prev, suppliersTop: "ready" }));
-        } else {
+        } else if (isAdmin) {
           setTopSuppliers([]);
           setStatus((prev) => ({ ...prev, suppliersTop: "error" }));
           setErrors((prev) => ({
@@ -319,6 +322,9 @@ const DashboardPage = () => {
               suppliersTopRes.reason?.message ||
               "Falha ao carregar fornecedores.",
           }));
+        } else {
+          setTopSuppliers([]);
+          setStatus((prev) => ({ ...prev, suppliersTop: "ready" }));
         }
 
         if (isAdmin) {
@@ -342,7 +348,8 @@ const DashboardPage = () => {
           stock: "error",
           moved: "error",
           min: "error",
-          resume: "error",
+          resume: isAdmin ? "error" : prev.resume,
+          suppliersTop: isAdmin ? "error" : prev.suppliersTop,
           users: isAdmin ? "error" : prev.users,
         }));
         setErrors((prev) => ({
@@ -429,8 +436,8 @@ const DashboardPage = () => {
     status.stock === "error" ? "Estoque" : null,
     status.moved === "error" ? "Movimentações" : null,
     status.min === "error" ? "Mínimo" : null,
-    status.resume === "error" ? "Resumo Financeiro" : null,
-    status.suppliersTop === "error" ? "Top fornecedores" : null,
+    isAdmin && status.resume === "error" ? "Resumo Financeiro" : null,
+    isAdmin && status.suppliersTop === "error" ? "Top fornecedores" : null,
     isAdmin && status.users === "error" ? "Usuários" : null,
   ].filter(Boolean);
 
@@ -475,12 +482,14 @@ const DashboardPage = () => {
           meta={`${formatNumber(productsWithStockCount)} produtos com saldo`}
           loading={anyLoading && status.stock === "loading"}
         />
-        <DashboardStatCard
-          title="Investimento do Mês"
-          value={resumeData?.valor_entradas_mes ? `R$ ${formatNumber(resumeData.valor_entradas_mes)}` : "R$ 0,00"}
-          meta="Valor total de entradas no mês atual"
-          loading={anyLoading && status.resume === "loading"}
-        />
+        {isAdmin ? (
+          <DashboardStatCard
+            title="Investimento do Mês"
+            value={resumeData?.valor_entradas_mes ? `R$ ${formatNumber(resumeData.valor_entradas_mes)}` : "R$ 0,00"}
+            meta="Valor total de entradas no mês atual"
+            loading={anyLoading && status.resume === "loading"}
+          />
+        ) : null}
         <DashboardStatCard
           title="Alertas de minimo"
           value={formatNumber(minStock.length)}
@@ -753,71 +762,73 @@ const DashboardPage = () => {
           )}
         </div>
 
-        <div className="card">
-          <ChartCardHeader
-            title="Top fornecedores"
-            subtitle="Quem mais recebeu em compras"
-            actions={
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => navigate("/fornecedores")}
-                style={{ padding: "6px 10px", fontSize: 12 }}
-              >
-                Ver fornecedores
-              </button>
-            }
-          />
-
-          {status.suppliersTop === "loading" ? (
-            <div style={{ display: "grid", gap: 10, alignContent: "center" }}>
-              <div className="skeleton" style={{ height: 16, width: "45%" }} />
-              <div className="skeleton" style={{ height: 12, width: "65%" }} />
-              <div className="skeleton" style={{ height: 160, width: "100%", borderRadius: 16 }} />
-            </div>
-          ) : status.suppliersTop === "error" ? (
-            <div className="dashboard-error">
-              <strong>Falha ao carregar fornecedores</strong>
-              <div style={{ marginTop: 6, color: "var(--ink-soft)", fontSize: 13 }}>
-                {errors.suppliersTop || "Tente recarregar a página."}
-              </div>
-            </div>
-          ) : topSuppliersList.length ? (
-            <div style={{ height: 320, minWidth: 0, minHeight: 0 }}>
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Pie
-                    data={topSuppliersList}
-                    dataKey="total"
-                    nameKey="name"
-                    cx="50%"
-                    cy="45%"
-                    innerRadius={70}
-                    outerRadius={100}
-                    paddingAngle={4}
-                    stroke="none"
-                  >
-                    {topSuppliersList.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<DonutTooltip />} />
-                  <Legend 
-                    verticalAlign="bottom" 
-                    height={36} 
-                    iconType="circle"
-                    wrapperStyle={{ color: "var(--muted)", fontSize: 12, paddingTop: "20px" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <EmptyState
-              title="Sem compras registradas"
-              description="Ainda não há entradas vinculadas a fornecedores."
+        {isAdmin ? (
+          <div className="card">
+            <ChartCardHeader
+              title="Top fornecedores"
+              subtitle="Quem mais recebeu em compras"
+              actions={
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => navigate("/fornecedores")}
+                  style={{ padding: "6px 10px", fontSize: 12 }}
+                >
+                  Ver fornecedores
+                </button>
+              }
             />
-          )}
-        </div>
+
+            {status.suppliersTop === "loading" ? (
+              <div style={{ display: "grid", gap: 10, alignContent: "center" }}>
+                <div className="skeleton" style={{ height: 16, width: "45%" }} />
+                <div className="skeleton" style={{ height: 12, width: "65%" }} />
+                <div className="skeleton" style={{ height: 160, width: "100%", borderRadius: 16 }} />
+              </div>
+            ) : status.suppliersTop === "error" ? (
+              <div className="dashboard-error">
+                <strong>Falha ao carregar fornecedores</strong>
+                <div style={{ marginTop: 6, color: "var(--ink-soft)", fontSize: 13 }}>
+                  {errors.suppliersTop || "Tente recarregar a página."}
+                </div>
+              </div>
+            ) : topSuppliersList.length ? (
+              <div style={{ height: 320, minWidth: 0, minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height={320}>
+                  <PieChart>
+                    <Pie
+                      data={topSuppliersList}
+                      dataKey="total"
+                      nameKey="name"
+                      cx="50%"
+                      cy="45%"
+                      innerRadius={70}
+                      outerRadius={100}
+                      paddingAngle={4}
+                      stroke="none"
+                    >
+                      {topSuppliersList.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<DonutTooltip />} />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      iconType="circle"
+                      wrapperStyle={{ color: "var(--muted)", fontSize: 12, paddingTop: "20px" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <EmptyState
+                title="Sem compras registradas"
+                description="Ainda não há entradas vinculadas a fornecedores."
+              />
+            )}
+          </div>
+        ) : null}
       </div>
     </div>
   );

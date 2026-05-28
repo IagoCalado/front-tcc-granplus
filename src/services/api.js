@@ -85,6 +85,8 @@ export const getLocations = async (token) => {
 };
 export const createLocation = (token, payload) =>
   request("/localizacoes", { token, method: "POST", body: payload });
+export const deleteLocation = (token, id) =>
+  request(`/localizacoes/${id}`, { token, method: "DELETE" });
 
 // Usuários
 export const getUsers = (token) => request("/usuarios", { token });
