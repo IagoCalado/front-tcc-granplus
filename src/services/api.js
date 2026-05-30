@@ -83,10 +83,19 @@ export const getLocations = async (token) => {
     return request("/localizacoes/localizacoes", { token });
   }
 };
+export const getAllLocations = async (token) => {
+  try {
+    return await request("/localizacoes/all", { token });
+  } catch {
+    return request("/localizacoes/localizacoes/all", { token });
+  }
+};
 export const createLocation = (token, payload) =>
   request("/localizacoes", { token, method: "POST", body: payload });
 export const deleteLocation = (token, id) =>
   request(`/localizacoes/${id}`, { token, method: "DELETE" });
+export const activateLocation = (token, id) =>
+  request(`/localizacoes/${id}/activate`, { token, method: "PATCH" });
 
 // Usuários
 export const getUsers = (token) => request("/usuarios", { token });
@@ -142,8 +151,11 @@ export const getAuditReportsByDate = (token, startDate, endDate) =>
     token,
   });
 
-export const getRelatorioDinamico = (token, tipo, startDate, endDate) => 
-  request(`/relatorios/dinamico?tipo=${tipo}&startDate=${startDate}&endDate=${endDate}`, { token });
+export const getRelatorioDinamico = (token, tipo, startDate, endDate) =>
+  request(
+    `/relatorios/dinamico?tipo=${tipo}&startDate=${startDate}&endDate=${endDate}`,
+    { token },
+  );
 
-export const getDashboardResume = (token) => 
+export const getDashboardResume = (token) =>
   request("/dashboard/resumo", { token });

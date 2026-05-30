@@ -6,7 +6,15 @@ import EmptyState from "../components/common/EmptyState";
 import StatusPill from "../components/common/StatusPill";
 import AlertDialog from "../components/common/AlertDialog";
 import { useAuth } from "../contexts/AuthContext";
-import { createLocation, deleteLocation, getLocations, getOutputAvailableLots, getStock } from "../services/api";
+import {
+  activateLocation,
+  createLocation,
+  deleteLocation,
+  getAllLocations,
+  getLocations,
+  getOutputAvailableLots,
+  getStock,
+} from "../services/api";
 import { formatNumber } from "../utils/format";
 import {
   STOCK_MOVEMENT_EVENT,
@@ -106,11 +114,11 @@ const StockPage = () => {
     message: "",
     tone: "info",
   });
-  const [isDeleteLocationModalOpen, setIsDeleteLocationModalOpen] = useState(false);
+  const [isDeleteLocationModalOpen, setIsDeleteLocationModalOpen] =
+    useState(false);
   const [locations, setLocations] = useState([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
-  const [selectedLocationsForDeletion, setSelectedLocationsForDeletion] = useState({});
-  const [deletingLocations, setDeletingLocations] = useState(false);
+  const [updatingLocationId, setUpdatingLocationId] = useState(null);
   const [deleteLocationAlert, setDeleteLocationAlert] = useState({
     open: false,
     title: "",
@@ -521,20 +529,20 @@ const StockPage = () => {
 
   const handleOpenDeleteLocationModal = async () => {
     if (!isAdmin) return;
-    
+
     setIsDeleteLocationModalOpen(true);
-    setSelectedLocationsForDeletion({});
     setLoadingLocations(true);
-    
+
     try {
-      const data = await getLocations(token);
+      const data = await getAllLocations(token);
       const locList = Array.isArray(data) ? data : [];
       setLocations(locList);
     } catch (error) {
       setDeleteLocationAlert({
         open: true,
         title: "Erro ao carregar localizações",
-        message: error.message || "Não foi possível carregar a lista de localizações.",
+        message:
+          error.message || "Não foi possível carregar a lista de localizações.",
         tone: "error",
       });
       setLocations([]);
@@ -544,82 +552,66 @@ const StockPage = () => {
   };
 
   const handleCloseDeleteLocationModal = () => {
-    if (deletingLocations) return;
+    if (updatingLocationId) return;
     setIsDeleteLocationModalOpen(false);
-    setSelectedLocationsForDeletion({});
     setLocations([]);
   };
 
-  const handleToggleLocationSelection = (locId) => {
-    setSelectedLocationsForDeletion((prev) => ({
-      ...prev,
-      [locId]: !prev[locId],
-    }));
-  };
+  const handleDeactivateLocation = async (locId) => {
+    setUpdatingLocationId(locId);
 
-  const handleDeleteSelectedLocations = async () => {
-    const selectedIds = Object.keys(selectedLocationsForDeletion).filter(
-      (id) => selectedLocationsForDeletion[id]
-    );
-
-    if (selectedIds.length === 0) {
+    try {
+      await deleteLocation(token, locId);
+      setLocations((prev) =>
+        prev.map((loc) =>
+          loc.loc_id === locId ? { ...loc, loc_ativo: 0 } : loc,
+        ),
+      );
       setDeleteLocationAlert({
         open: true,
-        title: "Nenhuma localização selecionada",
-        message: "Selecione pelo menos uma localização para deletar.",
-        tone: "warning",
-      });
-      return;
-    }
-
-    setDeletingLocations(true);
-    const results = [];
-
-    for (const locId of selectedIds) {
-      try {
-        await deleteLocation(token, locId);
-        results.push({ id: locId, success: true });
-      } catch (error) {
-        results.push({ id: locId, success: false, error: error.message });
-      }
-    }
-
-    const successCount = results.filter((r) => r.success).length;
-    const errorCount = results.filter((r) => !r.success).length;
-
-    setDeletingLocations(false);
-
-    if (errorCount === 0) {
-      setIsDeleteLocationModalOpen(false);
-      setSelectedLocationsForDeletion({});
-      setLocations([]);
-      setDeleteLocationAlert({
-        open: true,
-        title: "Localizações deletadas com sucesso",
-        message: `${successCount} localização(ções) foram removidas.`,
+        title: "Localização desativada",
+        message: "A localização foi desativada com sucesso.",
         tone: "success",
       });
       loadData({ silent: true });
-    } else if (successCount === 0) {
+    } catch (error) {
       setDeleteLocationAlert({
         open: true,
-        title: "Erro ao deletar localizações",
-        message: `Falha ao deletar ${errorCount} localização(ções). Verifique se não há produtos vinculados.`,
+        title: "Erro ao desativar localização",
+        message: error.message || "Não foi possível desativar a localização.",
         tone: "error",
       });
-    } else {
+    } finally {
+      setUpdatingLocationId(null);
+    }
+  };
+
+  const handleActivateLocation = async (locId) => {
+    setUpdatingLocationId(locId);
+
+    try {
+      await activateLocation(token, locId);
+      setLocations((prev) =>
+        prev.map((loc) =>
+          loc.loc_id === locId ? { ...loc, loc_ativo: 1 } : loc,
+        ),
+      );
       setDeleteLocationAlert({
         open: true,
-        title: "Deletado parcialmente",
-        message: `${successCount} sucesso e ${errorCount} falhas. ${errorCount} localização(ções) pode ter produtos vinculados.`,
-        tone: "warning",
+        title: "Localização ativada",
+        message: "A localização foi ativada com sucesso.",
+        tone: "success",
       });
-      setLocations((prev) =>
-        prev.filter(
-          (loc) =>
-            !results.find((r) => r.id === loc.loc_id && r.success)
-        )
-      );
+      loadData({ silent: true });
+    } catch (error) {
+      setDeleteLocationAlert({
+        open: true,
+        title: "Erro ao ativar localização",
+        message: error.message || "Não foi possível ativar a localização.",
+        tone: "error",
+      });
+    } finally {
+      setUpdatingLocationId(null);
     }
   };
 
@@ -763,10 +755,16 @@ const StockPage = () => {
           actions={
             isAdmin ? (
               <div style={{ display: "flex", gap: "8px" }}>
-                <button className="btn btn-primary" onClick={handleOpenLocationModal}>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleOpenLocationModal}
+                >
                   Criar nova localização
                 </button>
-                <button className="btn btn-danger" onClick={handleOpenDeleteLocationModal}>
+                <button
+                  className="btn btn-danger"
+                  onClick={handleOpenDeleteLocationModal}
+                >
                   Excluir localização
                 </button>
               </div>
@@ -789,7 +787,12 @@ const StockPage = () => {
         message={locationAlert.message}
         tone={locationAlert.tone}
         onClose={() =>
-          setLocationAlert({ open: false, title: "", message: "", tone: "info" })
+          setLocationAlert({
+            open: false,
+            title: "",
+            message: "",
+            tone: "info",
+          })
         }
       />
 
@@ -799,7 +802,12 @@ const StockPage = () => {
         message={deleteLocationAlert.message}
         tone={deleteLocationAlert.tone}
         onClose={() =>
-          setDeleteLocationAlert({ open: false, title: "", message: "", tone: "info" })
+          setDeleteLocationAlert({
+            open: false,
+            title: "",
+            message: "",
+            tone: "info",
+          })
         }
       />
 
@@ -873,28 +881,37 @@ const StockPage = () => {
           <div
             className="modal-content card"
             onClick={(event) => event.stopPropagation()}
-            style={{ width: "min(92vw, 600px)" }}
+            style={{ width: "min(92vw, 760px)" }}
           >
             <button
               className="modal-close"
               onClick={handleCloseDeleteLocationModal}
               aria-label="Fechar"
-              disabled={deletingLocations}
+              disabled={Boolean(updatingLocationId)}
             >
               ×
             </button>
 
             <div className="modal-header">
-              <h3 style={{ margin: 0 }}>Excluir localizações</h3>
+              <h3 style={{ margin: 0 }}>Gerenciar localizações</h3>
             </div>
 
             <div className="modal-body">
               {loadingLocations ? (
                 <div style={{ textAlign: "center", padding: "20px" }}>
-                  <div className="skeleton" style={{ height: 200, borderRadius: 8 }} />
+                  <div
+                    className="skeleton"
+                    style={{ height: 200, borderRadius: 8 }}
+                  />
                 </div>
               ) : locations.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "20px", color: "var(--muted)" }}>
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "20px",
+                    color: "var(--muted)",
+                  }}
+                >
                   <p>Nenhuma localização cadastrada.</p>
                 </div>
               ) : (
@@ -906,34 +923,90 @@ const StockPage = () => {
                         display: "flex",
                         alignItems: "center",
                         gap: "12px",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
                         padding: "12px",
                         borderBottom: "1px solid var(--border)",
                       }}
                     >
-                      <input
-                        type="checkbox"
-                        id={`loc-${loc.loc_id}`}
-                        checked={Boolean(selectedLocationsForDeletion[loc.loc_id])}
-                        onChange={() => handleToggleLocationSelection(loc.loc_id)}
-                        disabled={deletingLocations}
-                        style={{ cursor: "pointer", width: 18, height: 18 }}
-                      />
-                      <label
-                        htmlFor={`loc-${loc.loc_id}`}
-                        style={{
-                          flex: 1,
-                          cursor: "pointer",
-                          userSelect: "none",
-                          color: "var(--ink)",
-                        }}
-                      >
-                        <strong>{loc.loc_nome}</strong>
+                      <div style={{ flex: "1 1 320px", minWidth: 0 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <strong>{loc.loc_nome}</strong>
+                          <span
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: "999px",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              background:
+                                Number(loc.loc_ativo) === 1
+                                  ? "rgba(34, 197, 94, 0.14)"
+                                  : "rgba(239, 68, 68, 0.14)",
+                              color:
+                                Number(loc.loc_ativo) === 1
+                                  ? "#16a34a"
+                                  : "#dc2626",
+                            }}
+                          >
+                            {Number(loc.loc_ativo) === 1 ? "Ativa" : "Inativa"}
+                          </span>
+                        </div>
                         {loc.loc_desc && (
-                          <div style={{ fontSize: "12px", color: "var(--muted)", marginTop: "2px" }}>
+                          <div
+                            style={{
+                              fontSize: "12px",
+                              color: "var(--muted)",
+                              marginTop: "4px",
+                            }}
+                          >
                             {loc.loc_desc}
                           </div>
                         )}
-                      </label>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={() => handleActivateLocation(loc.loc_id)}
+                          disabled={
+                            Boolean(updatingLocationId) ||
+                            Number(loc.loc_ativo) === 1
+                          }
+                        >
+                          {updatingLocationId === loc.loc_id &&
+                          Number(loc.loc_ativo) === 0
+                            ? "Ativando..."
+                            : "Ativar"}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger"
+                          onClick={() => handleDeactivateLocation(loc.loc_id)}
+                          disabled={
+                            Boolean(updatingLocationId) ||
+                            Number(loc.loc_ativo) === 0
+                          }
+                        >
+                          {updatingLocationId === loc.loc_id &&
+                          Number(loc.loc_ativo) === 1
+                            ? "Desativando..."
+                            : "Desativar"}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -945,19 +1018,9 @@ const StockPage = () => {
                 type="button"
                 className="btn btn-ghost"
                 onClick={handleCloseDeleteLocationModal}
-                disabled={deletingLocations}
+                disabled={Boolean(updatingLocationId)}
               >
                 Cancelar
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={handleDeleteSelectedLocations}
-                disabled={deletingLocations || Object.values(selectedLocationsForDeletion).every((v) => !v)}
-              >
-                {deletingLocations
-                  ? "Deletando..."
-                  : `Confirmar exclusão (${Object.values(selectedLocationsForDeletion).filter(Boolean).length})`}
               </button>
             </div>
           </div>
