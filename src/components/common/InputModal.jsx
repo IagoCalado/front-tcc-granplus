@@ -23,6 +23,37 @@ export default function InputModal({
 
   const scrollRef = useRef(null);
 
+  const normalizeProducts = (source) => {
+    if (Array.isArray(source?.produtos) && source.produtos.length > 0) {
+      return source.produtos.map((product) => ({
+        pdt_id: product?.pdt_id || "",
+        quantidade: product?.quantidade ?? product?.ent_quantidade ?? "",
+        lote: product?.lote ?? product?.ent_prod_lote ?? "",
+        pdt_validade: getLocalISODateOnly(product?.pdt_validade),
+      }));
+    }
+
+    if (source?.pdt_id || source?.ent_quantidade || source?.lote || source?.pdt_validade) {
+      return [
+        {
+          pdt_id: source?.pdt_id || "",
+          quantidade: source?.ent_quantidade ?? "",
+          lote: source?.lote ?? source?.ent_prod_lote ?? "",
+          pdt_validade: getLocalISODateOnly(source?.pdt_validade),
+        },
+      ];
+    }
+
+    return [
+      {
+        pdt_id: "",
+        quantidade: "",
+        lote: "",
+        pdt_validade: "",
+      },
+    ];
+  };
+
   const [formData, setFormData] = useState({
     loc_id: 1,
     fncd_id: "",
@@ -95,20 +126,15 @@ export default function InputModal({
       if (inputData) {
         const rawDate = inputData.ent_data_compra || inputData.ent_data || "";
         const ISODate = rawDate ? getLocalISODateTime(rawDate) : "";
+        const locationId = inputData.loc_id || inputData.location_id || 1;
+        const supplierId = inputData.fncd_id || inputData.forn_id || "";
 
         setFormData({
-          loc_id: inputData.loc_id || 1,
-          fncd_id: inputData.fncd_id || "",
+          loc_id: Number(locationId) || 1,
+          fncd_id: Number(supplierId) || "",
           ent_data_compra: ISODate,
           ent_valor_compra: inputData.ent_valor_compra || "",
-          produtos: [
-            {
-              pdt_id: inputData.pdt_id || "",
-              quantidade: inputData.ent_quantidade || "",
-              lote: inputData.lote || "",
-              pdt_validade: getLocalISODateOnly(inputData.pdt_validade),
-            },
-          ],
+          produtos: normalizeProducts(inputData),
         });
       } else {
         setFormData({

@@ -49,6 +49,24 @@ const ProductInputsPage = () => {
   const getErrorMessage = (error, fallbackMessage) =>
     error?.message || fallbackMessage;
 
+  const buildInputForEdit = (input) => {
+    if (!input) return null;
+
+    const produtos = inputs
+      .filter((row) => Number(row?.ent_id) === Number(input.ent_id))
+      .map((row) => ({
+        pdt_id: row?.pdt_id || "",
+        quantidade: row?.ent_quantidade ?? row?.ep_quantidade ?? "",
+        lote: row?.lote ?? row?.ent_prod_lote ?? "",
+        pdt_validade: row?.pdt_validade || "",
+      }));
+
+    return {
+      ...input,
+      produtos: produtos.length > 0 ? produtos : [],
+    };
+  };
+
   // Função para buscar as entradas de produtos já cadastradas com seus detalhes em junção à tabela de fornecedores
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -70,7 +88,7 @@ const ProductInputsPage = () => {
   }, [loadData, token]);
 
   const handleOpenModal = (input = null) => {
-    setCurrentInput(input);
+    setCurrentInput(input ? buildInputForEdit(input) : null);
     setIsModalOpen(true);
   };
 

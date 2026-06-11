@@ -1,12 +1,20 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react';
 
-const categoryOptions = [
-  { value: 1, label: 'Limpeza' },
-  { value: 2, label: 'Escritório' },
-  { value: 3, label: 'Informática' },
-  { value: 4, label: 'Alimentos' },
-];
+const categoriaMap = {
+  1: 'Higiene e limpeza',
+  2: 'Manutenção e peças',
+  3: 'Escritório',
+  4: 'informatica',
+  5: 'EPI',
+  6: 'Material eletrico',
+  7: 'Insumos',
+};
+
+const categoryOptions = Object.entries(categoriaMap).map(([value, label]) => ({
+  value: Number(value),
+  label,
+}));
 
 const unitOptions = [
   { value: 1, label: 'Unidade' },

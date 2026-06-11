@@ -218,10 +218,13 @@ const ProductsPage = () => {
     setAlertState({ open: false, title: "", message: "", tone: "info" });
 
   const categoriaMap = {
-    1: 'Limpeza',
-    2: 'Escritório',
-    3: 'Informática',
-    4: 'Alimentos'
+    1: 'Higiene e limpeza',
+    2: 'Manutenção e peças',
+    3: 'Escritório',
+    4: 'informatica',
+    5: 'EPI',
+    6: 'Material eletrico',
+    7: 'Insumos'
   };
 
   const unidadeMap = {
