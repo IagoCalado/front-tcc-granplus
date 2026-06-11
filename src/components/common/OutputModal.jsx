@@ -449,16 +449,18 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
                       }}
                     >
                       <div>
-                        <label
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: "500",
-                            display: "block",
-                            marginBottom: "6px",
-                          }}
-                        >
-                          Produto
-                        </label>
+                        {index === 0 && (
+                          <label
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: "500",
+                              display: "block",
+                              marginBottom: "6px",
+                            }}
+                          >
+                            Produto
+                          </label>
+                        )}
                         <select
                           name="pdt_id"
                           value={prod.pdt_id}
@@ -480,16 +482,18 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
                       </div>
 
                       <div>
-                        <label
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: "500",
-                            display: "block",
-                            marginBottom: "6px",
-                          }}
-                        >
-                          Quantidade
-                        </label>
+                        {index === 0 && (
+                          <label
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: "500",
+                              display: "block",
+                              marginBottom: "6px",
+                            }}
+                          >
+                            Quantidade
+                          </label>
+                        )}
                         <input
                           type="number"
                           name="quantidade"
@@ -508,16 +512,18 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
                       </div>
 
                       <div>
-                        <label
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: "500",
-                            display: "block",
-                            marginBottom: "6px",
-                          }}
-                        >
-                          Lotes
-                        </label>
+                        {index === 0 && (
+                          <label
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: "500",
+                              display: "block",
+                              marginBottom: "6px",
+                            }}
+                          >
+                            Lotes
+                          </label>
+                        )}
                         <div
                           style={{
                             display: "flex",

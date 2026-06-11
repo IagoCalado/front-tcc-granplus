@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { FaSearch } from "react-icons/fa";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -254,47 +255,37 @@ const AuditReportsPage = () => {
         />
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        
-        <div style={{ display: "flex", gap: "10px" }}>
+      <div className="report-toolbar">
+        <div className="report-period-filters">
           <button 
-            className="filter-button"
+            className={`btn ${filterPeriod === "weekly" ? "btn-primary" : "btn-outline"}`}
             onClick={() => setFilterPeriod("weekly")}
-            style={{ opacity: filterPeriod === "weekly" ? 1 : 0.6 }}
           >
             Semanal
           </button>
           <button 
-            className="filter-button"
+            className={`btn ${filterPeriod === "monthly" ? "btn-primary" : "btn-outline"}`}
             onClick={() => setFilterPeriod("monthly")}
-            style={{ opacity: filterPeriod === "monthly" ? 1 : 0.6 }}
           >
             Mensal
           </button>
           <button 
-            className="filter-button"
+            className={`btn ${filterPeriod === "annual" ? "btn-primary" : "btn-outline"}`}
             onClick={() => setFilterPeriod("annual")}
-            style={{ opacity: filterPeriod === "annual" ? 1 : 0.6 }}
           >
             Anual
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-          <input
-            type="text"
-            placeholder="Buscar tabela ou usuário..."
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              padding: "10px 16px",
-              borderRadius: "8px",
-              border: "1px solid var(--border)",
-              background: "transparent",
-              color: "inherit",
-              minWidth: "250px"
-            }}
-          />
-
+        <div className="report-toolbar-actions">
+          <label className="search-field report-search-field">
+            <FaSearch style={{ color: "var(--muted)", marginLeft: "4px" }} />
+            <input
+              type="text"
+              placeholder="Buscar tabela ou usuário..."
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </label>
           <button className="btn btn-primary" onClick={() => setIsModalAberto(true)}>
             Exportar Relatório
           </button>
