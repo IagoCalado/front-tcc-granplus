@@ -103,7 +103,7 @@ const AuditReportsPage = () => {
 
       if (tipoRelatorio === "geral") {
         // 👇 1. O cabeçalho TEM de ter 6 itens:
-        colunasTabela = [['ID', 'Usuario', 'Acao', 'ID Evento', 'Data', 'Hora']];
+        colunasTabela = [['ID', 'Usuário', 'Ação', 'ID Evento', 'Data', 'Hora']];
 
         // 👇 2. Os dados também TÊM de ter 6 itens na mesma ordem:
         linhasTabela = dados.map(item => [

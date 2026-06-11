@@ -43,12 +43,30 @@ export default function InputModal({
       Number(supplier?.fncd_ativo) === 1 || supplier?.fncd_ativo === true,
   );
 
-  const getLocalISODate = (dateInput) => {
+  const getLocalISODateTime = (dateInput) => {
     const d = dateInput ? new Date(dateInput) : new Date();
     if (isNaN(d.getTime())) return "";
 
     const offset = d.getTimezoneOffset() * 60000;
     return new Date(d.getTime() - offset).toISOString().substring(0, 16);
+  };
+
+  const getLocalISODateOnly = (dateInput) => {
+    if (!dateInput) return "";
+
+    if (typeof dateInput === "string" && dateInput.includes("T")) {
+      return dateInput.split("T")[0];
+    }
+
+    if (typeof dateInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+      return dateInput;
+    }
+
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return "";
+
+    const offset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - offset).toISOString().substring(0, 10);
   };
 
   useEffect(() => {
@@ -76,7 +94,7 @@ export default function InputModal({
 
       if (inputData) {
         const rawDate = inputData.ent_data_compra || inputData.ent_data || "";
-        const ISODate = rawDate ? getLocalISODate(rawDate) : "";
+        const ISODate = rawDate ? getLocalISODateTime(rawDate) : "";
 
         setFormData({
           loc_id: inputData.loc_id || 1,
@@ -88,7 +106,7 @@ export default function InputModal({
               pdt_id: inputData.pdt_id || "",
               quantidade: inputData.ent_quantidade || "",
               lote: inputData.lote || "",
-              pdt_validade: inputData.pdt_validade || "",
+              pdt_validade: getLocalISODateOnly(inputData.pdt_validade),
             },
           ],
         });
@@ -96,7 +114,7 @@ export default function InputModal({
         setFormData({
           loc_id: 1,
           fncd_id: "",
-          ent_data_compra: getLocalISODate(),
+          ent_data_compra: getLocalISODateTime(),
           ent_valor_compra: "",
           produtos: [
             {
@@ -206,7 +224,10 @@ export default function InputModal({
         ...p,
         // Garante que o lote seja enviado como inteiro nulo se ficar vazio, para não quebrar a tipagem INT do banco
         lote: p.lote === "" ? null : Number(p.lote),
-        pdt_validade: p.pdt_validade === "" ? null : p.pdt_validade,
+        pdt_validade:
+          p.pdt_validade === ""
+            ? null
+            : getLocalISODateOnly(p.pdt_validade),
       })),
     };
 
@@ -407,7 +428,7 @@ export default function InputModal({
                     <input
                       type="date"
                       name="pdt_validade"
-                      value={prod.pdt_validade || ""}
+                      value={getLocalISODateOnly(prod.pdt_validade)}
                       onChange={(e) => handleProductChange(index, e)}
                       placeholder="Validade (Opcional)"
                       style={{

@@ -46,6 +46,9 @@ const ProductInputsPage = () => {
     targetId: null,
   });
 
+  const getErrorMessage = (error, fallbackMessage) =>
+    error?.message || fallbackMessage;
+
   // Função para buscar as entradas de produtos já cadastradas com seus detalhes em junção à tabela de fornecedores
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -115,6 +118,10 @@ const ProductInputsPage = () => {
       setAlertState({
         open: true,
         title: "Erro ao salvar entrada de produtos.",
+        message: getErrorMessage(
+          err,
+          "Não foi possível salvar a entrada. Verifique os dados enviados.",
+        ),
         tone: "error",
       });
       console.error(err);
@@ -157,7 +164,11 @@ const ProductInputsPage = () => {
     } catch (err) {
       setAlertState({
         open: true,
-        title: "Erro ao apagar" + err.message,
+        title: "Erro ao excluir entrada.",
+        message: getErrorMessage(
+          err,
+          "Não foi possível excluir a entrada selecionada.",
+        ),
         tone: "error",
       });
     } finally {
