@@ -1837,61 +1837,6 @@
     opacity: 0;
   }
 }
-
-/*=========================================
-            METEOROS CAINDO 
-  =========================================*/
-
-/* Container que vai segurar todos os meteoros */
-.meteors-container {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none; /* Garante que os meteoros não bloqueiem o clique nos inputs */
-  z-index: 1; /* Fica atrás do seu auth-card (que tem z-index: 2) */
-}
-
-/* O corpo principal do meteoro (a cauda) */
-.meteor {
-  position: absolute;
-  width: 100px; /* Tamanho da cauda */
-  height: 1px;
-  background: linear-gradient(to left, rgba(255, 255, 255, 0.8), transparent);
-  transform-origin: right center;
-  animation: meteor-fall linear infinite;
-
-  opacity: 0;
-}
-
-
-/* A "cabeça" brilhante do meteoro */
-.meteor::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background-color: white;
-  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.6);
-}
-
-/* A animação de queda diagonal */
-@keyframes meteor-fall {
-  0% {
-    opacity: 0;
-    transform: rotate(45deg) translateX(-300px);
-  }
-  15% {
-    opacity: 1; /* Aparece suavemente */
-  }
-  100% {
-    opacity: 0;
-    transform: rotate(45deg) translateX(1200px); /* Distância que ele viaja */
-  }
-}
 /* ============================================================================
    CORES GLOBAIS (Modo Escuro / Padrão)
    ============================================================================ */
