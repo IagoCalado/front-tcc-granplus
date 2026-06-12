@@ -412,6 +412,8 @@ const DashboardPage = () => {
       .slice(0, topLimit);
   }, [products, topLimit]);
 
+  const topStockChartHeight = Math.max(280, topStockChartData.length * 28 + 64);
+
   const topSuppliersList = useMemo(() => {
     return (topSuppliers || [])
       .map((item) => ({
@@ -623,8 +625,8 @@ const DashboardPage = () => {
               </div>
             </div>
           ) : topStockChartData.length ? (
-            <div style={{ height: 300, minWidth: 0, minHeight: 0 }}>
-              <ResponsiveContainer width="100%" height={300}>
+            <div style={{ height: topStockChartHeight, minWidth: 0, minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height={topStockChartHeight}>
                 <BarChart data={topStockChartData} layout="vertical" margin={{ left: 30, right: 10 }}>
                   <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                   <XAxis
@@ -637,7 +639,7 @@ const DashboardPage = () => {
                     type="category"
                     dataKey="name"
                     width={140}
-                    tick={<TruncatedAxisTick dy={4} textAnchor="end" maxLength={18} />}
+                    tick={<TruncatedAxisTick dy={3} textAnchor="end" maxLength={18} fontSize={11} />}
                     axisLine={{ stroke: "var(--border)" }}
                     tickLine={{ stroke: "var(--border)" }}
                   />
