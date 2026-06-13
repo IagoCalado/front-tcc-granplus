@@ -64,7 +64,33 @@ const TruncatedAxisTick = ({
   );
 };
 
-const COLORS = ["#00d4ff", "#8b5cf6", "#f43f5e", "#10b981", "#f59e0b"];
+const BAR_COLORS = [
+  "#22d3ee",
+  "#f43f5e",
+  "#10b981",
+  "#f59e0b",
+  "#14b8a6",
+  "#8b5cf6",
+  "#f97316",
+  "#3b82f6",
+  "#ec4899",
+  "#84cc16",
+  "#0ea5e9",
+  "#a78bfa",
+  "#34d399",
+];
+
+const getColorByProductKey = (productKey) => {
+  const value = String(productKey ?? "");
+  let hash = 0;
+
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+
+  return BAR_COLORS[Math.abs(hash) % BAR_COLORS.length];
+};
 const DonutTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     return (
@@ -384,6 +410,7 @@ const DashboardPage = () => {
   const mostMovedChartData = useMemo(() => {
     return (mostMoved || [])
       .map((item) => ({
+        productKey: item?.pdt_id || item?.pdt_nome || "Produto",
         name: item?.pdt_nome || "Produto",
         movimentado: Number(item?.total_movimentado || 0),
       }))
@@ -401,10 +428,11 @@ const DashboardPage = () => {
       .sort((a, b) => (b.minimo - b.atual) - (a.minimo - a.atual))
       .slice(0, Math.min(topLimit, 10));
   }, [minStock, topLimit]);
-
+  
   const topStockChartData = useMemo(() => {
     return (products || [])
       .map((p) => ({
+        productKey: p?.pdt_id || p?.pdt_nome || "Produto",
         name: p?.pdt_nome || "Produto",
         estoque: Number(p?.pdt_estoque_atual || 0),
       }))
@@ -498,12 +526,13 @@ const DashboardPage = () => {
           meta="Produtos abaixo do minimo"
           loading={anyLoading && status.min === "loading"}
         />
-        <DashboardStatCard
+        {/* card de validade de produtos */}
+        {/* <DashboardStatCard
           title="Usuários"
           value={formatNumber(isAdmin ? users.length : 1)}
           meta={isAdmin ? "Equipe ativa" : "Perfil ativo"}
           loading={isAdmin ? anyLoading && status.users === "loading" : false}
-        />
+        /> */}
 
         {/* <DashboardStatCard
           title="Produtos sem saldo"
@@ -575,13 +604,13 @@ const DashboardPage = () => {
                   <Bar
                     dataKey="atual"
                     name="Estoque atual"
-                    fill="var(--accent-2)"
+                    fill="#22D3EE"
                     radius={[10, 10, 0, 0]}
                   />
                   <Bar
                     dataKey="minimo"
                     name="Mínimo"
-                    fill="var(--accent)"
+                    fill="#ef4444"
                     radius={[10, 10, 0, 0]}
                   />
                 </BarChart>
@@ -627,7 +656,7 @@ const DashboardPage = () => {
           ) : topStockChartData.length ? (
             <div style={{ height: topStockChartHeight, minWidth: 0, minHeight: 0 }}>
               <ResponsiveContainer width="100%" height={topStockChartHeight}>
-                <BarChart data={topStockChartData} layout="vertical" margin={{ left: 30, right: 10 }}>
+                <BarChart data={topStockChartData} layout="vertical" margin={{ left: 10, right: 10 }}>
                   <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                   <XAxis
                     type="number"
@@ -638,8 +667,8 @@ const DashboardPage = () => {
                   <YAxis
                     type="category"
                     dataKey="name"
-                    width={140}
-                    tick={<TruncatedAxisTick dy={3} textAnchor="end" maxLength={18} fontSize={11} />}
+                    width={200}
+                    tick={<TruncatedAxisTick dy={3} textAnchor="end" maxLength={32} fontSize={13} />}
                     axisLine={{ stroke: "var(--border)" }}
                     tickLine={{ stroke: "var(--border)" }}
                   />
@@ -650,7 +679,10 @@ const DashboardPage = () => {
                     radius={[0, 10, 10, 0]}
                   >
                     {topStockChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={getColorByProductKey(entry.productKey || entry.name)}
+                      />
                     ))}
                   </Bar>
                 </BarChart>
@@ -750,9 +782,15 @@ const DashboardPage = () => {
                   <Bar
                     dataKey="movimentado"
                     name="Total movimentado"
-                    fill="var(--accent)"
                     radius={[10, 10, 0, 0]}
-                  />
+                  >
+                    {mostMovedChartData.map((entry, index) => (
+                      <Cell
+                        key={`movement-cell-${index}`}
+                        fill={getColorByProductKey(entry.productKey || entry.name)}
+                      />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -810,7 +848,7 @@ const DashboardPage = () => {
                       stroke="none"
                     >
                       {topSuppliersList.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip content={<DonutTooltip />} />
