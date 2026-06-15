@@ -51,12 +51,12 @@ const LoginPage = () => {
     setFriendlyError("");
 
     if (!validate()) {
-      setFriendlyError("Preencha usuario e senha para continuar.");
+      setFriendlyError("Preencha e-mail e senha para continuar.");
       return;
     }
 
     const result = await login({
-      usuario: form.usuario.trim(),
+      email: form.email.trim(),
       password: form.password,
     });
 
@@ -99,19 +99,19 @@ const LoginPage = () => {
 
               <form id="login-form" className="login-form" onSubmit={handleSubmit} noValidate>
                 <div className="login-field">
-                  <label htmlFor="usuario">Usuário</label>
+                  <label htmlFor="email">E-mail</label>
                   <input
-                    id="usuario"
-                    name="usuario"
-                    type="text"
-                    value={form.usuario}
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={form.email}
                     onChange={handleChange}
-                    placeholder="Digite seu usuário"
-                    autoComplete="username"
-                    aria-invalid={fieldErrors.usuario ? "true" : "false"}
+                    placeholder="Digite seu e-mail"
+                    autoComplete="email"
+                    aria-invalid={fieldErrors.email ? "true" : "false"}
                   />
-                  {fieldErrors.usuario ? (
-                    <p className="login-field-error">{fieldErrors.usuario}</p>
+                  {fieldErrors.email ? (
+                    <p className="login-field-error">{fieldErrors.email}</p>
                   ) : null}
                 </div>
 

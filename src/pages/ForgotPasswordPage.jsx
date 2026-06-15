@@ -18,9 +18,8 @@ const ForgotPasswordPage = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   // const [message, setMessage] = useState("");
-  const [maskedEmail, setMaskedEmail] = useState("");
   const [form, setForm] = useState({
-    usuario: "",
+    email: "",
     pin: "",
     novaSenha: "",
     confirmarSenha: "",
@@ -57,9 +56,8 @@ const ForgotPasswordPage = () => {
     setStep("request");
     setError("");
     // setMessage("");
-    setMaskedEmail("");
     setForm({
-      usuario: "",
+      email: "",
       pin: "",
       novaSenha: "",
       confirmarSenha: "",
@@ -71,26 +69,22 @@ const ForgotPasswordPage = () => {
     setError("");
     // setMessage("");
 
-    const usuario = form.usuario.trim();
-    if (usuario.length < 3) {
-      setError("Informe seu usuario para continuar.");
+    const email = form.email.trim();
+    if (email.length < 3) {
+      setError("Informe seu e-mail para continuar.");
       return;
     }
 
     try {
       setLoading(true);
-      const verification = await verifyUserForReset({ user_nome: usuario });
-      await sendResetPin({ user_nome: usuario });
+      await verifyUserForReset({ user_email: email });
+      await sendResetPin({ user_email: email });
 
-      setMaskedEmail(verification?.emailMascarado || "seu e-mail cadastrado");
       setStep("confirm");
-      // setMessage(
-      //   `Codigo enviado com sucesso para ${verification?.emailMascarado || "seu e-mail cadastrado"}.`,
-      // );
     } catch (requestError) {
       setError(
         requestError.message ||
-          "Nao foi possivel enviar o codigo. Verifique o usuario e tente novamente.",
+          "Não foi possivel enviar o codigo. Verifique o e-mail e tente novamente.",
       );
     } finally {
       setLoading(false);
@@ -102,12 +96,12 @@ const ForgotPasswordPage = () => {
     setError("");
     // setMessage("");
 
-    const usuario = form.usuario.trim();
+    const email = form.email.trim();
     const pin = form.pin.trim();
     const novaSenha = form.novaSenha.trim();
 
-    if (!usuario) {
-      setError("Informe o usuario antes de redefinir a senha.");
+    if (!email) {
+      setError("Informe o e-mail antes de redefinir a senha.");
       return;
     }
 
@@ -129,7 +123,7 @@ const ForgotPasswordPage = () => {
     try {
       setLoading(true);
       await resetPasswordWithPin({
-        user_nome: usuario,
+        user_email: email,
         pin,
         novaSenha,
       });
@@ -149,18 +143,15 @@ const ForgotPasswordPage = () => {
   };
 
   const handleResendPin = async () => {
-    if (!form.usuario.trim()) {
-      setError("Informe o usuario antes de reenviar o codigo.");
+    if (!form.email.trim()) {
+      setError("Informe o e-mail antes de reenviar o codigo.");
       return;
     }
 
     try {
       setLoading(true);
-      await sendResetPin({ user_nome: form.usuario.trim() });
+      await sendResetPin({ user_email: form.email.trim() });
       setStep("confirm");
-      // setMessage(
-      //   `Novo codigo reenviado para ${maskedEmail || "seu e-mail cadastrado"}.`,
-      // );
       setError("");
     } catch (resendError) {
       setError(
@@ -210,6 +201,24 @@ const ForgotPasswordPage = () => {
                 </p>
               ) : null}
 
+              {step === "done" ? (
+                <p
+                  role="status"
+                  style={{
+                    marginTop: "18px",
+                    padding: "14px 16px",
+                    borderRadius: "14px",
+                    border: "1px solid rgba(0, 200, 255, 0.35)",
+                    background: "rgba(0, 200, 255, 0.08)",
+                    color: "#cfefff",
+                    fontWeight: 600,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Sua senha foi redefinida com sucesso. Agora você já pode acessar o sistema.
+                </p>
+              ) : null}
+
               <form
                 className="login-form"
                 onSubmit={
@@ -221,111 +230,111 @@ const ForgotPasswordPage = () => {
                 }
                 noValidate
               >
-                <div className="login-field">
-                  <label htmlFor="usuario">Usuario</label>
-                  <input
-                    id="usuario"
-                    name="usuario"
-                    type="text"
-                    value={form.usuario}
-                    onChange={handleChange}
-                    placeholder="Digite seu usuario"
-                    autoComplete="username"
-                    disabled={step !== "request"}
-                  />
-                </div>
-
-                {step !== "request" ? (
-                  <p className="login-form-error" role="status">
-                    PIN enviado para {maskedEmail || "seu e-mail cadastrado"}.
-                  </p>
-                ) : null}
-
-                {step === "confirm" ? (
+                {step !== "done" ? (
                   <>
                     <div className="login-field">
-                      <label htmlFor="pin">PIN de 6 digitos</label>
+                      <label htmlFor="email">E-mail</label>
                       <input
-                        id="pin"
-                        name="pin"
-                        type="text"
-                        value={form.pin}
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={form.email}
                         onChange={handleChange}
-                        placeholder="000000"
-                        autoComplete="one-time-code"
-                        maxLength={6}
+                        placeholder="Digite seu e-mail"
+                        autoComplete="email"
+                        disabled={step !== "request"}
                       />
                     </div>
 
-                    <div className="login-field">
-                      <label htmlFor="novaSenha">Nova senha</label>
-                      <div className="input-with-toggle">
-                        <input
-                          id="novaSenha"
-                          name="novaSenha"
-                          type={showNewPassword ? "text" : "password"}
-                          value={form.novaSenha}
-                          onChange={handleChange}
-                          placeholder="Digite a nova senha"
-                          autoComplete="new-password"
-                        />
+                    {step !== "request" ? (
+                      <p className="login-form-error" role="status">
+                        PIN enviado com sucesso para o seu e-mail.
+                      </p>
+                    ) : null}
 
-                        <button
-                          type="button"
-                          className="password-toggle btn-ghost"
-                          onClick={() => setShowNewPassword((s) => !s)}
-                          aria-pressed={showNewPassword}
-                          aria-label={showNewPassword ? "Esconder senha" : "Mostrar senha"}
-                        >
-                          {showNewPassword ? <AiOutlineEyeInvisible size={18} aria-hidden="true" /> : <AiOutlineEye size={18} aria-hidden="true" />}
-                        </button>
-                      </div>
-                    </div>
+                    {step === "confirm" ? (
+                      <>
+                        <div className="login-field">
+                          <label htmlFor="pin">PIN de 6 digitos</label>
+                          <input
+                            id="pin"
+                            name="pin"
+                            type="text"
+                            value={form.pin}
+                            onChange={handleChange}
+                            placeholder="000000"
+                            autoComplete="one-time-code"
+                            maxLength={6}
+                          />
+                        </div>
 
-                    <div className="login-field">
-                      <label htmlFor="confirmarSenha">Confirmar nova senha</label>
-                      <div className="input-with-toggle">
-                        <input
-                          id="confirmarSenha"
-                          name="confirmarSenha"
-                          type={showConfirmPassword ? "text" : "password"}
-                          value={form.confirmarSenha}
-                          onChange={handleChange}
-                          placeholder="Repita a nova senha"
-                          autoComplete="new-password"
-                        />
+                        <div className="login-field">
+                          <label htmlFor="novaSenha">Nova senha</label>
+                          <div className="input-with-toggle">
+                            <input
+                              id="novaSenha"
+                              name="novaSenha"
+                              type={showNewPassword ? "text" : "password"}
+                              value={form.novaSenha}
+                              onChange={handleChange}
+                              placeholder="Digite a nova senha"
+                              autoComplete="new-password"
+                            />
 
-                        <button
-                          type="button"
-                          className="password-toggle btn-ghost"
-                          onClick={() => setShowConfirmPassword((s) => !s)}
-                          aria-pressed={showConfirmPassword}
-                          aria-label={showConfirmPassword ? "Esconder senha" : "Mostrar senha"}
-                        >
-                          {showConfirmPassword ? <AiOutlineEyeInvisible size={18} aria-hidden="true" /> : <AiOutlineEye size={18} aria-hidden="true" />}
-                        </button>
-                      </div>
-                    </div>
+                            <button
+                              type="button"
+                              className="password-toggle btn-ghost"
+                              onClick={() => setShowNewPassword((s) => !s)}
+                              aria-pressed={showNewPassword}
+                              aria-label={showNewPassword ? "Esconder senha" : "Mostrar senha"}
+                            >
+                              {showNewPassword ? <AiOutlineEyeInvisible size={18} aria-hidden="true" /> : <AiOutlineEye size={18} aria-hidden="true" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="login-field">
+                          <label htmlFor="confirmarSenha">Confirmar nova senha</label>
+                          <div className="input-with-toggle">
+                            <input
+                              id="confirmarSenha"
+                              name="confirmarSenha"
+                              type={showConfirmPassword ? "text" : "password"}
+                              value={form.confirmarSenha}
+                              onChange={handleChange}
+                              placeholder="Repita a nova senha"
+                              autoComplete="new-password"
+                            />
+
+                            <button
+                              type="button"
+                              className="password-toggle btn-ghost"
+                              onClick={() => setShowConfirmPassword((s) => !s)}
+                              aria-pressed={showConfirmPassword}
+                              aria-label={showConfirmPassword ? "Esconder senha" : "Mostrar senha"}
+                            >
+                              {showConfirmPassword ? <AiOutlineEyeInvisible size={18} aria-hidden="true" /> : <AiOutlineEye size={18} aria-hidden="true" />}
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    ) : null}
+
+                    {step === "request" ? (
+                      <button
+                        type="submit"
+                        className="login-submit"
+                        disabled={loading || form.email.trim().length < 3}
+                      >
+                        {loading ? "Enviando codigo..." : "Enviar codigo"}
+                      </button>
+                    ) : step === "confirm" ? (
+                      <button type="submit" className="login-submit" disabled={loading}>
+                        {loading ? "Redefinindo senha..." : "Redefinir senha"}
+                      </button>
+                    ) : null}
                   </>
                 ) : null}
-
-                {step === "request" ? (
-                  <button
-                    type="submit"
-                    className="login-submit"
-                    disabled={loading || form.usuario.trim().length < 3}
-                  >
-                    {loading ? "Enviando codigo..." : "Enviar codigo"}
-                  </button>
-                ) : step === "confirm" ? (
-                  <button type="submit" className="login-submit" disabled={loading}>
-                    {loading ? "Redefinindo senha..." : "Redefinir senha"}
-                  </button>
-                ) : (
-                  <button type="button" className="login-submit" onClick={resetFlow}>
-                    Fazer nova tentativa
-                  </button>
-                )}
               </form>
 
               <div className="login-link-row forgot-actions-inline">
@@ -335,7 +344,7 @@ const ForgotPasswordPage = () => {
                   </button>
                 ) : null}
 
-                {step !== "done" ? (
+                {step === "request" || step === "confirm" ? (
                   <button type="button" className="login-link" onClick={handleResendPin}>
                     Reenviar codigo
                   </button>

@@ -21,12 +21,12 @@ export const AuthProvider = ({ children }) => {
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
 
-  const login = async ({ usuario, password }) => {
+  const login = async ({ email, password }) => {
     setStatus("loading");
     setError("");
 
     try {
-      const data = await apiLogin({ usuario, password });
+      const data = await apiLogin({ email, password });
       const nextUser = {
         ...data.usuario,
         email: data.usuario?.email || "",

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
 const initialForm = {
-  usuario: "",
+  email: "",
   password: "",
 };
 
@@ -10,8 +10,8 @@ const useLoginForm = () => {
   const [fieldErrors, setFieldErrors] = useState({});
 
   const isValid = useMemo(
-    () => form.usuario.trim().length >= 3 && form.password.trim().length >= 3,
-    [form.password, form.usuario]
+    () => form.email.trim().length >= 3 && form.password.trim().length >= 3,
+    [form.password, form.email]
   );
 
   const handleChange = (event) => {
@@ -23,8 +23,8 @@ const useLoginForm = () => {
   const validate = () => {
     const errors = {};
 
-    if (!form.usuario.trim()) {
-      errors.usuario = "Informe seu usuario.";
+    if (!form.email.trim()) {
+      errors.email = "Informe seu e-mail.";
     }
 
     if (!form.password.trim()) {

@@ -35,34 +35,33 @@ const request = async (path, { token, method = "GET", body } = {}) => {
 };
 
 // Autenticação
-export const login = ({ usuario, password }) =>
+export const login = ({ email, password }) =>
   request("/usuarios/login", {
     method: "POST",
     body: {
-      usuario,
+      user_email: email,
       password,
-      user_nome: usuario,
       user_senha: password,
     },
   });
 
 // Recuperação de senha
-export const verifyUserForReset = ({ user_nome }) =>
+export const verifyUserForReset = ({ user_email }) =>
   request("/usuarios/verificar-usuario", {
     method: "POST",
-    body: { user_nome },
+    body: { user_email },
   });
 
-export const sendResetPin = ({ user_nome }) =>
+export const sendResetPin = ({ user_email }) =>
   request("/usuarios/enviar-pin", {
     method: "POST",
-    body: { user_nome },
+    body: { user_email },
   });
 
-export const resetPasswordWithPin = ({ user_nome, pin, novaSenha }) =>
+export const resetPasswordWithPin = ({ user_email, pin, novaSenha }) =>
   request("/usuarios/redefinir-senha", {
     method: "POST",
-    body: { user_nome, pin, novaSenha },
+    body: { user_email, pin, novaSenha },
   });
 
 // Produtos
