@@ -16,6 +16,7 @@ import {
 import SectionHeader from "../components/common/SectionHeader";
 import StatCard from "../components/common/StatCard";
 import EmptyState from "../components/common/EmptyState";
+import CardProdutosVencendo from "../components/common/CardProdutosVencendo";
 import { useAuth } from "../contexts/AuthContext";
 import {
   getMostMovedProducts,
@@ -526,7 +527,10 @@ const DashboardPage = () => {
           meta="Produtos abaixo do minimo"
           loading={anyLoading && status.min === "loading"}
         />
-        {/* card de validade de produtos */}
+        <CardProdutosVencendo
+          produtos={stock}
+          loading={anyLoading && status.stock === "loading"}
+        />
         {/* <DashboardStatCard
           title="Usuários"
           value={formatNumber(isAdmin ? users.length : 1)}
