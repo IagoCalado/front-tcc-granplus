@@ -344,9 +344,6 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
     <>
       <div
         className="modal-overlay"
-        onClick={() => {
-          onClose();
-        }}
       >
         <div
           className="modal-content card"

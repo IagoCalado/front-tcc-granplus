@@ -13,11 +13,12 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  activateProduct,
 } from "../services/api";
 import { formatNumber } from "../utils/format";
 
 const ProductsPage = () => {
-  const { token } = useAuth();
+  const { token, isAdmin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,6 +36,7 @@ const ProductsPage = () => {
     title: "",
     message: "",
     targetProduct: null,
+    actionType: null,
   });
   const [saveConfirmState, setSaveConfirmState] = useState({
     open: false,
@@ -56,13 +58,14 @@ const ProductsPage = () => {
     setError("");
     try {
       const data = await getProducts(token);
-      setProducts(data || []);
+      const rows = Array.isArray(data) ? data : [];
+      setProducts(isAdmin ? rows : rows.filter((product) => Number(product?.pdt_ativo) === 1));
     } catch (loadError) {
       setError(loadError.message || "Erro ao carregar produtos");
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAdmin, token]);
 
   useEffect(() => {
     if (!token) return;
@@ -128,9 +131,20 @@ const ProductsPage = () => {
   const handleDeleteProduct = async (product) => {
     setConfirmState({
       open: true,
-      title: `Tem certeza que deseja excluir o produto ${product.pdt_nome} ?`,
-      // message: `Tem certeza que deseja excluir o produto ${product.pdt_nome}?`,
+      title: `Tem certeza que deseja desativar o produto ${product.pdt_nome} ?`,
+      message: "O produto ficará inativo para usuários comuns.",
       targetProduct: product,
+      actionType: "deactivate",
+    });
+  };
+
+  const handleActivateProduct = async (product) => {
+    setConfirmState({
+      open: true,
+      title: `Tem certeza que deseja ativar o produto ${product.pdt_nome} ?`,
+      message: "O produto voltará a aparecer na listagem.",
+      targetProduct: product,
+      actionType: "activate",
     });
   };
 
@@ -142,25 +156,38 @@ const ProductsPage = () => {
         title: "",
         message: "",
         targetProduct: null,
+        actionType: null,
       });
       return;
     }
 
     setConfirmState((prev) => ({ ...prev, open: false }));
     try {
-      await deleteProduct(token, product.pdt_id);
+      if (confirmState.actionType === "activate") {
+        await activateProduct(token, product.pdt_id);
+      } else {
+        await deleteProduct(token, product.pdt_id);
+      }
       await loadData();
       setAlertState({
         open: true,
-        title: "Produto excluido com sucesso.",
-        // message: "Produto excluido com sucesso.",
+        title:
+          confirmState.actionType === "activate"
+            ? "Produto ativado com sucesso."
+            : "Produto desativado com sucesso.",
         tone: "success",
       });
     } catch (deleteError) {
       setAlertState({
         open: true,
-        title: "Erro ao excluir produto",
-        message: "Erro ao excluir produto: " + deleteError.message,
+        title:
+          confirmState.actionType === "activate"
+            ? "Erro ao ativar produto"
+            : "Erro ao desativar produto",
+        message:
+          confirmState.actionType === "activate"
+            ? "Erro ao ativar produto: " + deleteError.message
+            : "Erro ao desativar produto: " + deleteError.message,
         tone: "error",
       });
     } finally {
@@ -169,6 +196,7 @@ const ProductsPage = () => {
         title: "",
         message: "",
         targetProduct: null,
+        actionType: null,
       });
     }
   };
@@ -234,6 +262,9 @@ const ProductsPage = () => {
     4: 'LT'
   };
 
+  const getUnitLabel = (row) =>
+    row?.unid_med_sigla || unidadeMap[row?.unid_med_id] || row?.unid_med_id || "-";
+
   const columns = [
     { key: "pdt_nome", label: "Produto", sortable: true },
     { key: "pdt_codigo", label: "Codigo", sortable: true },
@@ -262,8 +293,8 @@ const ProductsPage = () => {
       key: "unid_med_id", 
       label: "Unidade",
       sortable: true,
-      sortAccessor: (row) => unidadeMap[row.unid_med_id] || row.unid_med_id,
-      render: (row) => unidadeMap[row.unid_med_id] || row.unid_med_id, 
+      sortAccessor: (row) => getUnitLabel(row),
+      render: (row) => getUnitLabel(row), 
     },
     {
       key: "pdt_ativo",
@@ -290,13 +321,25 @@ const ProductsPage = () => {
           >
             Editar
           </button>
-          <button
-            className="btn btn-ghost btn-danger"
-            type="button"
-            onClick={() => handleDeleteProduct(row)}
-          >
-            Excluir
-          </button>
+          {isAdmin ? (
+            <button
+              className={`btn ${row.pdt_ativo ? "btn-ghost btn-danger" : "btn-primary"}`}
+              type="button"
+              onClick={() =>
+                row.pdt_ativo ? handleDeleteProduct(row) : handleActivateProduct(row)
+              }
+            >
+              {row.pdt_ativo ? "Desativar" : "Ativar"}
+            </button>
+          ) : (
+            <button
+              className="btn btn-ghost btn-danger"
+              type="button"
+              onClick={() => handleDeleteProduct(row)}
+            >
+              Excluir
+            </button>
+          )}
         </div>
       ),
     },
@@ -333,6 +376,7 @@ const ProductsPage = () => {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveProduct}
         product={currentProduct}
+        token={token}
       />
 
       <AlertDialog
@@ -348,7 +392,7 @@ const ProductsPage = () => {
         title={confirmState.title}
         message={confirmState.message}
         tone="danger"
-        confirmLabel="Excluir"
+        confirmLabel={confirmState.actionType === "activate" ? "Ativar" : "Desativar"}
         onConfirm={handleConfirmDelete}
         onCancel={() =>
           setConfirmState({
@@ -356,6 +400,7 @@ const ProductsPage = () => {
             title: "",
             message: "",
             targetProduct: null,
+            actionType: null,
           })
         }
       />

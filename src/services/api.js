@@ -72,6 +72,10 @@ export const updateProduct = (token, id, payload) =>
   request(`/produtos/${id}`, { token, method: "PUT", body: payload });
 export const deleteProduct = (token, id) =>
   request(`/produtos/${id}`, { token, method: "DELETE" });
+export const activateProduct = (token, id) =>
+  request(`/produtos/${id}/activate`, { token, method: "PATCH" });
+
+export const getUnits = (token) => request("/unidademedidas", { token });
 
 // Estoque
 export const getStock = (token) => request("/estoque", { token });

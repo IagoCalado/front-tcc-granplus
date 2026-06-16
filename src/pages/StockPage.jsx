@@ -812,7 +812,7 @@ const StockPage = () => {
       />
 
       {isLocationModalOpen && (
-        <div className="modal-overlay" onClick={handleCloseLocationModal}>
+        <div className="modal-overlay">
           <div
             className="modal-content card"
             onClick={(event) => event.stopPropagation()}
@@ -877,7 +877,7 @@ const StockPage = () => {
       )}
 
       {isDeleteLocationModalOpen && (
-        <div className="modal-overlay" onClick={handleCloseDeleteLocationModal}>
+        <div className="modal-overlay">
           <div
             className="modal-content card"
             onClick={(event) => event.stopPropagation()}
@@ -1030,10 +1030,6 @@ const StockPage = () => {
       {selectedProductId && (
         <div
           className="modal-overlay"
-          onClick={() => {
-            setSelectedProductId(null);
-            setSelectedProductName("");
-          }}
           style={{
             position: "fixed",
             top: 0,
