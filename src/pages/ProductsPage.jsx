@@ -13,11 +13,12 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  activateProduct,
 } from "../services/api";
 import { formatNumber } from "../utils/format";
 
 const ProductsPage = () => {
-  const { token } = useAuth();
+  const { token, isAdmin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,6 +36,7 @@ const ProductsPage = () => {
     title: "",
     message: "",
     targetProduct: null,
+    actionType: null,
   });
   const [saveConfirmState, setSaveConfirmState] = useState({
     open: false,
@@ -55,14 +57,19 @@ const ProductsPage = () => {
     setLoading(true);
     setError("");
     try {
-      const data = await getProducts(token);
-      setProducts(data || []);
+      const data = await getProducts(token, { includeInactive: isAdmin });
+      const rows = Array.isArray(data) ? data : [];
+      setProducts(
+        isAdmin
+          ? rows
+          : rows.filter((product) => Number(product?.pdt_ativo) === 1),
+      );
     } catch (loadError) {
       setError(loadError.message || "Erro ao carregar produtos");
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAdmin, token]);
 
   useEffect(() => {
     if (!token) return;
@@ -77,7 +84,9 @@ const ProductsPage = () => {
   const handleSaveProduct = (formData, id) => {
     setSaveConfirmState({
       open: true,
-      title: id ? "Deseja atualizar as alterações deste produto ?" : "Deseja criar este novo produto ?",
+      title: id
+        ? "Deseja atualizar as alterações deste produto ?"
+        : "Deseja criar este novo produto ?",
       // message: id
       //   ? "Deseja salvar as alterações deste produto?"
       //   : "Deseja criar este novo produto?",
@@ -126,11 +135,33 @@ const ProductsPage = () => {
   };
 
   const handleDeleteProduct = async (product) => {
+    if (Number(product?.pdt_estoque_atual || 0) > 0) {
+      setAlertState({
+        open: true,
+        title:
+          "O Produto não pode ser excluido pois o mesmo ainda possui saldo em estoque",
+        message: "",
+        tone: "error",
+      });
+      return;
+    }
+
     setConfirmState({
       open: true,
-      title: `Tem certeza que deseja excluir o produto ${product.pdt_nome} ?`,
-      // message: `Tem certeza que deseja excluir o produto ${product.pdt_nome}?`,
+      title: `Tem certeza que deseja desativar o produto ${product.pdt_nome} ?`,
+      message: "O produto ficará inativo para usuários comuns.",
       targetProduct: product,
+      actionType: "deactivate",
+    });
+  };
+
+  const handleActivateProduct = async (product) => {
+    setConfirmState({
+      open: true,
+      title: `Tem certeza que deseja ativar o produto ${product.pdt_nome} ?`,
+      message: "O produto voltará a aparecer na listagem.",
+      targetProduct: product,
+      actionType: "activate",
     });
   };
 
@@ -142,25 +173,44 @@ const ProductsPage = () => {
         title: "",
         message: "",
         targetProduct: null,
+        actionType: null,
       });
       return;
     }
 
     setConfirmState((prev) => ({ ...prev, open: false }));
     try {
-      await deleteProduct(token, product.pdt_id);
+      if (confirmState.actionType === "activate") {
+        await activateProduct(token, product.pdt_id);
+      } else {
+        await deleteProduct(token, product.pdt_id);
+      }
       await loadData();
       setAlertState({
         open: true,
-        title: "Produto excluido com sucesso.",
-        // message: "Produto excluido com sucesso.",
+        title:
+          confirmState.actionType === "activate"
+            ? "Produto ativado com sucesso."
+            : "Produto desativado com sucesso.",
         tone: "success",
       });
     } catch (deleteError) {
+      const stockBlockedMessage =
+        "O Produto não pode ser excluido pois o mesmo ainda possui saldo em estoque";
+      const errorMessage = deleteError?.message || "Erro ao desativar produto";
+      const blockedByStock = errorMessage.includes("saldo em estoque");
+
       setAlertState({
         open: true,
-        title: "Erro ao excluir produto",
-        message: "Erro ao excluir produto: " + deleteError.message,
+        title: blockedByStock
+          ? stockBlockedMessage
+          : confirmState.actionType === "activate"
+            ? "Erro ao ativar produto"
+            : "Erro ao desativar produto",
+        message:
+          blockedByStock || confirmState.actionType === "activate"
+            ? ""
+            : "Erro ao desativar produto: " + errorMessage,
         tone: "error",
       });
     } finally {
@@ -169,6 +219,7 @@ const ProductsPage = () => {
         title: "",
         message: "",
         targetProduct: null,
+        actionType: null,
       });
     }
   };
@@ -218,21 +269,27 @@ const ProductsPage = () => {
     setAlertState({ open: false, title: "", message: "", tone: "info" });
 
   const categoriaMap = {
-    1: 'Higiene e limpeza',
-    2: 'Manutenção e peças',
-    3: 'Escritório',
-    4: 'informatica',
-    5: 'EPI',
-    6: 'Material eletrico',
-    7: 'Insumos'
+    1: "Higiene e limpeza",
+    2: "Manutenção e peças",
+    3: "Escritório",
+    4: "informatica",
+    5: "EPI",
+    6: "Material eletrico",
+    7: "Insumos",
   };
 
   const unidadeMap = {
-    1: 'UN',
-    2: 'CX',
-    3: 'KG',
-    4: 'LT'
+    1: "UN",
+    2: "CX",
+    3: "KG",
+    4: "LT",
   };
+
+  const getUnitLabel = (row) =>
+    row?.unid_med_sigla ||
+    unidadeMap[row?.unid_med_id] ||
+    row?.unid_med_id ||
+    "-";
 
   const columns = [
     { key: "pdt_nome", label: "Produto", sortable: true },
@@ -251,19 +308,19 @@ const ProductsPage = () => {
       sortType: "number",
       render: (row) => formatNumber(row.pdt_estoque_minimo),
     },
-    { 
-      key: "cat_id", 
+    {
+      key: "cat_id",
       label: "Categoria",
       sortable: true,
       sortAccessor: (row) => categoriaMap[row.cat_id] || row.cat_id,
       render: (row) => categoriaMap[row.cat_id] || row.cat_id,
     },
-    { 
-      key: "unid_med_id", 
+    {
+      key: "unid_med_id",
       label: "Unidade",
       sortable: true,
-      sortAccessor: (row) => unidadeMap[row.unid_med_id] || row.unid_med_id,
-      render: (row) => unidadeMap[row.unid_med_id] || row.unid_med_id, 
+      sortAccessor: (row) => getUnitLabel(row),
+      render: (row) => getUnitLabel(row),
     },
     {
       key: "pdt_ativo",
@@ -290,17 +347,31 @@ const ProductsPage = () => {
           >
             Editar
           </button>
-          <button
-            className="btn btn-ghost btn-danger"
-            type="button"
-            onClick={() => handleDeleteProduct(row)}
-          >
-            Excluir
-          </button>
+          {isAdmin ? (
+            <button
+              className={`btn ${row.pdt_ativo ? "btn-ghost btn-danger" : "btn-primary"}`}
+              type="button"
+              onClick={() =>
+                row.pdt_ativo
+                  ? handleDeleteProduct(row)
+                  : handleActivateProduct(row)
+              }
+            >
+              {row.pdt_ativo ? "Desativar" : "Ativar"}
+            </button>
+          ) : (
+            <button
+              className="btn btn-ghost btn-danger"
+              type="button"
+              onClick={() => handleDeleteProduct(row)}
+            >
+              Excluir
+            </button>
+          )}
         </div>
       ),
     },
-  ]; 
+  ];
 
   return (
     <div className="app-content">
@@ -316,11 +387,18 @@ const ProductsPage = () => {
       >
         <SectionHeader
           title="Produtos"
-          subtitle="Controle total do catalogo ativo"
+          subtitle={
+            isAdmin
+              ? "Controle total do catalogo, incluindo produtos inativos"
+              : "Controle total do catalogo ativo"
+          }
           onSearch={setSearchTerm}
           searchPlaceholder="Buscar por produto/código..."
           actions={
-            <button className="btn btn-primary" onClick={() => handleOpenModal()}>
+            <button
+              className="btn btn-primary"
+              onClick={() => handleOpenModal()}
+            >
               Novo produto
             </button>
           }
@@ -333,6 +411,7 @@ const ProductsPage = () => {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveProduct}
         product={currentProduct}
+        token={token}
       />
 
       <AlertDialog
@@ -348,7 +427,9 @@ const ProductsPage = () => {
         title={confirmState.title}
         message={confirmState.message}
         tone="danger"
-        confirmLabel="Excluir"
+        confirmLabel={
+          confirmState.actionType === "activate" ? "Ativar" : "Desativar"
+        }
         onConfirm={handleConfirmDelete}
         onCancel={() =>
           setConfirmState({
@@ -356,6 +437,7 @@ const ProductsPage = () => {
             title: "",
             message: "",
             targetProduct: null,
+            actionType: null,
           })
         }
       />

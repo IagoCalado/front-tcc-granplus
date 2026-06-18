@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react';
+import { getUnits } from "../../services/api";
 
 const categoriaMap = {
   1: 'Higiene e limpeza',
@@ -16,14 +17,8 @@ const categoryOptions = Object.entries(categoriaMap).map(([value, label]) => ({
   label,
 }));
 
-const unitOptions = [
-  { value: 1, label: 'Unidade' },
-  { value: 2, label: 'Caixa' },
-  { value: 3, label: 'Quilo' },
-  { value: 4, label: 'Litro' },
-];
-
-export default function ProductModal({ isOpen, onClose, onSave, product }) {
+export default function ProductModal({ isOpen, onClose, onSave, product, token }) {
+  const [unitOptions, setUnitOptions] = useState([]);
   const [formData, setFormData] = useState({
     pdt_nome: '',
     pdt_codigo: '',
@@ -35,6 +30,31 @@ export default function ProductModal({ isOpen, onClose, onSave, product }) {
   });
 
   useEffect(() => {
+    if (!isOpen) return;
+
+    let alive = true;
+
+    if (token) {
+      getUnits(token)
+        .then((data) => {
+          if (!alive) return;
+
+          const options = Array.isArray(data)
+            ? data.map((unit) => ({
+                value: Number(unit.unid_med_id),
+                label: unit.unid_med_sigla || String(unit.unid_med_id),
+              }))
+            : [];
+
+          setUnitOptions(options);
+        })
+        .catch(() => {
+          if (alive) setUnitOptions([]);
+        });
+    } else {
+      setUnitOptions([]);
+    }
+
     if (product) {
       setFormData({
         pdt_nome: product.pdt_nome || '',
@@ -56,7 +76,10 @@ export default function ProductModal({ isOpen, onClose, onSave, product }) {
         unid_med_id: 1,
       });     
     }
-  }, [product, isOpen]);
+    return () => {
+      alive = false;
+    };
+  }, [product, isOpen, token]);
 
   if (!isOpen) return null;
 
