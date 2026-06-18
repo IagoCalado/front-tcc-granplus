@@ -65,13 +65,20 @@ export const resetPasswordWithPin = ({ user_email, pin, novaSenha }) =>
   });
 
 // Produtos
-export const getProducts = (token) => request("/produtos", { token });
+export const getProducts = (token, { includeInactive = false } = {}) => {
+  const query = includeInactive ? "?includeInactive=1" : "";
+  return request(`/produtos${query}`, { token });
+};
 export const createProduct = (token, payload) =>
   request("/produtos", { token, method: "POST", body: payload });
 export const updateProduct = (token, id, payload) =>
   request(`/produtos/${id}`, { token, method: "PUT", body: payload });
 export const deleteProduct = (token, id) =>
   request(`/produtos/${id}`, { token, method: "DELETE" });
+export const activateProduct = (token, id) =>
+  request(`/produtos/${id}/activate`, { token, method: "PATCH" });
+
+export const getUnits = (token) => request("/unidademedidas", { token });
 
 // Estoque
 export const getStock = (token) => request("/estoque", { token });
