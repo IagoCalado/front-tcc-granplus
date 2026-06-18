@@ -94,6 +94,7 @@ const StockPage = () => {
   const [error, setError] = useState("");
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [selectedProductName, setSelectedProductName] = useState("");
+  const [selectedProductStock, setSelectedProductStock] = useState(null);
   const [modalLots, setModalLots] = useState([]);
   const [modalLotsFilter, setModalLotsFilter] = useState("");
   const [modalLotsSortColumn, setModalLotsSortColumn] = useState("validade");
@@ -171,6 +172,7 @@ const StockPage = () => {
         setModalLotsFilter("");
         setModalLotsSortColumn("validade");
         setModalLotsSortDirection("asc");
+        setSelectedProductStock(Number(data?.estoque_atual ?? 0) || 0);
         setAvailableLotsCountByProduct((prev) => ({
           ...prev,
           [productId]: normalizedLots.length,
@@ -180,6 +182,7 @@ const StockPage = () => {
         setModalLotsFilter("");
         setModalLotsSortColumn("validade");
         setModalLotsSortDirection("asc");
+        setSelectedProductStock(0);
         setAvailableLotsCountByProduct((prev) => ({
           ...prev,
           [productId]: 0,
@@ -262,6 +265,7 @@ const StockPage = () => {
       setModalLotsFilter("");
       setModalLotsSortColumn("validade");
       setModalLotsSortDirection("asc");
+      setSelectedProductStock(null);
       return;
     }
 
@@ -1089,6 +1093,33 @@ const StockPage = () => {
                 onChange={(event) => setModalLotsFilter(event.target.value)}
                 placeholder="Filtre por localização, lote, validade, quantidade ou status"
               />
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "16px",
+                flexWrap: "wrap",
+                marginBottom: "14px",
+                fontSize: "14px",
+                color: "var(--muted)",
+              }}
+            >
+              <span>
+                Estoque atual:{" "}
+                <strong>{formatNumber(selectedProductStock ?? 0)}</strong>
+              </span>
+              <span>
+                Soma dos lotes exibidos:{" "}
+                <strong>
+                  {formatNumber(
+                    sortedModalLots.reduce(
+                      (total, item) => total + Number(item.quantidade || 0),
+                      0,
+                    ),
+                  )}
+                </strong>
+              </span>
             </div>
 
             {loadingModalLots ? (
