@@ -17,6 +17,7 @@ import SectionHeader from "../components/common/SectionHeader";
 import StatCard from "../components/common/StatCard";
 import EmptyState from "../components/common/EmptyState";
 import CardProdutosVencendo from "../components/common/CardProdutosVencendo";
+import MinAlertCard from "../components/common/MinAlertCard";
 import { useAuth } from "../contexts/AuthContext";
 import {
   getMostMovedProducts,
@@ -244,12 +245,12 @@ const DashboardPage = () => {
 
   const [products, setProducts] = useState([]);
   const [stock, setStock] = useState([]);
-  const [users, setUsers] = useState([]);
   const [mostMoved, setMostMoved] = useState([]);
   const [minStock, setMinStock] = useState([]);
   const [resumeData, setResumeData] = useState(null); // ESTADO DOS DADOS NOVOS
   const [topSuppliers, setTopSuppliers] = useState([]);
   const [topLimit, setTopLimit] = useState(8);
+  
 
   useEffect(() => {
     if (!token) return;
@@ -356,11 +357,9 @@ const DashboardPage = () => {
 
         if (isAdmin) {
           try {
-            const usersData = await getUsers(token);
-            setUsers(usersData?.usuarios || []);
+            await getUsers(token); // fetched to pre-warm cache / test auth
             setStatus((prev) => ({ ...prev, users: "ready" }));
           } catch {
-            setUsers([]);
             setStatus((prev) => ({ ...prev, users: "error" }));
             setErrors((prev) => ({
               ...prev,
@@ -402,10 +401,6 @@ const DashboardPage = () => {
 
   const productsWithStockCount = useMemo(() => {
     return products.filter((p) => Number(p?.pdt_estoque_atual || 0) > 0).length;
-  }, [products]);
-
-  const productsWithoutStockCount = useMemo(() => {
-    return products.filter((p) => Number(p?.pdt_estoque_atual || 0) <= 0).length;
   }, [products]);
 
   const mostMovedChartData = useMemo(() => {
@@ -521,8 +516,7 @@ const DashboardPage = () => {
             loading={anyLoading && status.resume === "loading"}
           />
         ) : null}
-        <DashboardStatCard
-          title="Alertas de minimo"
+        <MinAlertCard
           value={formatNumber(minStock.length)}
           meta="Produtos abaixo do minimo"
           loading={anyLoading && status.min === "loading"}
