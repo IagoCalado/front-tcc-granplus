@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { FiAlertTriangle, FiEye } from "react-icons/fi";
+import { formatNumber } from "../../utils/format";
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -51,11 +52,13 @@ const getStockQuantity = (produto) => {
   return Number(quantity) || 0;
 };
 
-const getProductKey = (produto, index) => {
+const getExpiryKey = (produto, index) => {
   return String(
     produto?.pdt_id ??
       produto?.id ??
       produto?.pdt_codigo ??
+      produto?.lote ??
+      produto?.validade ??
       produto?.pdt_nome ??
       produto?.nome ??
       index,
@@ -74,25 +77,25 @@ const normalizeProduct = (produto, index) => {
   return {
     ...produto,
     id,
-    productKey: getProductKey(produto, index),
+    expiryKey: getExpiryKey(produto, index),
     estoqueAtual: getStockQuantity(produto),
     pdt_nome: produto?.pdt_nome || produto?.nome || "Produto",
+    lote: produto?.lote ?? produto?.ent_prod_lote ?? null,
     pdt_validade: validade,
     diasRestantes: getDaysRemaining(validade),
   };
 };
 
-const dedupeByProduct = (produtos) => {
+const dedupeByExpiryItem = (produtos) => {
   const grouped = new Map();
 
   produtos.forEach((produto) => {
-    const current = grouped.get(produto.productKey);
+    const current = grouped.get(produto.expiryKey);
 
     if (!current || produto.diasRestantes < current.diasRestantes) {
-      grouped.set(produto.productKey, {
+      grouped.set(produto.expiryKey, {
         ...produto,
-        estoqueAtual:
-          produto.estoqueAtual + Number(current?.estoqueAtual || 0),
+        estoqueAtual: produto.estoqueAtual + Number(current?.estoqueAtual || 0),
       });
       return;
     }
@@ -137,6 +140,8 @@ const ModalListaVencimento = ({ produtos, onClose }) => {
               <tr>
                 <th>ID</th>
                 <th>Nome do Produto</th>
+                <th>Lote</th>
+                <th>Quantidade</th>
                 <th>Data de Validade</th>
                 <th>Dias Restantes</th>
               </tr>
@@ -149,6 +154,8 @@ const ModalListaVencimento = ({ produtos, onClose }) => {
                   >
                     <td>{produto.id}</td>
                     <td>{produto.pdt_nome}</td>
+                    <td>{produto.lote ?? "-"}</td>
+                    <td>{formatNumber(produto.estoqueAtual)}</td>
                     <td>{formatDate(produto.pdt_validade)}</td>
                     <td>
                       <span className="expiry-days-pill">
@@ -163,7 +170,7 @@ const ModalListaVencimento = ({ produtos, onClose }) => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="expiry-empty-row">
+                  <td colSpan="5" className="expiry-empty-row">
                     Nenhum produto vence nos proximos 7 dias.
                   </td>
                 </tr>
@@ -196,15 +203,27 @@ const CardProdutosVencendo = ({ produtos = [], loading = false }) => {
         return validade >= today && validade <= limitDate;
       });
 
-    return dedupeByProduct(filteredProducts)
-      .sort((a, b) => a.diasRestantes - b.diasRestantes);
+    return dedupeByExpiryItem(filteredProducts).sort(
+      (a, b) => a.diasRestantes - b.diasRestantes,
+    );
   }, [produtos]);
+
+  const quantidadeVencendo = useMemo(
+    () =>
+      produtosVencendo.reduce(
+        (total, produto) => total + Number(produto.estoqueAtual || 0),
+        0,
+      ),
+    [produtosVencendo],
+  );
 
   return (
     <>
       <article
         className={`expiry-card ${
-          produtosVencendo.length > 0 ? "expiry-card--alert" : "expiry-card--neutral"
+          produtosVencendo.length > 0
+            ? "expiry-card--alert"
+            : "expiry-card--neutral"
         }`}
       >
         <div className="expiry-card-glow" aria-hidden="true" />
@@ -236,7 +255,11 @@ const CardProdutosVencendo = ({ produtos = [], loading = false }) => {
             {loading ? "..." : produtosVencendo.length}
           </strong>
           <span className="expiry-card-meta">
-            produtos com validade entre hoje e os proximos 7 dias
+            {loading
+              ? "..."
+              : `${formatNumber(quantidadeVencendo)} unidade${
+                  quantidadeVencendo === 1 ? "" : "s"
+                } em produtos com validade entre hoje e os proximos 7 dias`}
           </span>
         </div>
       </article>
