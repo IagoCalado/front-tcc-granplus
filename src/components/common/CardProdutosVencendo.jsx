@@ -37,16 +37,30 @@ const getDaysRemaining = (validade) => {
   return Math.ceil((validadeOnly.getTime() - today.getTime()) / MS_PER_DAY);
 };
 
-const getStockQuantity = (produto) => {
+const hasLotStockData = (produto, lote = null) => {
+  const source = lote || produto;
+
+  if (lote) return true;
+
+  return Boolean(
+    source?.lote != null ||
+      source?.ent_prod_lote != null ||
+      source?.quantidade_lote != null ||
+      source?.ent_prod_qtde != null ||
+      source?.quantidade_disponivel != null,
+  );
+};
+
+const getLotQuantity = (produto, lote = null) => {
+  if (!hasLotStockData(produto, lote)) return 0;
+
+  const source = lote || produto;
   const quantity =
-    produto?.estoque_atual ??
-    produto?.pdt_estoque_atual ??
-    produto?.total_estoque ??
-    produto?.quantidade_disponivel ??
-    produto?.quantidade_lote ??
-    produto?.quantidade ??
-    produto?.ent_prod_qtde ??
-    produto?.ep_quantidade ??
+    source?.quantidade_disponivel ??
+    source?.quantidade_lote ??
+    source?.quantidade ??
+    source?.ent_prod_qtde ??
+    source?.ep_quantidade ??
     0;
 
   return Number(quantity) || 0;
@@ -65,8 +79,11 @@ const getExpiryKey = (produto, index) => {
   );
 };
 
-const normalizeProduct = (produto, index) => {
-  const validade = produto?.pdt_validade ?? produto?.validade;
+const normalizeAlertItem = (produto, index, lote = null, loteIndex = 0) => {
+  const source = lote || produto;
+  const validade = hasLotStockData(produto, lote)
+    ? source?.pdt_validade ?? source?.validade ?? null
+    : null;
   const id =
     produto?.pdt_id ??
     produto?.id ??
@@ -77,8 +94,15 @@ const normalizeProduct = (produto, index) => {
   return {
     ...produto,
     id,
+<<<<<<< HEAD
     expiryKey: getExpiryKey(produto, index),
     estoqueAtual: getStockQuantity(produto),
+=======
+    productKey: getProductKey(produto, index),
+    estoqueAtual: getLotQuantity(produto, lote),
+    lote: source?.lote ?? source?.ent_prod_lote ?? null,
+    loteIndex,
+>>>>>>> ajuste
     pdt_nome: produto?.pdt_nome || produto?.nome || "Produto",
     lote: produto?.lote ?? produto?.ent_prod_lote ?? null,
     pdt_validade: validade,
@@ -86,6 +110,7 @@ const normalizeProduct = (produto, index) => {
   };
 };
 
+<<<<<<< HEAD
 const dedupeByExpiryItem = (produtos) => {
   const grouped = new Map();
 
@@ -94,6 +119,38 @@ const dedupeByExpiryItem = (produtos) => {
 
     if (!current || produto.diasRestantes < current.diasRestantes) {
       grouped.set(produto.expiryKey, {
+=======
+const expandProductLots = (produto, index) => {
+  const lotes = Array.isArray(produto?.lotes) ? produto.lotes : [];
+
+  if (!lotes.length) {
+    return [normalizeAlertItem(produto, index)];
+  }
+
+  return lotes.map((lote, loteIndex) =>
+    normalizeAlertItem(produto, index, lote, loteIndex),
+  );
+};
+
+const getAlertItemKey = (produto) => {
+  const validadeDate = getValidDate(produto.pdt_validade);
+  const validadeKey = validadeDate
+    ? validadeDate.toISOString().slice(0, 10)
+    : "sem-validade";
+
+  return `${produto.productKey}|${produto.lote ?? "sem-lote"}|${validadeKey}`;
+};
+
+const dedupeByLot = (produtos) => {
+  const grouped = new Map();
+
+  produtos.forEach((produto) => {
+    const key = getAlertItemKey(produto);
+    const current = grouped.get(key);
+
+    if (!current || produto.diasRestantes < current.diasRestantes) {
+      grouped.set(key, {
+>>>>>>> ajuste
         ...produto,
         estoqueAtual: produto.estoqueAtual + Number(current?.estoqueAtual || 0),
       });
@@ -141,7 +198,10 @@ const ModalListaVencimento = ({ produtos, onClose }) => {
                 <th>ID</th>
                 <th>Nome do Produto</th>
                 <th>Lote</th>
+<<<<<<< HEAD
                 <th>Quantidade</th>
+=======
+>>>>>>> ajuste
                 <th>Data de Validade</th>
                 <th>Dias Restantes</th>
               </tr>
@@ -150,12 +210,16 @@ const ModalListaVencimento = ({ produtos, onClose }) => {
               {produtos.length ? (
                 produtos.map((produto, index) => (
                   <tr
-                    key={`${produto.id}-${produto.pdt_validade ?? "sem-validade"}-${index}`}
+                    key={`${produto.id}-${produto.pdt_validade ?? "sem-validade"}-${produto.lote ?? "sem-lote"}-${index}`}
                   >
                     <td>{produto.id}</td>
                     <td>{produto.pdt_nome}</td>
+<<<<<<< HEAD
                     <td>{produto.lote ?? "-"}</td>
                     <td>{formatNumber(produto.estoqueAtual)}</td>
+=======
+                    <td>{produto.lote || "-"}</td>
+>>>>>>> ajuste
                     <td>{formatDate(produto.pdt_validade)}</td>
                     <td>
                       <span className="expiry-days-pill">
@@ -192,7 +256,7 @@ const CardProdutosVencendo = ({ produtos = [], loading = false }) => {
     limitDate.setDate(today.getDate() + 7);
 
     const filteredProducts = (produtos || [])
-      .map(normalizeProduct)
+      .flatMap(expandProductLots)
       .filter((produto) => {
         if (produto.estoqueAtual <= 0) return false;
 
@@ -203,7 +267,11 @@ const CardProdutosVencendo = ({ produtos = [], loading = false }) => {
         return validade >= today && validade <= limitDate;
       });
 
+<<<<<<< HEAD
     return dedupeByExpiryItem(filteredProducts).sort(
+=======
+    return dedupeByLot(filteredProducts).sort(
+>>>>>>> ajuste
       (a, b) => a.diasRestantes - b.diasRestantes,
     );
   }, [produtos]);
@@ -255,11 +323,15 @@ const CardProdutosVencendo = ({ produtos = [], loading = false }) => {
             {loading ? "..." : produtosVencendo.length}
           </strong>
           <span className="expiry-card-meta">
+<<<<<<< HEAD
             {loading
               ? "..."
               : `${formatNumber(quantidadeVencendo)} unidade${
                   quantidadeVencendo === 1 ? "" : "s"
                 } em produtos com validade entre hoje e os proximos 7 dias`}
+=======
+            itens/lotes com validade entre hoje e os proximos 7 dias
+>>>>>>> ajuste
           </span>
         </div>
       </article>

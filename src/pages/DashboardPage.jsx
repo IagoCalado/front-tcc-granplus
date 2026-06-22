@@ -261,6 +261,7 @@ const DashboardPage = () => {
 
   const [products, setProducts] = useState([]);
   const [stock, setStock] = useState([]);
+  const [expiryStockItems, setExpiryStockItems] = useState([]);
   const [mostMoved, setMostMoved] = useState([]);
   const [minStock, setMinStock] = useState([]);
   const [resumeData, setResumeData] = useState(null); // ESTADO DOS DADOS NOVOS
@@ -482,17 +483,25 @@ const DashboardPage = () => {
     };
   }, [loadData, token]);
 
-  const estoqueTotal = useMemo(() => {
-    return stock.reduce(
-      (total, item) => total + Number(item.estoque_atual || 0),
-      0,
-    );
-  }, [stock]);
+  // const estoqueTotal = useMemo(() => {
+  //   return stock.reduce(
+  //     (total, item) => total + Number(item.estoque_atual || 0),
+  //     0,
+  //   );
+  // }, [stock]);
 
   const productsActiveCount = useMemo(() => {
     return products.filter((p) => Boolean(p?.pdt_ativo)).length;
   }, [products]);
+  
+  const estoqueTotal = useMemo(() => {
+    return products.reduce(
+      (soma, p) => soma + Number(p?.pdt_estoque_atual || 0),
+      0
+    );
+  }, [products]);
 
+  // 2. CONTA quantos produtos diferentes têm saldo
   const productsWithStockCount = useMemo(() => {
     return products.filter((p) => Number(p?.pdt_estoque_atual || 0) > 0).length;
   }, [products]);
