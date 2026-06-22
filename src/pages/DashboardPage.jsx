@@ -26,6 +26,7 @@ import {
   getTopSuppliersBySpend,
   getStock,
   getUsers,
+  getOutputAvailableLots,
   getDashboardResume // 👈 IMPORT NOVO AQUI
 } from "../services/api";
 import { formatNumber } from "../utils/format";
@@ -245,6 +246,7 @@ const DashboardPage = () => {
 
   const [products, setProducts] = useState([]);
   const [stock, setStock] = useState([]);
+  const [expiryStockItems, setExpiryStockItems] = useState([]);
   const [mostMoved, setMostMoved] = useState([]);
   const [minStock, setMinStock] = useState([]);
   const [resumeData, setResumeData] = useState(null); // ESTADO DOS DADOS NOVOS
@@ -292,10 +294,43 @@ const DashboardPage = () => {
         }
 
         if (stockRes.status === "fulfilled") {
-          setStock(stockRes.value || []);
+          const stockData = stockRes.value || [];
+          setStock(stockData);
+
+          const productsForLots = Array.from(
+            new Map(
+              stockData
+                .filter((item) => item?.pdt_id)
+                .map((item) => [item.pdt_id, item]),
+            ).values(),
+          );
+
+          const lotsResults = await Promise.allSettled(
+            productsForLots.map(async (product) => {
+              const lotsData = await getOutputAvailableLots(token, product.pdt_id);
+              const lotes = Array.isArray(lotsData?.lotes) ? lotsData.lotes : [];
+
+              return {
+                ...product,
+                lotes: lotes.map((lote) => ({
+                  lote: lote?.lote ?? null,
+                  validade: lote?.validade ?? null,
+                  quantidade:
+                    Number(lote?.quantidade_disponivel ?? lote?.quantidade ?? 0) || 0,
+                })),
+              };
+            }),
+          );
+
+          setExpiryStockItems(
+            lotsResults
+              .filter((result) => result.status === "fulfilled")
+              .map((result) => result.value),
+          );
           setStatus((prev) => ({ ...prev, stock: "ready" }));
         } else {
           setStock([]);
+          setExpiryStockItems([]);
           setStatus((prev) => ({ ...prev, stock: "error" }));
           setErrors((prev) => ({
             ...prev,
@@ -388,17 +423,25 @@ const DashboardPage = () => {
     loadData();
   }, [token, isAdmin]);
 
-  const estoqueTotal = useMemo(() => {
-    return stock.reduce(
-      (total, item) => total + Number(item.estoque_atual || 0),
-      0,
-    );
-  }, [stock]);
+  // const estoqueTotal = useMemo(() => {
+  //   return stock.reduce(
+  //     (total, item) => total + Number(item.estoque_atual || 0),
+  //     0,
+  //   );
+  // }, [stock]);
 
   const productsActiveCount = useMemo(() => {
     return products.filter((p) => Boolean(p?.pdt_ativo)).length;
   }, [products]);
+  
+  const estoqueTotal = useMemo(() => {
+    return products.reduce(
+      (soma, p) => soma + Number(p?.pdt_estoque_atual || 0),
+      0
+    );
+  }, [products]);
 
+  // 2. CONTA quantos produtos diferentes têm saldo
   const productsWithStockCount = useMemo(() => {
     return products.filter((p) => Number(p?.pdt_estoque_atual || 0) > 0).length;
   }, [products]);
@@ -522,7 +565,7 @@ const DashboardPage = () => {
           loading={anyLoading && status.min === "loading"}
         />
         <CardProdutosVencendo
-          produtos={stock}
+          produtos={expiryStockItems}
           loading={anyLoading && status.stock === "loading"}
         />
         {/* <DashboardStatCard

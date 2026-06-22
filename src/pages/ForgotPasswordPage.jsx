@@ -116,7 +116,7 @@ const ForgotPasswordPage = () => {
     }
 
     if (novaSenha !== form.confirmarSenha.trim()) {
-      setError("A confirmacao da senha nao confere.");
+      setError("A confirmação da senha não confere.");
       return;
     }
 
@@ -135,7 +135,7 @@ const ForgotPasswordPage = () => {
     } catch (resetError) {
       setError(
         resetError.message ||
-          "Nao foi possivel redefinir a senha. Verifique o PIN e tente novamente.",
+          "Não foi possivel redefinir a senha. Verifique o PIN e tente novamente.",
       );
     } finally {
       setLoading(false);
@@ -156,7 +156,7 @@ const ForgotPasswordPage = () => {
     } catch (resendError) {
       setError(
         resendError.message ||
-          "Nao foi possivel reenviar o codigo no momento.",
+          "Não foi possivel reenviar o codigo no momento.",
       );
     } finally {
       setLoading(false);

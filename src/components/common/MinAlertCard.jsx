@@ -4,10 +4,17 @@ const MinAlertCard = ({ value = 0, meta = "", loading = false }) => {
   // Amber/orange accent
   const accentRgb = "245, 158, 11"; // #f59e0b
   const accentSoft = "#ffd7a8";
+  const numericValue =
+    typeof value === "number"
+      ? value
+      : Number(String(value).replace(/\./g, "").replace(",", "."));
+  const hasAlert = !loading && numericValue > 0;
 
   return (
     <article
-      className={`expiry-card expiry-card--alert`}
+      className={`expiry-card min-alert-card ${
+        hasAlert ? "expiry-card--alert" : "expiry-card--neutral"
+      }`}
       style={{
         ['--expiry-accent']: '#f59e0b',
         ['--expiry-accent-rgb']: accentRgb,

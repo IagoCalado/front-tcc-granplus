@@ -2125,16 +2125,16 @@ td .btn-danger:hover {
   display: grid;
   place-items: center;
   border-radius: 14px;
-  color: var(--accent-strong);
+  color: var(--accent);
   border: 1px solid rgba(var(--accent-rgb), 0.28);
   background: rgba(var(--accent-rgb), 0.08);
 }
 
 .expiry-card--alert .expiry-alert-icon {
-  color: var(--expiry-accent-soft);
-  border-color: rgba(var(--expiry-accent-rgb), 0.36);
-  background: rgba(var(--expiry-accent-rgb), 0.1);
-  box-shadow: 0 0 18px rgba(var(--expiry-accent-rgb), 0.22);
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), 0.36);
+  background: rgba(var(--accent-rgb), 0.1);
+  box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.22);
 }
 
 .expiry-card-label {
@@ -2160,7 +2160,7 @@ td .btn-danger:hover {
   justify-content: center;
   border: 1px solid var(--border-strong);
   background: transparent;
-  color: var(--accent-strong);
+  color: var(--accent);
   cursor: pointer;
   transition:
     transform 0.24s ease,
@@ -2188,15 +2188,15 @@ td .btn-danger:hover {
 }
 
 .expiry-card--alert .expiry-view-button {
-  border-color: rgba(var(--expiry-accent-rgb), 0.46);
-  background: rgba(var(--expiry-accent-rgb), 0.09);
-  color: var(--expiry-accent-soft);
+  border-color: rgba(var(--accent-rgb), 0.46);
+  background: rgba(var(--accent-rgb), 0.09);
+  color: var(--accent);
 }
 
 .expiry-card--alert .expiry-view-button:hover {
-  border-color: rgba(var(--expiry-accent-rgb), 0.76);
-  background: rgba(var(--expiry-accent-rgb), 0.16);
-  box-shadow: 0 0 18px rgba(var(--expiry-accent-rgb), 0.32);
+  border-color: rgba(var(--accent-rgb), 0.76);
+  background: rgba(var(--accent-rgb), 0.16);
+  box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.32);
 }
 
 .expiry-card-body {
@@ -2401,8 +2401,8 @@ td .btn-danger:hover {
 
 [data-theme="light"] .expiry-card--alert .expiry-alert-icon,
 [data-theme="light"] .expiry-card--alert .expiry-view-button {
-  color: var(--expiry-accent-soft);
-  background: rgba(var(--expiry-accent-rgb), 0.08);
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 [data-theme="light"] .expiry-days-pill {
