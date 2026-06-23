@@ -245,7 +245,6 @@ const DashboardPage = () => {
   });
 
   const [products, setProducts] = useState([]);
-  const [stock, setStock] = useState([]);
   const [expiryStockItems, setExpiryStockItems] = useState([]);
   const [mostMoved, setMostMoved] = useState([]);
   const [minStock, setMinStock] = useState([]);
@@ -295,7 +294,6 @@ const DashboardPage = () => {
 
         if (stockRes.status === "fulfilled") {
           const stockData = stockRes.value || [];
-          setStock(stockData);
 
           const productsForLots = Array.from(
             new Map(
@@ -329,7 +327,6 @@ const DashboardPage = () => {
           );
           setStatus((prev) => ({ ...prev, stock: "ready" }));
         } else {
-          setStock([]);
           setExpiryStockItems([]);
           setStatus((prev) => ({ ...prev, stock: "error" }));
           setErrors((prev) => ({
