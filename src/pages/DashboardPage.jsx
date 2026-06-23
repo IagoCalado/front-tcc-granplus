@@ -260,7 +260,7 @@ const DashboardPage = () => {
   });
 
   const [products, setProducts] = useState([]);
-  const [expiryStockItems, setExpiryStockItems] = useState([]);
+  const [stock, setStock] = useState([]);
   const [mostMoved, setMostMoved] = useState([]);
   const [minStock, setMinStock] = useState([]);
   const [resumeData, setResumeData] = useState(null); // ESTADO DOS DADOS NOVOS
@@ -281,48 +281,10 @@ const DashboardPage = () => {
         return;
       }
 
-        if (stockRes.status === "fulfilled") {
-          const stockData = stockRes.value || [];
-
-          const productsForLots = Array.from(
-            new Map(
-              stockData
-                .filter((item) => item?.pdt_id)
-                .map((item) => [item.pdt_id, item]),
-            ).values(),
-          );
-
-          const lotsResults = await Promise.allSettled(
-            productsForLots.map(async (product) => {
-              const lotsData = await getOutputAvailableLots(token, product.pdt_id);
-              const lotes = Array.isArray(lotsData?.lotes) ? lotsData.lotes : [];
-
-              return {
-                ...product,
-                lotes: lotes.map((lote) => ({
-                  lote: lote?.lote ?? null,
-                  validade: lote?.validade ?? null,
-                  quantidade:
-                    Number(lote?.quantidade_disponivel ?? lote?.quantidade ?? 0) || 0,
-                })),
-              };
-            }),
-          );
-
-          setExpiryStockItems(
-            lotsResults
-              .filter((result) => result.status === "fulfilled")
-              .map((result) => result.value),
-          );
-          setStatus((prev) => ({ ...prev, stock: "ready" }));
-        } else {
-          setExpiryStockItems([]);
-          setStatus((prev) => ({ ...prev, stock: "error" }));
-          setErrors((prev) => ({
-            ...prev,
-            stock: stockRes.reason?.message || "Falha ao carregar estoque.",
-          }));
-        }
+      const lotsByProduct = await Promise.allSettled(
+        rows.map(async (row) => {
+          const data = await getOutputAvailableLots(token, row.pdt_id);
+          const lotes = Array.isArray(data?.lotes) ? data.lotes : [];
 
           return lotes.map((lote) => ({
             pdt_id: row?.pdt_id ?? lote?.pdt_id ?? null,

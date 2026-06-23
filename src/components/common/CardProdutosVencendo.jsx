@@ -94,32 +94,16 @@ const normalizeAlertItem = (produto, index, lote = null, loteIndex = 0) => {
   return {
     ...produto,
     id,
-<<<<<<< HEAD
-    expiryKey: getExpiryKey(produto, index),
-    estoqueAtual: getStockQuantity(produto),
-=======
-    productKey: getProductKey(produto, index),
+    productKey: getExpiryKey(produto, index),
     estoqueAtual: getLotQuantity(produto, lote),
     lote: source?.lote ?? source?.ent_prod_lote ?? null,
     loteIndex,
->>>>>>> ajuste
     pdt_nome: produto?.pdt_nome || produto?.nome || "Produto",
-    lote: produto?.lote ?? produto?.ent_prod_lote ?? null,
     pdt_validade: validade,
     diasRestantes: getDaysRemaining(validade),
   };
 };
 
-<<<<<<< HEAD
-const dedupeByExpiryItem = (produtos) => {
-  const grouped = new Map();
-
-  produtos.forEach((produto) => {
-    const current = grouped.get(produto.expiryKey);
-
-    if (!current || produto.diasRestantes < current.diasRestantes) {
-      grouped.set(produto.expiryKey, {
-=======
 const expandProductLots = (produto, index) => {
   const lotes = Array.isArray(produto?.lotes) ? produto.lotes : [];
 
@@ -150,7 +134,6 @@ const dedupeByLot = (produtos) => {
 
     if (!current || produto.diasRestantes < current.diasRestantes) {
       grouped.set(key, {
->>>>>>> ajuste
         ...produto,
         estoqueAtual: produto.estoqueAtual + Number(current?.estoqueAtual || 0),
       });
@@ -176,7 +159,7 @@ const ModalListaVencimento = ({ produtos, onClose }) => {
           <div>
             <span className="expiry-modal-kicker">Alerta de validade</span>
             <h2 id="expiry-modal-title">
-              Lista de Produtos Proximos ao Vencimento
+              Lista de Produtos Próximos ao Vencimento
             </h2>
           </div>
 
@@ -198,10 +181,7 @@ const ModalListaVencimento = ({ produtos, onClose }) => {
                 <th>ID</th>
                 <th>Nome do Produto</th>
                 <th>Lote</th>
-<<<<<<< HEAD
                 <th>Quantidade</th>
-=======
->>>>>>> ajuste
                 <th>Data de Validade</th>
                 <th>Dias Restantes</th>
               </tr>
@@ -214,12 +194,8 @@ const ModalListaVencimento = ({ produtos, onClose }) => {
                   >
                     <td>{produto.id}</td>
                     <td>{produto.pdt_nome}</td>
-<<<<<<< HEAD
-                    <td>{produto.lote ?? "-"}</td>
-                    <td>{formatNumber(produto.estoqueAtual)}</td>
-=======
                     <td>{produto.lote || "-"}</td>
->>>>>>> ajuste
+                    <td>{formatNumber(produto.estoqueAtual)}</td>
                     <td>{formatDate(produto.pdt_validade)}</td>
                     <td>
                       <span className="expiry-days-pill">
@@ -234,8 +210,8 @@ const ModalListaVencimento = ({ produtos, onClose }) => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="expiry-empty-row">
-                    Nenhum produto vence nos proximos 7 dias.
+                  <td colSpan="6" className="expiry-empty-row">
+                    Nenhum produto vence nos próximos 7 dias.
                   </td>
                 </tr>
               )}
@@ -267,11 +243,7 @@ const CardProdutosVencendo = ({ produtos = [], loading = false }) => {
         return validade >= today && validade <= limitDate;
       });
 
-<<<<<<< HEAD
-    return dedupeByExpiryItem(filteredProducts).sort(
-=======
     return dedupeByLot(filteredProducts).sort(
->>>>>>> ajuste
       (a, b) => a.diasRestantes - b.diasRestantes,
     );
   }, [produtos]);
@@ -310,7 +282,7 @@ const CardProdutosVencendo = ({ produtos = [], loading = false }) => {
             type="button"
             className="expiry-view-button"
             onClick={() => setShowModal(true)}
-            aria-label="Ver lista de produtos proximos ao vencimento"
+            aria-label="Ver lista de produtos próximos ao vencimento"
             title="Ver lista"
           >
             <FiEye size={17} aria-hidden="true" />
@@ -323,15 +295,11 @@ const CardProdutosVencendo = ({ produtos = [], loading = false }) => {
             {loading ? "..." : produtosVencendo.length}
           </strong>
           <span className="expiry-card-meta">
-<<<<<<< HEAD
             {loading
               ? "..."
               : `${formatNumber(quantidadeVencendo)} unidade${
                   quantidadeVencendo === 1 ? "" : "s"
-                } em produtos com validade entre hoje e os proximos 7 dias`}
-=======
-            itens/lotes com validade entre hoje e os proximos 7 dias
->>>>>>> ajuste
+                } em produtos com validade entre hoje e os próximos 7 dias`}
           </span>
         </div>
       </article>
