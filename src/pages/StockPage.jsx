@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import SectionHeader from "../components/common/SectionHeader";
 import DataTable from "../components/common/DataTable";
 import LoadingSpinner from "../components/common/LoadingSpinner";
@@ -11,7 +11,6 @@ import {
   createLocation,
   deleteLocation,
   getAllLocations,
-  getLocations,
   getOutputAvailableLots,
   getStock,
 } from "../services/api";

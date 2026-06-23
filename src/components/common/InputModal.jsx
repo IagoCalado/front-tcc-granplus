@@ -4,6 +4,63 @@ import { X } from "lucide-react";
 import { getLocations, getSuppliers, getProducts } from "../../services/api";
 import AlertDialog from "./AlertDialog";
 
+const getLocalISODateTime = (dateInput) => {
+  const d = dateInput ? new Date(dateInput) : new Date();
+  if (isNaN(d.getTime())) return "";
+
+  const offset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offset).toISOString().substring(0, 16);
+};
+
+const getLocalISODateOnly = (dateInput) => {
+  if (!dateInput) return "";
+
+  if (typeof dateInput === "string" && dateInput.includes("T")) {
+    return dateInput.split("T")[0];
+  }
+
+  if (typeof dateInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+    return dateInput;
+  }
+
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return "";
+
+  const offset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offset).toISOString().substring(0, 10);
+};
+
+const normalizeProducts = (source) => {
+  if (Array.isArray(source?.produtos) && source.produtos.length > 0) {
+    return source.produtos.map((product) => ({
+      pdt_id: product?.pdt_id || "",
+      quantidade: product?.quantidade ?? product?.ent_quantidade ?? "",
+      lote: product?.lote ?? product?.ent_prod_lote ?? "",
+      pdt_validade: getLocalISODateOnly(product?.pdt_validade),
+    }));
+  }
+
+  if (source?.pdt_id || source?.ent_quantidade || source?.lote || source?.pdt_validade) {
+    return [
+      {
+        pdt_id: source?.pdt_id || "",
+        quantidade: source?.ent_quantidade ?? "",
+        lote: source?.lote ?? source?.ent_prod_lote ?? "",
+        pdt_validade: getLocalISODateOnly(source?.pdt_validade),
+      },
+    ];
+  }
+
+  return [
+    {
+      pdt_id: "",
+      quantidade: "",
+      lote: "",
+      pdt_validade: "",
+    },
+  ];
+};
+
 export default function InputModal({
   isOpen,
   onClose,
@@ -22,37 +79,6 @@ export default function InputModal({
   });
 
   const scrollRef = useRef(null);
-
-  const normalizeProducts = (source) => {
-    if (Array.isArray(source?.produtos) && source.produtos.length > 0) {
-      return source.produtos.map((product) => ({
-        pdt_id: product?.pdt_id || "",
-        quantidade: product?.quantidade ?? product?.ent_quantidade ?? "",
-        lote: product?.lote ?? product?.ent_prod_lote ?? "",
-        pdt_validade: getLocalISODateOnly(product?.pdt_validade),
-      }));
-    }
-
-    if (source?.pdt_id || source?.ent_quantidade || source?.lote || source?.pdt_validade) {
-      return [
-        {
-          pdt_id: source?.pdt_id || "",
-          quantidade: source?.ent_quantidade ?? "",
-          lote: source?.lote ?? source?.ent_prod_lote ?? "",
-          pdt_validade: getLocalISODateOnly(source?.pdt_validade),
-        },
-      ];
-    }
-
-    return [
-      {
-        pdt_id: "",
-        quantidade: "",
-        lote: "",
-        pdt_validade: "",
-      },
-    ];
-  };
 
   const [formData, setFormData] = useState({
     loc_id: 1,
@@ -73,32 +99,6 @@ export default function InputModal({
     (supplier) =>
       Number(supplier?.fncd_ativo) === 1 || supplier?.fncd_ativo === true,
   );
-
-  const getLocalISODateTime = (dateInput) => {
-    const d = dateInput ? new Date(dateInput) : new Date();
-    if (isNaN(d.getTime())) return "";
-
-    const offset = d.getTimezoneOffset() * 60000;
-    return new Date(d.getTime() - offset).toISOString().substring(0, 16);
-  };
-
-  const getLocalISODateOnly = (dateInput) => {
-    if (!dateInput) return "";
-
-    if (typeof dateInput === "string" && dateInput.includes("T")) {
-      return dateInput.split("T")[0];
-    }
-
-    if (typeof dateInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
-      return dateInput;
-    }
-
-    const d = new Date(dateInput);
-    if (isNaN(d.getTime())) return "";
-
-    const offset = d.getTimezoneOffset() * 60000;
-    return new Date(d.getTime() - offset).toISOString().substring(0, 10);
-  };
 
   useEffect(() => {
     if (isOpen && token) {

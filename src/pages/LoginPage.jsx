@@ -31,8 +31,10 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (phase !== "split") {
-      setCardVisible(false);
-      return undefined;
+      const timer = window.setTimeout(() => {
+        setCardVisible(false);
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
 
     const cardTimer = window.setTimeout(() => {

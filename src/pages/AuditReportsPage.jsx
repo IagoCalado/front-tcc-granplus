@@ -10,7 +10,7 @@ import AlertDialog from "../components/common/AlertDialog";
 import { useAuth } from "../contexts/AuthContext";
 import { matchesSearch } from "../utils/search";
 
-import { getAuditReports, getAuditReportsByDate, getRelatorioDinamico } from "../services/api";
+import { getAuditReports, getRelatorioDinamico } from "../services/api";
 
 const TableNameLabels = {
   saida_produtos: "Saidas de Produtos",

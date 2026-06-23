@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AlertCircle, X } from "lucide-react";
 import { getOutputAvailableLots, getProducts } from "../../services/api";
 
@@ -64,9 +64,9 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
   const [errorMsg, setErrorMsg] = useState("");
   const [isLotsModalOpen, setIsLotsModalOpen] = useState(false);
   const [currentLineIndex, setCurrentLineIndex] = useState(null);
-  const [loadingLots, setLoadingLots] = useState(false);
   const [availableLots, setAvailableLots] = useState([]);
   const [lotSelections, setLotSelections] = useState({});
+  const [_loadingLots, setLoadingLots] = useState(false);
 
   const [formData, setFormData] = useState({
     lcl_tipo: "", // Motivo
@@ -103,21 +103,11 @@ export default function OutputModal({ isOpen, onClose, onSave, token }) {
       setLotSelections({});
       setIsLotsModalOpen(false);
       setCurrentLineIndex(null);
-      setLoadingLots(false);
       setErrorMsg("");
     }
   }, [isOpen, token]);
 
   if (!isOpen) return null;
-
-  const selectedProduct =
-    currentLineIndex !== null && formData.produtos[currentLineIndex]
-      ? products.find(
-          (p) =>
-            Number(p.pdt_id) ===
-            Number(formData.produtos[currentLineIndex].pdt_id),
-        )
-      : null;
 
   const selectedLotsTotal = Object.values(lotSelections).reduce(
     (sum, value) => sum + (Number(value) || 0),
