@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bar,
@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
   PieChart,
-  Pie,  
+  Pie,
   Cell,
 } from "recharts";
 import SectionHeader from "../components/common/SectionHeader";
@@ -25,11 +25,15 @@ import {
   getProducts,
   getTopSuppliersBySpend,
   getStock,
-  getUsers,
   getOutputAvailableLots,
-  getDashboardResume // 👈 IMPORT NOVO AQUI
+  getUsers,
+  getDashboardResume, // 👈 IMPORT NOVO AQUI
 } from "../services/api";
 import { formatNumber } from "../utils/format";
+import {
+  STOCK_MOVEMENT_EVENT,
+  STOCK_MOVEMENT_STORAGE_KEY,
+} from "../utils/stockEvents";
 
 const truncateText = (value, maxLength = 18) => {
   const text = String(value ?? "");
@@ -97,18 +101,26 @@ const getColorByProductKey = (productKey) => {
 const DonutTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     return (
-      <div style={{
-        background: "var(--bg-elevated)",
-        border: "1px solid var(--border)",
-        borderRadius: "12px",
-        padding: "10px 12px",
-        boxShadow: "var(--shadow-sm)",
-        color: "var(--ink)"
-      }}>
+      <div
+        style={{
+          background: "var(--bg-elevated)",
+          border: "1px solid var(--border)",
+          borderRadius: "12px",
+          padding: "10px 12px",
+          boxShadow: "var(--shadow-sm)",
+          color: "var(--ink)",
+        }}
+      >
         <div style={{ fontSize: "12px", fontWeight: 800, marginBottom: "6px" }}>
           {payload[0].name}
         </div>
-        <div style={{ fontSize: "14px", fontWeight: 800, color: payload[0].payload.fill }}>
+        <div
+          style={{
+            fontSize: "14px",
+            fontWeight: 800,
+            color: payload[0].payload.fill,
+          }}
+        >
           R$ {formatNumber(payload[0].value)}
         </div>
       </div>
@@ -133,7 +145,13 @@ const ChartCardHeader = ({ title, subtitle, actions }) => {
           {title}
         </div>
         {subtitle ? (
-          <div style={{ fontSize: "12px", color: "var(--muted)", marginTop: "2px" }}>
+          <div
+            style={{
+              fontSize: "12px",
+              color: "var(--muted)",
+              marginTop: "2px",
+            }}
+          >
             {subtitle}
           </div>
         ) : null}
@@ -149,10 +167,7 @@ const DashboardTooltip = (props) => {
   if (!active || !payload?.length) return null;
 
   const tooltipLabel =
-    label ??
-    payload?.[0]?.payload?.name ??
-    payload?.[0]?.name ??
-    "";
+    label ?? payload?.[0]?.payload?.name ?? payload?.[0]?.name ?? "";
 
   return (
     <div
@@ -251,46 +266,20 @@ const DashboardPage = () => {
   const [resumeData, setResumeData] = useState(null); // ESTADO DOS DADOS NOVOS
   const [topSuppliers, setTopSuppliers] = useState([]);
   const [topLimit, setTopLimit] = useState(8);
-  
+  const [expiryLots, setExpiryLots] = useState([]);
 
-  useEffect(() => {
-    if (!token) return;
+  const loadExpiryLots = useCallback(
+    async (stockRows) => {
+      if (!token) {
+        setExpiryLots([]);
+        return;
+      }
 
-    const loadData = async () => {
-      setStatus((prev) => ({
-        ...prev,
-        products: "loading",
-        stock: "loading",
-        moved: "loading",
-        min: "loading",
-        resume: isAdmin ? "loading" : "ready",
-        suppliersTop: isAdmin ? "loading" : "ready",
-        users: isAdmin ? "loading" : "ready",
-      }));
-      setErrors({ products: "", stock: "", moved: "", min: "", suppliersTop: "", users: "" });
-
-      try {
-        const [productsRes, stockRes, movedRes, minRes, resumeRes, suppliersTopRes] =
-          await Promise.allSettled([
-            getProducts(token),
-            getStock(token),
-            getMostMovedProducts(token),
-            getMinimumStock(token),
-            isAdmin ? getDashboardResume(token) : Promise.resolve(null),
-            isAdmin ? getTopSuppliersBySpend(token) : Promise.resolve([])
-          ]);
-
-        if (productsRes.status === "fulfilled") {
-          setProducts(productsRes.value || []);
-          setStatus((prev) => ({ ...prev, products: "ready" }));
-        } else {
-          setProducts([]);
-          setStatus((prev) => ({ ...prev, products: "error" }));
-          setErrors((prev) => ({
-            ...prev,
-            products: productsRes.reason?.message || "Falha ao carregar produtos.",
-          }));
-        }
+      const rows = Array.isArray(stockRows) ? stockRows : [];
+      if (rows.length === 0) {
+        setExpiryLots([]);
+        return;
+      }
 
         if (stockRes.status === "fulfilled") {
           const stockData = stockRes.value || [];
@@ -335,90 +324,201 @@ const DashboardPage = () => {
           }));
         }
 
-        if (movedRes.status === "fulfilled") {
-          setMostMoved(movedRes.value || []);
-          setStatus((prev) => ({ ...prev, moved: "ready" }));
-        } else {
-          setMostMoved([]);
-          setStatus((prev) => ({ ...prev, moved: "error" }));
-          setErrors((prev) => ({
-            ...prev,
-            moved: movedRes.reason?.message || "Falha ao carregar movimentações.",
+          return lotes.map((lote) => ({
+            pdt_id: row?.pdt_id ?? lote?.pdt_id ?? null,
+            pdt_nome: row?.pdt_nome ?? lote?.pdt_nome ?? "Produto",
+            lote: lote?.lote ?? lote?.ent_prod_lote ?? null,
+            pdt_validade: lote?.validade ?? lote?.pdt_validade ?? null,
+            estoque_atual:
+              Number(lote?.quantidade_disponivel ?? lote?.quantidade ?? 0) || 0,
+            loc_nome: lote?.loc_nome ?? null,
           }));
-        }
+        }),
+      );
 
-        if (minRes.status === "fulfilled") {
-          setMinStock(minRes.value || []);
-          setStatus((prev) => ({ ...prev, min: "ready" }));
-        } else {
-          setMinStock([]);
-          setStatus((prev) => ({ ...prev, min: "error" }));
-          setErrors((prev) => ({
-            ...prev,
-            min: minRes.reason?.message || "Falha ao carregar alertas de mínimo.",
-          }));
-        }
+      const flattened = lotsByProduct
+        .flatMap((entry) => (entry.status === "fulfilled" ? entry.value : []))
+        .filter((item) => Number(item.estoque_atual || 0) > 0);
 
-        if (isAdmin && resumeRes.status === "fulfilled") {
-          setResumeData(resumeRes.value || null);
-          setStatus((prev) => ({ ...prev, resume: "ready" }));
-        } else if (isAdmin) {
-          setResumeData(null);
-          setStatus((prev) => ({ ...prev, resume: "error" }));
-        } else {
-          setResumeData(null);
-          setStatus((prev) => ({ ...prev, resume: "ready" }));
-        }
+      setExpiryLots(flattened);
+    },
+    [token],
+  );
 
-        if (isAdmin && suppliersTopRes.status === "fulfilled") {
-          setTopSuppliers(suppliersTopRes.value || []);
-          setStatus((prev) => ({ ...prev, suppliersTop: "ready" }));
-        } else if (isAdmin) {
-          setTopSuppliers([]);
-          setStatus((prev) => ({ ...prev, suppliersTop: "error" }));
-          setErrors((prev) => ({
-            ...prev,
-            suppliersTop:
-              suppliersTopRes.reason?.message ||
-              "Falha ao carregar fornecedores.",
-          }));
-        } else {
-          setTopSuppliers([]);
-          setStatus((prev) => ({ ...prev, suppliersTop: "ready" }));
-        }
+  const loadData = useCallback(async () => {
+    setStatus((prev) => ({
+      ...prev,
+      products: "loading",
+      stock: "loading",
+      moved: "loading",
+      min: "loading",
+      resume: isAdmin ? "loading" : "ready",
+      suppliersTop: isAdmin ? "loading" : "ready",
+      users: isAdmin ? "loading" : "ready",
+    }));
+    setErrors({
+      products: "",
+      stock: "",
+      moved: "",
+      min: "",
+      suppliersTop: "",
+      users: "",
+    });
 
-        if (isAdmin) {
-          try {
-            await getUsers(token); // fetched to pre-warm cache / test auth
-            setStatus((prev) => ({ ...prev, users: "ready" }));
-          } catch {
-            setStatus((prev) => ({ ...prev, users: "error" }));
-            setErrors((prev) => ({
-              ...prev,
-              users: "Falha ao carregar usuários.",
-            }));
-          }
-        }
-      } catch {
-        setStatus((prev) => ({
-          ...prev,
-          products: "error",
-          stock: "error",
-          moved: "error",
-          min: "error",
-          resume: isAdmin ? "error" : prev.resume,
-          suppliersTop: isAdmin ? "error" : prev.suppliersTop,
-          users: isAdmin ? "error" : prev.users,
-        }));
+    try {
+      const [
+        productsRes,
+        stockRes,
+        movedRes,
+        minRes,
+        resumeRes,
+        suppliersTopRes,
+      ] = await Promise.allSettled([
+        getProducts(token),
+        getStock(token),
+        getMostMovedProducts(token),
+        getMinimumStock(token),
+        isAdmin ? getDashboardResume(token) : Promise.resolve(null),
+        isAdmin ? getTopSuppliersBySpend(token) : Promise.resolve([]),
+      ]);
+
+      if (productsRes.status === "fulfilled") {
+        setProducts(productsRes.value || []);
+        setStatus((prev) => ({ ...prev, products: "ready" }));
+      } else {
+        setProducts([]);
+        setStatus((prev) => ({ ...prev, products: "error" }));
         setErrors((prev) => ({
           ...prev,
-          products: prev.products || "Erro crítico ao carregar o painel.",
+          products:
+            productsRes.reason?.message || "Falha ao carregar produtos.",
         }));
       }
-    };
+
+      if (stockRes.status === "fulfilled") {
+        setStock(stockRes.value || []);
+        setStatus((prev) => ({ ...prev, stock: "ready" }));
+      } else {
+        setStock([]);
+        setStatus((prev) => ({ ...prev, stock: "error" }));
+        setErrors((prev) => ({
+          ...prev,
+          stock: stockRes.reason?.message || "Falha ao carregar estoque.",
+        }));
+      }
+
+      await loadExpiryLots(
+        stockRes.status === "fulfilled" ? stockRes.value || [] : [],
+      );
+
+      if (movedRes.status === "fulfilled") {
+        setMostMoved(movedRes.value || []);
+        setStatus((prev) => ({ ...prev, moved: "ready" }));
+      } else {
+        setMostMoved([]);
+        setStatus((prev) => ({ ...prev, moved: "error" }));
+        setErrors((prev) => ({
+          ...prev,
+          moved: movedRes.reason?.message || "Falha ao carregar movimentações.",
+        }));
+      }
+
+      if (minRes.status === "fulfilled") {
+        setMinStock(minRes.value || []);
+        setStatus((prev) => ({ ...prev, min: "ready" }));
+      } else {
+        setMinStock([]);
+        setStatus((prev) => ({ ...prev, min: "error" }));
+        setErrors((prev) => ({
+          ...prev,
+          min: minRes.reason?.message || "Falha ao carregar alertas de mínimo.",
+        }));
+      }
+
+      if (isAdmin && resumeRes.status === "fulfilled") {
+        setResumeData(resumeRes.value || null);
+        setStatus((prev) => ({ ...prev, resume: "ready" }));
+      } else if (isAdmin) {
+        setResumeData(null);
+        setStatus((prev) => ({ ...prev, resume: "error" }));
+      } else {
+        setResumeData(null);
+        setStatus((prev) => ({ ...prev, resume: "ready" }));
+      }
+
+      if (isAdmin && suppliersTopRes.status === "fulfilled") {
+        setTopSuppliers(suppliersTopRes.value || []);
+        setStatus((prev) => ({ ...prev, suppliersTop: "ready" }));
+      } else if (isAdmin) {
+        setTopSuppliers([]);
+        setStatus((prev) => ({ ...prev, suppliersTop: "error" }));
+        setErrors((prev) => ({
+          ...prev,
+          suppliersTop:
+            suppliersTopRes.reason?.message ||
+            "Falha ao carregar fornecedores.",
+        }));
+      } else {
+        setTopSuppliers([]);
+        setStatus((prev) => ({ ...prev, suppliersTop: "ready" }));
+      }
+
+      if (isAdmin) {
+        try {
+          await getUsers(token);
+          setStatus((prev) => ({ ...prev, users: "ready" }));
+        } catch {
+          setStatus((prev) => ({ ...prev, users: "error" }));
+          setErrors((prev) => ({
+            ...prev,
+            users: "Falha ao carregar usuários.",
+          }));
+        }
+      }
+    } catch {
+      setStatus((prev) => ({
+        ...prev,
+        products: "error",
+        stock: "error",
+        moved: "error",
+        min: "error",
+        resume: isAdmin ? "error" : prev.resume,
+        suppliersTop: isAdmin ? "error" : prev.suppliersTop,
+        users: isAdmin ? "error" : prev.users,
+      }));
+      setErrors((prev) => ({
+        ...prev,
+        products: prev.products || "Erro crítico ao carregar o painel.",
+      }));
+    }
+  }, [isAdmin, loadExpiryLots, token]);
+
+  useEffect(() => {
+    if (!token) return;
 
     loadData();
-  }, [token, isAdmin]);
+  }, [loadData, token]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const handleStockMovement = () => {
+      loadData();
+    };
+
+    const handleStorage = (event) => {
+      if (event.key !== STOCK_MOVEMENT_STORAGE_KEY) return;
+      loadData();
+    };
+
+    window.addEventListener(STOCK_MOVEMENT_EVENT, handleStockMovement);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener(STOCK_MOVEMENT_EVENT, handleStockMovement);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [loadData, token]);
 
   // const estoqueTotal = useMemo(() => {
   //   return stock.reduce(
@@ -461,10 +561,10 @@ const DashboardPage = () => {
         atual: Number(item?.total_estoque || 0),
         minimo: Number(item?.pdt_estoque_minimo || 0),
       }))
-      .sort((a, b) => (b.minimo - b.atual) - (a.minimo - a.atual))
+      .sort((a, b) => b.minimo - b.atual - (a.minimo - a.atual))
       .slice(0, Math.min(topLimit, 10));
   }, [minStock, topLimit]);
-  
+
   const topStockChartData = useMemo(() => {
     return (products || [])
       .map((p) => ({
@@ -551,7 +651,11 @@ const DashboardPage = () => {
         {isAdmin ? (
           <DashboardStatCard
             title="Investimento do Mês"
-            value={resumeData?.valor_entradas_mes ? `R$ ${formatNumber(resumeData.valor_entradas_mes)}` : "R$ 0,00"}
+            value={
+              resumeData?.valor_entradas_mes
+                ? `R$ ${formatNumber(resumeData.valor_entradas_mes)}`
+                : "R$ 0,00"
+            }
             meta="Valor total de entradas no mês atual"
             loading={anyLoading && status.resume === "loading"}
           />
@@ -562,7 +666,7 @@ const DashboardPage = () => {
           loading={anyLoading && status.min === "loading"}
         />
         <CardProdutosVencendo
-          produtos={expiryStockItems}
+          produtos={expiryLots}
           loading={anyLoading && status.stock === "loading"}
         />
         {/* <DashboardStatCard
@@ -580,7 +684,10 @@ const DashboardPage = () => {
         /> */}
       </section>
 
-      <div className="stats-grid" style={{ alignItems: "stretch", marginTop: 16 }}>
+      <div
+        className="stats-grid"
+        style={{ alignItems: "stretch", marginTop: 16 }}
+      >
         <div className="card">
           <ChartCardHeader
             title="Alertas de estoque mínimo"
@@ -598,22 +705,37 @@ const DashboardPage = () => {
           />
 
           {status.min === "loading" ? (
-            <div style={{ height: 320, display: "grid", gap: 10, alignContent: "center" }}>
+            <div
+              style={{
+                height: 320,
+                display: "grid",
+                gap: 10,
+                alignContent: "center",
+              }}
+            >
               <div className="skeleton" style={{ height: 16, width: "55%" }} />
               <div className="skeleton" style={{ height: 12, width: "75%" }} />
-              <div className="skeleton" style={{ height: 240, width: "100%", borderRadius: 16 }} />
+              <div
+                className="skeleton"
+                style={{ height: 240, width: "100%", borderRadius: 16 }}
+              />
             </div>
           ) : status.min === "error" ? (
             <div className="dashboard-error">
               <strong>Falha ao carregar alertas de mínimo</strong>
-              <div style={{ marginTop: 6, color: "var(--ink-soft)", fontSize: 13 }}>
+              <div
+                style={{ marginTop: 6, color: "var(--ink-soft)", fontSize: 13 }}
+              >
                 {errors.min || "Tente recarregar a página."}
               </div>
             </div>
           ) : minStockChartData.length ? (
             <div style={{ height: 320, minWidth: 0, minHeight: 0 }}>
               <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={minStockChartData} margin={{ left: 10, right: 10 }}>
+                <BarChart
+                  data={minStockChartData}
+                  margin={{ left: 10, right: 10 }}
+                >
                   <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                   <XAxis
                     dataKey="name"
@@ -635,7 +757,10 @@ const DashboardPage = () => {
                     axisLine={{ stroke: "var(--border)" }}
                     tickLine={{ stroke: "var(--border)" }}
                   />
-                  <Tooltip content={<DashboardTooltip />} cursor={dashboardTooltipCursor} />
+                  <Tooltip
+                    content={<DashboardTooltip />}
+                    cursor={dashboardTooltipCursor}
+                  />
                   <Legend
                     wrapperStyle={{ color: "var(--muted)", fontSize: 12 }}
                   />
@@ -679,22 +804,40 @@ const DashboardPage = () => {
           />
 
           {status.products === "loading" ? (
-            <div style={{ height: 300, display: "grid", gap: 10, alignContent: "center" }}>
+            <div
+              style={{
+                height: 300,
+                display: "grid",
+                gap: 10,
+                alignContent: "center",
+              }}
+            >
               <div className="skeleton" style={{ height: 16, width: "45%" }} />
               <div className="skeleton" style={{ height: 12, width: "65%" }} />
-              <div className="skeleton" style={{ height: 220, width: "100%", borderRadius: 16 }} />
+              <div
+                className="skeleton"
+                style={{ height: 220, width: "100%", borderRadius: 16 }}
+              />
             </div>
           ) : status.products === "error" ? (
             <div className="dashboard-error">
               <strong>Falha ao carregar produtos</strong>
-              <div style={{ marginTop: 6, color: "var(--ink-soft)", fontSize: 13 }}>
+              <div
+                style={{ marginTop: 6, color: "var(--ink-soft)", fontSize: 13 }}
+              >
                 {errors.products || "Tente recarregar a página."}
               </div>
             </div>
           ) : topStockChartData.length ? (
-            <div style={{ height: topStockChartHeight, minWidth: 0, minHeight: 0 }}>
+            <div
+              style={{ height: topStockChartHeight, minWidth: 0, minHeight: 0 }}
+            >
               <ResponsiveContainer width="100%" height={topStockChartHeight}>
-                <BarChart data={topStockChartData} layout="vertical" margin={{ left: 10, right: 10 }}>
+                <BarChart
+                  data={topStockChartData}
+                  layout="vertical"
+                  margin={{ left: 10, right: 10 }}
+                >
                   <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                   <XAxis
                     type="number"
@@ -706,20 +849,28 @@ const DashboardPage = () => {
                     type="category"
                     dataKey="name"
                     width={200}
-                    tick={<TruncatedAxisTick dy={3} textAnchor="end" maxLength={32} fontSize={13} />}
+                    tick={
+                      <TruncatedAxisTick
+                        dy={3}
+                        textAnchor="end"
+                        maxLength={32}
+                        fontSize={13}
+                      />
+                    }
                     axisLine={{ stroke: "var(--border)" }}
                     tickLine={{ stroke: "var(--border)" }}
                   />
-                  <Tooltip content={<DashboardTooltip />} cursor={dashboardTooltipCursor} />
-                  <Bar
-                    dataKey="estoque"
-                    name="Estoque"
-                    radius={[0, 10, 10, 0]}
-                  >
+                  <Tooltip
+                    content={<DashboardTooltip />}
+                    cursor={dashboardTooltipCursor}
+                  />
+                  <Bar dataKey="estoque" name="Estoque" radius={[0, 10, 10, 0]}>
                     {topStockChartData.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={getColorByProductKey(entry.productKey || entry.name)}
+                        fill={getColorByProductKey(
+                          entry.productKey || entry.name,
+                        )}
                       />
                     ))}
                   </Bar>
@@ -735,13 +886,23 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      <div className="stats-grid" style={{ alignItems: "stretch", marginTop: 16 }}>
+      <div
+        className="stats-grid"
+        style={{ alignItems: "stretch", marginTop: 16 }}
+      >
         <div className="card">
           <ChartCardHeader
             title="Movimentações (Top)"
             subtitle="Produtos com maior volume de entradas e saídas"
             actions={
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "8px",
+                  flexWrap: "wrap",
+                  justifyContent: "flex-end",
+                }}
+              >
                 <button
                   type="button"
                   className="btn btn-outline"
@@ -776,22 +937,37 @@ const DashboardPage = () => {
           />
 
           {status.moved === "loading" ? (
-            <div style={{ height: 300, display: "grid", gap: 10, alignContent: "center" }}>
+            <div
+              style={{
+                height: 300,
+                display: "grid",
+                gap: 10,
+                alignContent: "center",
+              }}
+            >
               <div className="skeleton" style={{ height: 16, width: "50%" }} />
               <div className="skeleton" style={{ height: 12, width: "70%" }} />
-              <div className="skeleton" style={{ height: 220, width: "100%", borderRadius: 16 }} />
+              <div
+                className="skeleton"
+                style={{ height: 220, width: "100%", borderRadius: 16 }}
+              />
             </div>
           ) : status.moved === "error" ? (
             <div className="dashboard-error">
               <strong>Falha ao carregar movimentações</strong>
-              <div style={{ marginTop: 6, color: "var(--ink-soft)", fontSize: 13 }}>
+              <div
+                style={{ marginTop: 6, color: "var(--ink-soft)", fontSize: 13 }}
+              >
                 {errors.moved || "Tente recarregar a página."}
               </div>
             </div>
           ) : mostMovedChartData.length ? (
             <div style={{ height: 300, minWidth: 0, minHeight: 0 }}>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={mostMovedChartData} margin={{ left: 10, right: 10 }}>
+                <BarChart
+                  data={mostMovedChartData}
+                  margin={{ left: 10, right: 10 }}
+                >
                   <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                   <XAxis
                     dataKey="name"
@@ -813,7 +989,10 @@ const DashboardPage = () => {
                     axisLine={{ stroke: "var(--border)" }}
                     tickLine={{ stroke: "var(--border)" }}
                   />
-                  <Tooltip content={<DashboardTooltip />} cursor={dashboardTooltipCursor} />
+                  <Tooltip
+                    content={<DashboardTooltip />}
+                    cursor={dashboardTooltipCursor}
+                  />
                   <Legend
                     wrapperStyle={{ color: "var(--muted)", fontSize: 12 }}
                   />
@@ -825,7 +1004,9 @@ const DashboardPage = () => {
                     {mostMovedChartData.map((entry, index) => (
                       <Cell
                         key={`movement-cell-${index}`}
-                        fill={getColorByProductKey(entry.productKey || entry.name)}
+                        fill={getColorByProductKey(
+                          entry.productKey || entry.name,
+                        )}
                       />
                     ))}
                   </Bar>
@@ -859,14 +1040,29 @@ const DashboardPage = () => {
 
             {status.suppliersTop === "loading" ? (
               <div style={{ display: "grid", gap: 10, alignContent: "center" }}>
-                <div className="skeleton" style={{ height: 16, width: "45%" }} />
-                <div className="skeleton" style={{ height: 12, width: "65%" }} />
-                <div className="skeleton" style={{ height: 160, width: "100%", borderRadius: 16 }} />
+                <div
+                  className="skeleton"
+                  style={{ height: 16, width: "45%" }}
+                />
+                <div
+                  className="skeleton"
+                  style={{ height: 12, width: "65%" }}
+                />
+                <div
+                  className="skeleton"
+                  style={{ height: 160, width: "100%", borderRadius: 16 }}
+                />
               </div>
             ) : status.suppliersTop === "error" ? (
               <div className="dashboard-error">
                 <strong>Falha ao carregar fornecedores</strong>
-                <div style={{ marginTop: 6, color: "var(--ink-soft)", fontSize: 13 }}>
+                <div
+                  style={{
+                    marginTop: 6,
+                    color: "var(--ink-soft)",
+                    fontSize: 13,
+                  }}
+                >
                   {errors.suppliersTop || "Tente recarregar a página."}
                 </div>
               </div>
@@ -886,7 +1082,10 @@ const DashboardPage = () => {
                       stroke="none"
                     >
                       {topSuppliersList.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={BAR_COLORS[index % BAR_COLORS.length]}
+                        />
                       ))}
                     </Pie>
                     <Tooltip content={<DonutTooltip />} />
@@ -894,7 +1093,11 @@ const DashboardPage = () => {
                       verticalAlign="bottom"
                       height={36}
                       iconType="circle"
-                      wrapperStyle={{ color: "var(--muted)", fontSize: 12, paddingTop: "20px" }}
+                      wrapperStyle={{
+                        color: "var(--muted)",
+                        fontSize: 12,
+                        paddingTop: "20px",
+                      }}
                     />
                   </PieChart>
                 </ResponsiveContainer>

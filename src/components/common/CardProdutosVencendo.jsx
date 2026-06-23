@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { FiAlertTriangle, FiEye } from "react-icons/fi";
+import { formatNumber } from "../../utils/format";
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -65,11 +66,13 @@ const getLotQuantity = (produto, lote = null) => {
   return Number(quantity) || 0;
 };
 
-const getProductKey = (produto, index) => {
+const getExpiryKey = (produto, index) => {
   return String(
     produto?.pdt_id ??
       produto?.id ??
       produto?.pdt_codigo ??
+      produto?.lote ??
+      produto?.validade ??
       produto?.pdt_nome ??
       produto?.nome ??
       index,
@@ -91,16 +94,32 @@ const normalizeAlertItem = (produto, index, lote = null, loteIndex = 0) => {
   return {
     ...produto,
     id,
+<<<<<<< HEAD
+    expiryKey: getExpiryKey(produto, index),
+    estoqueAtual: getStockQuantity(produto),
+=======
     productKey: getProductKey(produto, index),
     estoqueAtual: getLotQuantity(produto, lote),
     lote: source?.lote ?? source?.ent_prod_lote ?? null,
     loteIndex,
+>>>>>>> ajuste
     pdt_nome: produto?.pdt_nome || produto?.nome || "Produto",
+    lote: produto?.lote ?? produto?.ent_prod_lote ?? null,
     pdt_validade: validade,
     diasRestantes: getDaysRemaining(validade),
   };
 };
 
+<<<<<<< HEAD
+const dedupeByExpiryItem = (produtos) => {
+  const grouped = new Map();
+
+  produtos.forEach((produto) => {
+    const current = grouped.get(produto.expiryKey);
+
+    if (!current || produto.diasRestantes < current.diasRestantes) {
+      grouped.set(produto.expiryKey, {
+=======
 const expandProductLots = (produto, index) => {
   const lotes = Array.isArray(produto?.lotes) ? produto.lotes : [];
 
@@ -131,9 +150,9 @@ const dedupeByLot = (produtos) => {
 
     if (!current || produto.diasRestantes < current.diasRestantes) {
       grouped.set(key, {
+>>>>>>> ajuste
         ...produto,
-        estoqueAtual:
-          produto.estoqueAtual + Number(current?.estoqueAtual || 0),
+        estoqueAtual: produto.estoqueAtual + Number(current?.estoqueAtual || 0),
       });
       return;
     }
@@ -179,6 +198,10 @@ const ModalListaVencimento = ({ produtos, onClose }) => {
                 <th>ID</th>
                 <th>Nome do Produto</th>
                 <th>Lote</th>
+<<<<<<< HEAD
+                <th>Quantidade</th>
+=======
+>>>>>>> ajuste
                 <th>Data de Validade</th>
                 <th>Dias Restantes</th>
               </tr>
@@ -191,7 +214,12 @@ const ModalListaVencimento = ({ produtos, onClose }) => {
                   >
                     <td>{produto.id}</td>
                     <td>{produto.pdt_nome}</td>
+<<<<<<< HEAD
+                    <td>{produto.lote ?? "-"}</td>
+                    <td>{formatNumber(produto.estoqueAtual)}</td>
+=======
                     <td>{produto.lote || "-"}</td>
+>>>>>>> ajuste
                     <td>{formatDate(produto.pdt_validade)}</td>
                     <td>
                       <span className="expiry-days-pill">
@@ -239,10 +267,23 @@ const CardProdutosVencendo = ({ produtos = [], loading = false }) => {
         return validade >= today && validade <= limitDate;
       });
 
+<<<<<<< HEAD
+    return dedupeByExpiryItem(filteredProducts).sort(
+=======
     return dedupeByLot(filteredProducts).sort(
+>>>>>>> ajuste
       (a, b) => a.diasRestantes - b.diasRestantes,
     );
   }, [produtos]);
+
+  const quantidadeVencendo = useMemo(
+    () =>
+      produtosVencendo.reduce(
+        (total, produto) => total + Number(produto.estoqueAtual || 0),
+        0,
+      ),
+    [produtosVencendo],
+  );
 
   return (
     <>
@@ -282,7 +323,15 @@ const CardProdutosVencendo = ({ produtos = [], loading = false }) => {
             {loading ? "..." : produtosVencendo.length}
           </strong>
           <span className="expiry-card-meta">
+<<<<<<< HEAD
+            {loading
+              ? "..."
+              : `${formatNumber(quantidadeVencendo)} unidade${
+                  quantidadeVencendo === 1 ? "" : "s"
+                } em produtos com validade entre hoje e os proximos 7 dias`}
+=======
             itens/lotes com validade entre hoje e os proximos 7 dias
+>>>>>>> ajuste
           </span>
         </div>
       </article>
