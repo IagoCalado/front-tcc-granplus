@@ -1055,6 +1055,7 @@ const DashboardPage = () => {
                       verticalAlign="bottom"
                       height={36}
                       iconType="circle"
+                      formatter={(value) => (value && value.length > 18 ? `${value.slice(0, 15)}...` : value)}
                       wrapperStyle={{
                         color: "var(--muted)",
                         fontSize: 12,

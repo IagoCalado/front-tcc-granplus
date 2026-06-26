@@ -12,9 +12,8 @@ const MinAlertCard = ({ value = 0, meta = "", loading = false }) => {
 
   return (
     <article
-      className={`expiry-card min-alert-card ${
-        hasAlert ? "expiry-card--alert" : "expiry-card--neutral"
-      }`}
+      className={`expiry-card min-alert-card ${hasAlert ? "expiry-card--alert" : "expiry-card--neutral"
+        }`}
       style={{
         ['--expiry-accent']: '#f59e0b',
         ['--expiry-accent-rgb']: accentRgb,

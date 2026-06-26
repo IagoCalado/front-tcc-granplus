@@ -44,10 +44,11 @@ const hasLotStockData = (produto, lote = null) => {
 
   return Boolean(
     source?.lote != null ||
-      source?.ent_prod_lote != null ||
-      source?.quantidade_lote != null ||
-      source?.ent_prod_qtde != null ||
-      source?.quantidade_disponivel != null,
+    source?.ent_prod_lote != null ||
+    source?.quantidade_lote != null ||
+    source?.ent_prod_qtde != null ||
+    source?.quantidade_disponivel != null ||
+    source?.estoque_atual != null
   );
 };
 
@@ -61,6 +62,7 @@ const getLotQuantity = (produto, lote = null) => {
     source?.quantidade ??
     source?.ent_prod_qtde ??
     source?.ep_quantidade ??
+    source?.estoque_atual ??
     0;
 
   return Number(quantity) || 0;
@@ -69,13 +71,13 @@ const getLotQuantity = (produto, lote = null) => {
 const getExpiryKey = (produto, index) => {
   return String(
     produto?.pdt_id ??
-      produto?.id ??
-      produto?.pdt_codigo ??
-      produto?.lote ??
-      produto?.validade ??
-      produto?.pdt_nome ??
-      produto?.nome ??
-      index,
+    produto?.id ??
+    produto?.pdt_codigo ??
+    produto?.lote ??
+    produto?.validade ??
+    produto?.pdt_nome ??
+    produto?.nome ??
+    index,
   );
 };
 
@@ -201,9 +203,8 @@ const ModalListaVencimento = ({ produtos, onClose }) => {
                       <span className="expiry-days-pill">
                         {produto.diasRestantes === 0
                           ? "Vence hoje"
-                          : `${produto.diasRestantes} dia${
-                              produto.diasRestantes === 1 ? "" : "s"
-                            }`}
+                          : `${produto.diasRestantes} dia${produto.diasRestantes === 1 ? "" : "s"
+                          }`}
                       </span>
                     </td>
                   </tr>
@@ -260,11 +261,10 @@ const CardProdutosVencendo = ({ produtos = [], loading = false }) => {
   return (
     <>
       <article
-        className={`expiry-card ${
-          produtosVencendo.length > 0
+        className={`expiry-card ${produtosVencendo.length > 0
             ? "expiry-card--alert"
             : "expiry-card--neutral"
-        }`}
+          }`}
       >
         <div className="expiry-card-glow" aria-hidden="true" />
 
@@ -286,7 +286,6 @@ const CardProdutosVencendo = ({ produtos = [], loading = false }) => {
             title="Ver lista"
           >
             <FiEye size={17} aria-hidden="true" />
-            <span>Ver Lista</span>
           </button>
         </div>
 
@@ -297,9 +296,8 @@ const CardProdutosVencendo = ({ produtos = [], loading = false }) => {
           <span className="expiry-card-meta">
             {loading
               ? "..."
-              : `${formatNumber(quantidadeVencendo)} unidade${
-                  quantidadeVencendo === 1 ? "" : "s"
-                } em produtos com validade entre hoje e os próximos 7 dias`}
+              : `${formatNumber(quantidadeVencendo)} unidade${quantidadeVencendo === 1 ? "" : "s"
+              } em produtos com validade entre hoje e os próximos 7 dias`}
           </span>
         </div>
       </article>
