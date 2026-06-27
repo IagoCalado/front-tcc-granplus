@@ -13,11 +13,12 @@ import {
   createSupplier,
   updateSupplier,
   deleteSupplier,
+  activateSupplier,
 } from "../services/api";
 import { matchesSearch } from "../utils/search";
 
 const SuppliersPage = () => {
-  const { token } = useAuth(); // Recuperar o token da sessão do usuário
+  const { token, isAdmin } = useAuth(); // Recuperar o token da sessão do usuário e isAdmin
   const [loading, setLoading] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -33,7 +34,8 @@ const SuppliersPage = () => {
     open: false,
     title: "",
     message: "",
-    targetId: null,
+    targetSupplier: null,
+    actionType: null,
   });
   const [saveConfirmState, setSaveConfirmState] = useState({
     open: false,
@@ -162,14 +164,19 @@ const SuppliersPage = () => {
     setLoading(true);
     setError("");
     try {
-      const data = await getSuppliers(token);
-      setSuppliers(data || []);
+      const data = await getSuppliers(token, { includeInactive: isAdmin });
+      const rows = Array.isArray(data) ? data : [];
+      setSuppliers(
+        isAdmin
+          ? rows
+          : rows.filter((supplier) => Number(supplier?.fncd_ativo) === 1),
+      );
     } catch (loadError) {
       setError(loadError.message || "Erro ao carregar fornecedores");
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [isAdmin, token]);
 
   // Efeito colateral para carregar a página inicialmente caso o usuário esteja autenticado
   useEffect(() => {
@@ -244,41 +251,73 @@ const SuppliersPage = () => {
     }
   };
 
-  const handleDeleteSupplier = async (id) => {
+  const handleDeleteSupplier = async (supplier) => {
     setConfirmState({
       open: true,
-      title: "Certeza que deseja excluir este fornecedor ?",
-      // message: "Certeza que deseja excluir este fornecedor ?",
-      targetId: id,
+      title: `Tem certeza que deseja desativar o fornecedor ${supplier.fncd_nome} ?`,
+      message: "O fornecedor ficará inativo para usuários comuns.",
+      targetSupplier: supplier,
+      actionType: "deactivate",
+    });
+  };
+
+  const handleActivateSupplier = async (supplier) => {
+    setConfirmState({
+      open: true,
+      title: `Tem certeza que deseja ativar o fornecedor ${supplier.fncd_nome} ?`,
+      message: "O fornecedor voltará a aparecer na listagem.",
+      targetSupplier: supplier,
+      actionType: "activate",
     });
   };
 
   const handleConfirmDelete = async () => {
-    const targetId = confirmState.targetId;
-    if (!targetId) {
-      setConfirmState({ open: false, title: "", message: "", targetId: null });
+    const supplier = confirmState.targetSupplier;
+    if (!supplier) {
+      setConfirmState({
+        open: false,
+        title: "",
+        message: "",
+        targetSupplier: null,
+        actionType: null,
+      });
       return;
     }
 
     setConfirmState((prev) => ({ ...prev, open: false }));
     try {
-      await deleteSupplier(token, targetId);
-      loadData();
+      if (confirmState.actionType === "activate") {
+        await activateSupplier(token, supplier.fncd_id);
+      } else {
+        await deleteSupplier(token, supplier.fncd_id);
+      }
+      await loadData();
       setAlertState({
         open: true,
-        title: "Fornecedor excluido com sucesso.",
-        // message: "Fornecedor excluido com sucesso.",
+        title:
+          confirmState.actionType === "activate"
+            ? "Fornecedor ativado com sucesso."
+            : "Fornecedor desativado com sucesso.",
         tone: "success",
       });
     } catch (error) {
       setAlertState({
         open: true,
-        title: "Erro ao excluir : " + error.message,
-        // message: "Erro ao excluir : " + error.message,
+        title:
+          confirmState.actionType === "activate"
+            ? "Erro ao ativar fornecedor"
+            : "Erro ao desativar fornecedor",
+        message: error.message || "Erro no processamento da solicitação.",
         tone: "error",
       });
     } finally {
-      setConfirmState({ open: false, title: "", message: "", targetId: null });
+      setConfirmState({
+        open: false,
+        title: "",
+        message: "",
+        targetSupplier: null,
+        actionType: null,
+      });
     }
   };
 
@@ -411,13 +450,27 @@ const SuppliersPage = () => {
           >
             Editar
           </button>
-          <button
-            className="btn btn-ghost btn-danger"
-            type="button"
-            onClick={() => handleDeleteSupplier(row.fncd_id)}
-          >
-            Excluir
-          </button>
+          {isAdmin ? (
+            <button
+              className={`btn ${row.fncd_ativo ? "btn-ghost btn-danger" : "btn-primary"}`}
+              type="button"
+              onClick={() =>
+                row.fncd_ativo
+                  ? handleDeleteSupplier(row)
+                  : handleActivateSupplier(row)
+              }
+            >
+              {row.fncd_ativo ? "Desativar" : "Ativar"}
+            </button>
+          ) : (
+            <button
+              className="btn btn-ghost btn-danger"
+              type="button"
+              onClick={() => handleDeleteSupplier(row)}
+            >
+              Excluir
+            </button>
+          )}
         </div>
       ),
     },
@@ -437,7 +490,11 @@ const SuppliersPage = () => {
       >
         <SectionHeader
           title="Fornecedores"
-          subtitle="Gerencie os fornecedores de produtos e serviços."
+          subtitle={
+            isAdmin
+              ? "Controle total dos fornecedores, incluindo inativos."
+              : "Gerencie os fornecedores de produtos e serviços."
+          }
           onSearch={setSearchTerm}
           searchPlaceholder="Buscar por nome ou documento..."
           actions={
@@ -468,11 +525,23 @@ const SuppliersPage = () => {
         isOpen={confirmState.open}
         title={confirmState.title}
         message={confirmState.message}
-        tone="danger"
-        confirmLabel="Excluir"
+        tone={confirmState.actionType === "activate" ? "info" : "danger"}
+        confirmLabel={
+          confirmState.actionType === "activate"
+            ? "Ativar"
+            : isAdmin
+              ? "Desativar"
+              : "Excluir"
+        }
         onConfirm={handleConfirmDelete}
         onCancel={() =>
-          setConfirmState({ open: false, title: "", message: "", targetId: null })
+          setConfirmState({
+            open: false,
+            title: "",
+            message: "",
+            targetSupplier: null,
+            actionType: null,
+          })
         }
       />
 

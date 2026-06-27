@@ -131,13 +131,18 @@ export const getOutputAvailableLots = (token, pdtId) =>
   request(`/saidas/lotes-disponiveis/${pdtId}`, { token });
 
 // Fornecedores
-export const getSuppliers = (token) => request("/fornecedores", { token });
+export const getSuppliers = (token, { includeInactive = false } = {}) => {
+  const query = includeInactive ? "?includeInactive=1" : "";
+  return request(`/fornecedores${query}`, { token });
+};
 export const createSupplier = (token, payload) =>
   request("/fornecedores", { token, method: "POST", body: payload });
 export const updateSupplier = (token, id, payload) =>
   request(`/fornecedores/${id}`, { token, method: "PUT", body: payload });
 export const deleteSupplier = (token, id) =>
   request(`/fornecedores/${id}`, { token, method: "DELETE" });
+export const activateSupplier = (token, id) =>
+  request(`/fornecedores/${id}/activate`, { token, method: "PATCH" });
 
 // Relatórios e Auditoria
 export const getMostMovedProducts = (token) =>
